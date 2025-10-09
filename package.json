@@ -1,6 +1,6 @@
 {
   "name": "@hono/command",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "bin": {
     "hono": "dist/cli.js"
