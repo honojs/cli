@@ -1,6 +1,6 @@
 {
   "name": "honoc",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "bin": {
     "honoc": "dist/cli.js"
