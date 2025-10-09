@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "types": [],
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+  },
+  "include": [
+    "src",
+  ]
+}

@@ -1,0 +1,17 @@
+node_modules
+dist
+package-lock.json
+*.tgz
+sandbox
+test-results
+playwright-report
+.hono
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+yarn-error.log
