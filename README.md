@@ -31,6 +31,9 @@ hono serve --use 'logger()' --use 'cors()'
 
 # Start server and show routes
 hono serve --show-routes
+
+# Open documentation in browser
+hono docs
 ```
 
 ## Commands
@@ -41,6 +44,7 @@ hono serve --show-routes
   - `-p, --port <port>` - Port number (default: 3000)
   - `--show-routes` - Show registered routes
   - `--use <middleware>` - Use built-in middleware (can be used multiple times)
+- `docs` - Open Hono documentation in browser
 
 ## Authors
 
