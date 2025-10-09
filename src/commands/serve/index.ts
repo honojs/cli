@@ -9,9 +9,8 @@ import { pathToFileURL } from 'node:url'
 import { builtinMap } from './builtin-map.js'
 
 // Keep serveStatic to prevent bundler removal
-;
 import { serve } from './server.js'
-[serveStatic].forEach((f) => {
+;[serveStatic].forEach((f) => {
   if (typeof f === 'function') {
     // useless process to avoid being deleted by bundler
   }
