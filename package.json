@@ -1,21 +1,22 @@
 {
   "name": "honoc",
   "version": "0.0.0",
-  "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "honoc": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsup",
+    "watch": "tsup --watch",
+    "lint": "eslint --ext js,ts src",
+    "lint:fix": "eslint --ext js,ts src --fix",
+    "format": "prettier src --check",
+    "format:fix": "prettier src --write",
     "release": "np"
   },
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "license": "MIT",
   "repository": {
@@ -27,8 +28,12 @@
     "access": "public"
   },
   "homepage": "https://hono.dev",
+  "dependencies": {
+    "commander": "^14.0.1"
+  },
   "devDependencies": {
     "@hono/eslint-config": "^1.1.1",
+    "@types/node": "^24.7.0",
     "eslint": "^9.37.0",
     "hono": "4.4.13",
     "np": "^10.2.0",

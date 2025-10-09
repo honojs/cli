@@ -7,7 +7,7 @@
     "strict": true,
     "declaration": true,
     "skipLibCheck": true,
-    "types": [],
+    "types": ["node"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
   },
