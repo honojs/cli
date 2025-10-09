@@ -1,9 +1,9 @@
 {
-  "name": "honoc",
-  "version": "0.0.1",
+  "name": "@hono/command",
+  "version": "0.0.0",
   "type": "module",
   "bin": {
-    "honoc": "dist/cli.js"
+    "hono": "dist/cli.js"
   },
   "scripts": {
     "build": "tsup",
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/honoc.git"
+    "url": "https://github.com/honojs/coomand.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

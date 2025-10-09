@@ -1,24 +1,24 @@
-# honoc
+# @hono/command
 
 A CLI command for Hono
 
 ## Installation
 
 ```bash
-npm install -g honoc
+npm install -g @hono/command
 ```
 
 ## Usage
 
 ```bash
 # Show help
-honoc --help
+hono --help
 
 # Say hello
-honoc hello
+hono hello
 
 # Say hello to someone
-honoc hello yusuke
+hono hello yusuke
 ```
 
 ## Commands

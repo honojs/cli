@@ -13,7 +13,7 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 
 const program = new Command()
 
 program
-  .name('honoc')
+  .name('hono')
   .description('A CLI command for Hono')
   .version(packageJson.version, '-v, --version', 'display version number')
 
