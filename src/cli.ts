@@ -14,7 +14,7 @@ const program = new Command()
 
 program
   .name('hono')
-  .description('A CLI command for Hono')
+  .description('CLI for Hono')
   .version(packageJson.version, '-v, --version', 'display version number')
 
 // Register commands

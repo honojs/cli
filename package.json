@@ -1,5 +1,5 @@
 {
-  "name": "@hono/command",
+  "name": "@hono/cli",
   "version": "0.0.1",
   "type": "module",
   "bin": {
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/command.git"
+    "url": "https://github.com/honojs/cli.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",

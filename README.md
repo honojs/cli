@@ -1,11 +1,11 @@
-# @hono/command
+# @hono/cli
 
-A CLI command for Hono
+CLI for Hono
 
 ## Installation
 
 ```bash
-npm install -g @hono/command
+npm install -g @hono/cli
 ```
 
 ## Usage
