@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { helloCommand } from './commands/hello/index.js'
+import { serveCommand } from './commands/serve/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -19,5 +20,6 @@ program
 
 // Register commands
 helloCommand(program)
+serveCommand(program)
 
 program.parse()

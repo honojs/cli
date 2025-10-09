@@ -19,11 +19,28 @@ hono hello
 
 # Say hello to someone
 hono hello yusuke
+
+# Start development server
+hono serve
+
+# Start server with specific file
+hono serve src/app.ts
+
+# Start server with middleware
+hono serve --use 'logger()' --use 'cors()'
+
+# Start server and show routes
+hono serve --show-routes
 ```
 
 ## Commands
 
 - `hello [name]` - Say hello (default: Hono)
+- `serve [entry]` - Start development server
+  - `[entry]` - Entry file (default: `./src/index.ts`)
+  - `-p, --port <port>` - Port number (default: 3000)
+  - `--show-routes` - Show registered routes
+  - `--use <middleware>` - Use built-in middleware (can be used multiple times)
 
 ## Authors
 
