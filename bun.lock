@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "@hono/command",
+      "name": "@hono/cli",
       "dependencies": {
         "commander": "^14.0.1",
       },
