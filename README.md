@@ -19,11 +19,15 @@ hono hello
 
 # Say hello to someone
 hono hello yusuke
+
+# Open documentation in browser
+hono docs
 ```
 
 ## Commands
 
 - `hello [name]` - Say hello (default: Hono)
+- `docs` - Open Hono documentation in browser
 
 ## Authors
 

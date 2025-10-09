@@ -8,6 +8,9 @@
   "scripts": {
     "build": "tsup",
     "watch": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest watch",
     "lint": "eslint --ext js,ts src",
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
@@ -39,7 +42,8 @@
     "np": "^10.2.0",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   },
   "packageManager": "bun@1.2.20"
 }
