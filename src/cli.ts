@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildCommand } from './commands/build/index.js'
 import { docsCommand } from './commands/docs/index.js'
 import { helloCommand } from './commands/hello/index.js'
 import { serveCommand } from './commands/serve/index.js'
@@ -23,5 +24,6 @@ program
 helloCommand(program)
 serveCommand(program)
 docsCommand(program)
+buildCommand(program)
 
 program.parse()
