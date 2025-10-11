@@ -10,20 +10,16 @@ import { createCommand } from './index.js'
 describe('createCommand', () => {
   let program: Command
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let processExitSpy: any
 
   beforeEach(() => {
     program = new Command()
     createCommand(program)
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
     vi.clearAllMocks()
   })
 
   afterEach(() => {
     consoleErrorSpy.mockRestore()
-    processExitSpy.mockRestore()
   })
 
   it('should spawn npm create hono@latest with no arguments', async () => {
@@ -77,13 +73,12 @@ describe('createCommand', () => {
     }
     vi.mocked(spawn).mockReturnValue(mockChildProcess as never)
 
-    await program.parseAsync(['node', 'test', 'create'])
+    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow('Failed to execute npm: spawn ENOENT')
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to execute npm: spawn ENOENT')
-    expect(processExitSpy).toHaveBeenCalledWith(1)
   })
 
-  it('should exit with the same code as npm', async () => {
+  it('should throw error when npm exits with non-zero code', async () => {
     const { spawn } = await import('node:child_process')
     const mockChildProcess = {
       on: vi.fn((event, callback) => {
@@ -95,8 +90,6 @@ describe('createCommand', () => {
     }
     vi.mocked(spawn).mockReturnValue(mockChildProcess as never)
 
-    await program.parseAsync(['node', 'test', 'create'])
-
-    expect(processExitSpy).toHaveBeenCalledWith(1)
+    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow('npm create hono@latest exited with code 1')
   })
 })
