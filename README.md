@@ -17,9 +17,6 @@ hono --help
 # Create a new Hono project
 hono create
 
-# Say hello
-hono hello
-
 # Open documentation
 hono docs
 ```
@@ -27,7 +24,6 @@ hono docs
 ## Commands
 
 - `create [target]` - Create a new Hono project
-- `hello [name]` - Say hello (default: Hono)
 - `docs` - Open Hono documentation in browser
 
 ### `create`
@@ -64,18 +60,6 @@ hono create my-app --template cloudflare-workers
 # Create and install dependencies with Bun
 hono create my-app --pm bun --install
 ```
-
-### `hello`
-
-Say hello command for testing purposes.
-
-```bash
-hono hello [name]
-```
-
-**Arguments:**
-
-- `name` - Name to greet (default: Hono)
 
 ### `docs`
 
