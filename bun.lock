@@ -5,6 +5,7 @@
       "name": "@hono/cli",
       "dependencies": {
         "commander": "^14.0.1",
+        "esbuild": "^0.25.10",
       },
       "devDependencies": {
         "@hono/eslint-config": "^1.1.1",
