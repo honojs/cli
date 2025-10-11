@@ -73,7 +73,9 @@ describe('createCommand', () => {
     }
     vi.mocked(spawn).mockReturnValue(mockChildProcess as never)
 
-    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow('Failed to execute npm: spawn ENOENT')
+    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow(
+      'Failed to execute npm: spawn ENOENT'
+    )
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to execute npm: spawn ENOENT')
   })
@@ -90,6 +92,8 @@ describe('createCommand', () => {
     }
     vi.mocked(spawn).mockReturnValue(mockChildProcess as never)
 
-    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow('npm create hono@latest exited with code 1')
+    await expect(program.parseAsync(['node', 'test', 'create'])).rejects.toThrow(
+      'npm create hono@latest exited with code 1'
+    )
   })
 })
