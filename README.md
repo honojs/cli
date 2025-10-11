@@ -1,4 +1,4 @@
-# @hono/cli
+# Hono CLI
 
 CLI for Hono
 
@@ -14,20 +14,76 @@ npm install -g @hono/cli
 # Show help
 hono --help
 
+# Create a new Hono project
+hono create
+
 # Say hello
 hono hello
 
-# Say hello to someone
-hono hello yusuke
-
-# Open documentation in browser
+# Open documentation
 hono docs
 ```
 
 ## Commands
 
+- `create [target]` - Create a new Hono project
 - `hello [name]` - Say hello (default: Hono)
 - `docs` - Open Hono documentation in browser
+
+### `create`
+
+Create a new Hono project using [create-hono](https://github.com/honojs/create-hono).
+
+```bash
+hono create [target] [options]
+```
+
+**Arguments:**
+
+- `target` - Target directory (optional)
+
+**Options:**
+
+- `-t, --template <template>` - Template to use (aws-lambda, bun, cloudflare-workers, cloudflare-workers+vite, deno, fastly, lambda-edge, netlify, nextjs, nodejs, vercel, cloudflare-pages, x-basic)
+- `-i, --install` - Install dependencies
+- `-p, --pm <pm>` - Package manager to use (npm, bun, deno, pnpm, yarn)
+- `-o, --offline` - Use offline mode
+
+**Examples:**
+
+```bash
+# Interactive project creation
+hono create
+
+# Create project in specific directory
+hono create my-app
+
+# Create with Cloudflare Workers template
+hono create my-app --template cloudflare-workers
+
+# Create and install dependencies with Bun
+hono create my-app --pm bun --install
+```
+
+### `hello`
+
+Say hello command for testing purposes.
+
+```bash
+hono hello [name]
+```
+
+**Arguments:**
+
+- `name` - Name to greet (default: Hono)
+
+### `docs`
+
+Open Hono documentation in your default browser.
+
+```bash
+hono docs
+```
 
 ## Authors
 
