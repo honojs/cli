@@ -7,7 +7,10 @@
     "strict": true,
     "declaration": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
   },
