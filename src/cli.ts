@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createCommand } from './commands/create/index.js'
 import { docsCommand } from './commands/docs/index.js'
+import { requestCommand } from './commands/request/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -21,5 +22,6 @@ program
 // Register commands
 createCommand(program)
 docsCommand(program)
+requestCommand(program)
 
 program.parse()
