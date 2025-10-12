@@ -30,7 +30,7 @@ export function requestCommand(program: Command) {
     })
 }
 
-async function executeRequest(
+export async function executeRequest(
   appPath: string | undefined,
   requestPath: string,
   options: RequestOptions
