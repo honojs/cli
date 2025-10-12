@@ -30,7 +30,7 @@ export function optimizeCommand(program: Command) {
       const mainAppPath = resolve(process.cwd(), mainEntry)
       const outfile = options.outfile
         ? resolve(process.cwd(), options.outfile)
-        : resolve(dirname(mainAppPath), `hono-optimized${mainExt}`)
+        : resolve(dirname(mainAppPath), `hono-optimized${mainExt.replace(/x$/, '')}`)
 
       const routes: RouterRoute[] = []
       for (const entry of entries) {
@@ -57,7 +57,6 @@ export function optimizeCommand(program: Command) {
             jsxImportSource: 'hono/jsx',
             platform: 'node',
             external: ['@hono/node-server'], // Keep server external
-            sourcemap: 'inline',
           })
 
           // Execute the bundled code using data URL
