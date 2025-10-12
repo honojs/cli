@@ -99,7 +99,8 @@ export function optimizeCommand(program: Command) {
             assignRouterStatement = `const routerParams = ${serialized} as unknown as ConstructorParameters<typeof PreparedRegExpRouter>
     this.router = new PreparedRegExpRouter(...routerParams) as unknown as typeof this.router`
           } else {
-            assignRouterStatement = `this.router = new PreparedTrieRouter(...${serialized})`
+            assignRouterStatement = `const routerParams = ${serialized}
+    this.router = new PreparedRegExpRouter(...routerParams)`
           }
         } else {
           importStatement = "import { RegExpRouter } from 'hono/router/reg-exp-router'"
