@@ -2,7 +2,6 @@ import { Command } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createCommand } from './commands/create/index.js'
 import { docsCommand } from './commands/docs/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -19,7 +18,6 @@ program
   .version(packageJson.version, '-v, --version', 'display version number')
 
 // Register commands
-createCommand(program)
 docsCommand(program)
 
 program.parse()
