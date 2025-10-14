@@ -162,6 +162,24 @@ describe('serveCommand', () => {
     expect(response.status).toBe(404)
   })
 
+  it('should create default empty app when no entry argument provided', async () => {
+    await program.parseAsync(['node', 'test', 'serve'])
+
+    // Verify serve was called
+    expect(mockServe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        port: 7070,
+      }),
+      expect.any(Function)
+    )
+
+    // Test that the default app returns 404 for any route
+    const rootRequest = new Request('http://localhost:7070/')
+    const rootResponse = await capturedFetchFunction(rootRequest)
+    expect(rootResponse.status).toBe(404)
+  })
+
   it('should handle typical use case: basicAuth + proxy to ramen-api.dev', async () => {
     mockModules.existsSync.mockReturnValue(false)
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {

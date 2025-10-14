@@ -20,7 +20,7 @@ export function serveCommand(program: Command) {
   program
     .command('serve')
     .description('Start server')
-    .argument('[entry]', 'entry file', './src/index.ts')
+    .argument('[entry]', 'entry file')
     .option('-p, --port <port>', 'port number')
     .option('--show-routes', 'show registered routes')
     .option(
@@ -32,43 +32,51 @@ export function serveCommand(program: Command) {
       []
     )
     .action(
-      async (entry: string, options: { port?: string; showRoutes?: boolean; use?: string[] }) => {
-        const appPath = resolve(process.cwd(), entry)
-
+      async (
+        entry: string | undefined,
+        options: { port?: string; showRoutes?: boolean; use?: string[] }
+      ) => {
         let app: Hono
 
-        if (!existsSync(appPath)) {
-          // Create a default Hono app if entry file doesn't exist
+        if (!entry) {
+          // Create a default Hono app if no entry is provided
           app = new Hono()
         } else {
-          const appFilePath = realpathSync(appPath)
-          const ext = extname(appFilePath)
+          const appPath = resolve(process.cwd(), entry)
 
-          // TypeScript/JSX files need transformation and bundling
-          if (['.ts', '.tsx', '.jsx'].includes(ext)) {
-            // Use build API to resolve imports and bundle
-            const result = await esbuild.build({
-              entryPoints: [appFilePath],
-              bundle: true,
-              write: false,
-              format: 'esm',
-              target: 'node20',
-              jsx: 'automatic',
-              jsxImportSource: 'hono/jsx',
-              platform: 'node',
-              external: ['@hono/node-server'], // Keep server external
-              sourcemap: 'inline',
-            })
-
-            // Execute the bundled code using data URL
-            const code = result.outputFiles[0].text
-            const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-            const module = await import(dataUrl)
-            app = module.default
+          if (!existsSync(appPath)) {
+            // Create a default Hono app if entry file doesn't exist
+            app = new Hono()
           } else {
-            // Regular JS files can be imported directly
-            const module = await import(pathToFileURL(appFilePath).href)
-            app = module.default
+            const appFilePath = realpathSync(appPath)
+            const ext = extname(appFilePath)
+
+            // TypeScript/JSX files need transformation and bundling
+            if (['.ts', '.tsx', '.jsx'].includes(ext)) {
+              // Use build API to resolve imports and bundle
+              const result = await esbuild.build({
+                entryPoints: [appFilePath],
+                bundle: true,
+                write: false,
+                format: 'esm',
+                target: 'node20',
+                jsx: 'automatic',
+                jsxImportSource: 'hono/jsx',
+                platform: 'node',
+                external: ['@hono/node-server'], // Keep server external
+                sourcemap: 'inline',
+              })
+
+              // Execute the bundled code using data URL
+              const code = result.outputFiles[0].text
+              const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
+              const module = await import(dataUrl)
+              app = module.default
+            } else {
+              // Regular JS files can be imported directly
+              const module = await import(pathToFileURL(appFilePath).href)
+              app = module.default
+            }
           }
         }
 
