@@ -200,26 +200,29 @@ hono serve [entry] [options]
 **Examples:**
 
 ```bash
-# Start server with default settings (uses ./src/index.ts)
+# Start server with default empty app (no entry file needed)
 hono serve
 
 # Start server on specific port
-hono serve -p 8080
+hono serve -p 8080 src/app.ts
 
 # Start server with specific entry file
 hono serve src/app.ts
 
 # Start server and show routes
-hono serve --show-routes
+hono serve --show-routes src/app.ts
 
 # Start server with middleware
-hono serve --use 'cors()'
+hono serve --use 'cors()' src/app.ts
 
 # Start server with multiple middleware
-hono serve --use 'cors()' --use 'logger()'
+hono serve --use 'cors()' --use 'logger()' src/app.ts
+
+# Start server with authentication and static file serving
+hono serve --use 'basicAuth({username:"foo", password:"bar"})' --use "serveStatic({ root: './' })"
 
 # Combine all options
-hono serve src/app.ts -p 8080 --show-routes --use 'cors()' --use 'logger()'
+hono serve -p 8080 --show-routes --use 'cors()' --use 'logger()' src/app.ts
 ```
 
 ## Authors
