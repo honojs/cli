@@ -19,12 +19,16 @@ hono request
 
 # Display documentation
 hono docs
+
+# Search documentation
+hono search middleware
 ```
 
 ## Commands
 
 - `request [file]` - Send request to Hono app using `app.request()`
 - `docs [path]` - Display Hono documentation
+- `search <query>` - Search Hono documentation
 
 ### `request`
 
@@ -115,6 +119,60 @@ hono docs /examples/basic
 # Path normalization (these are equivalent)
 hono docs docs/concepts/stacks
 hono docs /docs/concepts/stacks
+```
+
+### `search`
+
+Search through Hono documentation using fuzzy search powered by Algolia.
+
+```bash
+hono search <query> [options]
+```
+
+**Arguments:**
+
+- `query` - Search query (required)
+
+**Options:**
+
+- `-l, --limit <number>` - Number of results to show (default: 5, max: 20)
+
+**Examples:**
+
+```bash
+# Search for middleware documentation
+hono search middleware
+
+# Search with custom result limit
+hono search "getting started" --limit 10
+
+# Search for specific topics
+hono search jwt
+hono search "cors middleware"
+hono search routing
+```
+
+**Search Results:**
+
+Each result includes:
+
+- **Title** - The documentation page title with search terms highlighted
+- **Category** - Hierarchical path showing the document structure
+- **URL** - Direct link to the documentation page
+- **Command** - Corresponding `hono docs` command to view the content locally
+
+Example output:
+
+```
+1. Middleware ​
+   Category: Middleware ​
+   URL: https://hono.dev/docs/guides/middleware#middleware
+   Command: hono docs /docs/guides/middleware
+
+2. Third-party Middleware - Hono
+   Category: Third-party Middleware - Hono > Middleware
+   URL: https://hono.dev/docs/middleware/third-party#VPSidebarNav
+   Command: hono docs /docs/middleware/third-party
 ```
 
 ## Authors
