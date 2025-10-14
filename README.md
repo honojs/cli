@@ -1,6 +1,6 @@
 # Hono CLI
 
-CLI for Hono
+Hono CLI for Human and AI
 
 ## Installation
 
@@ -14,64 +14,17 @@ npm install -g @hono/cli
 # Show help
 hono --help
 
-# Create a new Hono project
-hono create
-
-# Open documentation
-hono docs
-
 # Send request to Hono app
-hono request -P /
+hono request
+
+# Display documentation
+hono docs
 ```
 
 ## Commands
 
-- `create [target]` - Create a new Hono project
-- `docs` - Open Hono documentation in browser
-- `request [file]` - Send request to Hono app using app.request()
-
-### `create`
-
-Create a new Hono project using [create-hono](https://github.com/honojs/create-hono).
-
-```bash
-hono create [target] [options]
-```
-
-**Arguments:**
-
-- `target` - Target directory (optional)
-
-**Options:**
-
-- `-t, --template <template>` - Template to use (aws-lambda, bun, cloudflare-workers, cloudflare-workers+vite, deno, fastly, lambda-edge, netlify, nextjs, nodejs, vercel, cloudflare-pages, x-basic)
-- `-i, --install` - Install dependencies
-- `-p, --pm <pm>` - Package manager to use (npm, bun, deno, pnpm, yarn)
-- `-o, --offline` - Use offline mode
-
-**Examples:**
-
-```bash
-# Interactive project creation
-hono create
-
-# Create project in specific directory
-hono create my-app
-
-# Create with Cloudflare Workers template
-hono create my-app --template cloudflare-workers
-
-# Create and install dependencies with Bun
-hono create my-app --pm bun --install
-```
-
-### `docs`
-
-Open Hono documentation in your default browser.
-
-```bash
-hono docs
-```
+- `request [file]` - Send request to Hono app using `app.request()`
+- `docs [path]` - Display Hono documentation
 
 ### `request`
 
@@ -132,11 +85,37 @@ The command returns a JSON object with the following structure:
 }
 ```
 
-**File Support:**
+### `docs`
 
-- **TypeScript/JSX files** (`.ts`, `.tsx`, `.jsx`) - Automatically bundled with esbuild
-- **JavaScript files** (`.js`) - Imported directly
-- **Default paths** - If the file is not found, tries `src/index.ts` and `src/index.tsx` automatically
+Display Hono documentation content directly in your terminal.
+
+```bash
+hono docs [path]
+```
+
+**Arguments:**
+
+- `path` - Documentation path (optional)
+
+**Examples:**
+
+```bash
+# Display main documentation summary (llms.txt)
+hono docs
+
+# Display specific documentation pages
+hono docs /docs/concepts/motivation
+hono docs /docs/guides/best-practices
+hono docs /docs/api/context
+
+# Display examples and tutorials
+hono docs /examples/stytch-auth
+hono docs /examples/basic
+
+# Path normalization (these are equivalent)
+hono docs docs/concepts/stacks
+hono docs /docs/concepts/stacks
+```
 
 ## Authors
 
