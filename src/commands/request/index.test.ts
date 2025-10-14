@@ -9,16 +9,11 @@ vi.mock('node:fs', () => ({
 }))
 
 vi.mock('node:path', () => ({
-  extname: vi.fn(),
   resolve: vi.fn(),
 }))
 
-vi.mock('node:url', () => ({
-  pathToFileURL: vi.fn(),
-}))
-
-vi.mock('esbuild', () => ({
-  build: vi.fn(),
+vi.mock('../../utils/build.js', () => ({
+  buildAndImportApp: vi.fn(),
 }))
 
 import { requestCommand } from './index.js'
@@ -27,17 +22,15 @@ describe('requestCommand', () => {
   let program: Command
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let mockModules: any
+  let mockBuildAndImportApp: any
 
   const setupBasicMocks = (appPath: string, mockApp: Hono) => {
     mockModules.existsSync.mockReturnValue(true)
     mockModules.realpathSync.mockReturnValue(appPath)
-    mockModules.extname.mockReturnValue('.js')
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {
       return `${cwd}/${path}`
     })
-    const absolutePath = appPath.startsWith('/') ? appPath : `${process.cwd()}/${appPath}`
-    mockModules.pathToFileURL.mockReturnValue(new URL(`file://${absolutePath}`))
-    vi.doMock(absolutePath, () => ({ default: mockApp }))
+    mockBuildAndImportApp.mockResolvedValue(mockApp)
   }
 
   beforeEach(async () => {
@@ -49,10 +42,10 @@ describe('requestCommand', () => {
     mockModules = {
       existsSync: vi.mocked((await import('node:fs')).existsSync),
       realpathSync: vi.mocked((await import('node:fs')).realpathSync),
-      extname: vi.mocked((await import('node:path')).extname),
       resolve: vi.mocked((await import('node:path')).resolve),
-      pathToFileURL: vi.mocked((await import('node:url')).pathToFileURL),
     }
+
+    mockBuildAndImportApp = vi.mocked((await import('../../utils/build.js')).buildAndImportApp)
 
     vi.clearAllMocks()
   })
@@ -138,13 +131,10 @@ describe('requestCommand', () => {
       return path === resolvedPath
     })
     mockModules.realpathSync.mockReturnValue(expectedPath)
-    mockModules.extname.mockReturnValue('.js')
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {
       return `${cwd}/${path}`
     })
-    const absolutePath = `${process.cwd()}/${expectedPath}`
-    mockModules.pathToFileURL.mockReturnValue(new URL(`file://${absolutePath}`))
-    vi.doMock(absolutePath, () => ({ default: mockApp }))
+    mockBuildAndImportApp.mockResolvedValue(mockApp)
 
     await program.parseAsync(['node', 'test', 'request'])
 

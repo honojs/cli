@@ -1,12 +1,11 @@
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import type { Command } from 'commander'
-import * as esbuild from 'esbuild'
 import { Hono } from 'hono'
 import { showRoutes } from 'hono/dev'
 import { existsSync, realpathSync } from 'node:fs'
-import { resolve, extname } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
+import { buildAndImportApp } from '../../utils/build.js'
 import { builtinMap } from './builtin-map.js'
 
 // Keep serveStatic to prevent bundler removal
@@ -49,34 +48,9 @@ export function serveCommand(program: Command) {
             app = new Hono()
           } else {
             const appFilePath = realpathSync(appPath)
-            const ext = extname(appFilePath)
-
-            // TypeScript/JSX files need transformation and bundling
-            if (['.ts', '.tsx', '.jsx'].includes(ext)) {
-              // Use build API to resolve imports and bundle
-              const result = await esbuild.build({
-                entryPoints: [appFilePath],
-                bundle: true,
-                write: false,
-                format: 'esm',
-                target: 'node20',
-                jsx: 'automatic',
-                jsxImportSource: 'hono/jsx',
-                platform: 'node',
-                external: ['@hono/node-server'], // Keep server external
-                sourcemap: 'inline',
-              })
-
-              // Execute the bundled code using data URL
-              const code = result.outputFiles[0].text
-              const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-              const module = await import(dataUrl)
-              app = module.default
-            } else {
-              // Regular JS files can be imported directly
-              const module = await import(pathToFileURL(appFilePath).href)
-              app = module.default
-            }
+            app = await buildAndImportApp(appFilePath, {
+              external: ['@hono/node-server'],
+            })
           }
         }
 
