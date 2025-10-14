@@ -165,4 +165,143 @@ describe('requestCommand', () => {
 
     expect(consoleLogSpy).toHaveBeenCalledWith(expectedOutput)
   })
+
+  it('should handle single header option correctly', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/api/test', (c) => {
+      const auth = c.req.header('Authorization')
+      if (!auth) {
+        return c.text('No auth header', 400)
+      }
+      return c.json({ auth })
+    })
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/api/test',
+      '-H',
+      'Authorization: Bearer token123',
+      'test-app.js',
+    ])
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: '{"auth":"Bearer token123"}',
+          headers: { 'content-type': 'application/json' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
+  it('should handle multiple header options correctly', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/api/multi', (c) => {
+      const auth = c.req.header('Authorization')
+      const userAgent = c.req.header('User-Agent')
+      const custom = c.req.header('X-Custom-Header')
+      return c.json({ auth, userAgent, custom })
+    })
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/api/multi',
+      '-H',
+      'Authorization: Bearer token456',
+      '-H',
+      'User-Agent: TestClient/1.0',
+      '-H',
+      'X-Custom-Header: custom-value',
+      'test-app.js',
+    ])
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: '{"auth":"Bearer token456","userAgent":"TestClient/1.0","custom":"custom-value"}',
+          headers: { 'content-type': 'application/json' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
+  it('should handle no header options correctly', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/api/noheader', (c) => {
+      const headers = Object.fromEntries(c.req.raw.headers.entries())
+      return c.json({ receivedHeaders: headers })
+    })
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/api/noheader',
+      'test-app.js',
+    ])
+
+    // Should not include any custom headers, only default ones
+    const output = consoleLogSpy.mock.calls[0][0] as string
+    const result = JSON.parse(output)
+    expect(result.status).toBe(200)
+    expect(result.headers['content-type']).toBe('application/json')
+  })
+
+  it('should handle malformed header gracefully', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/api/malformed', (c) => {
+      return c.json({ success: true })
+    })
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/api/malformed',
+      '-H',
+      'MalformedHeader',  // Missing colon
+      '-H',
+      'ValidHeader: value',
+      'test-app.js',
+    ])
+
+    // Should still work, malformed header is ignored
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: '{"success":true}',
+          headers: { 'content-type': 'application/json' },
+        },
+        null,
+        2
+      )
+    )
+  })
 })

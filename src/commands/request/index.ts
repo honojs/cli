@@ -22,7 +22,14 @@ export function requestCommand(program: Command) {
     .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <data>', 'Request body data')
-    .option('-H, --header <header>', 'Custom headers', [])
+    .option(
+      '-H, --header <header>',
+      'Custom headers',
+      (value: string, previous: string[]) => {
+        return previous ? [...previous, value] : [value]
+      },
+      [] as string[]
+    )
     .action(async (file: string | undefined, options: RequestOptions) => {
       const path = options.path || '/'
       const result = await executeRequest(file, path, options)
