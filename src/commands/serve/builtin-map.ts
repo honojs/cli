@@ -24,6 +24,7 @@ export const builtinMap: Record<string, string> = {
   // Utilities & Performance
   cache: 'hono/cache',
   timeout: 'hono/timeout',
+  poweredBy: 'hono/powered-by',
 
   // Logging & Monitoring
   logger: 'hono/logger',
