@@ -79,6 +79,16 @@ hono docs /examples/basic
 hono docs
 ```
 
+### URL Path Conversion
+
+For efficient documentation access from web URLs, convert paths using the following rule:
+
+- `https://hono.dev/docs/middleware/builtin/basic-auth` → `hono docs /docs/middleware/builtin/basic-auth`
+- `https://hono.dev/docs/api/context` → `hono docs /docs/api/context`
+- `https://hono.dev/examples/basic` → `hono docs /examples/basic`
+
+Simply remove the `https://hono.dev` portion and append the path to the `hono docs` command to access documentation directly in the terminal.
+
 ### Recommended Workflow
 
 1. **Search first**: Use `hono search <keyword>` to find relevant documentation
