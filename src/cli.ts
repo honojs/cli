@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { docsCommand } from './commands/docs/index.js'
-import { helloCommand } from './commands/hello/index.js'
+import { requestCommand } from './commands/request/index.js'
 import { serveCommand } from './commands/serve/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -20,8 +20,8 @@ program
   .version(packageJson.version, '-v, --version', 'display version number')
 
 // Register commands
-helloCommand(program)
-serveCommand(program)
+requestCommand(program)
 docsCommand(program)
+serveCommand(program)
 
 program.parse()

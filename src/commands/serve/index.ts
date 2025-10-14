@@ -19,7 +19,7 @@ import { serve } from './server.js'
 export function serveCommand(program: Command) {
   program
     .command('serve')
-    .description('Start development server')
+    .description('Start server')
     .argument('[entry]', 'entry file', './src/index.ts')
     .option('-p, --port <port>', 'port number')
     .option('--show-routes', 'show registered routes')

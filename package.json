@@ -15,6 +15,7 @@
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
+    "postbuild": "publint",
     "release": "np"
   },
   "files": [
@@ -24,7 +25,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/cli.git"
+    "url": "git+https://github.com/honojs/cli.git"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
@@ -35,7 +36,7 @@
     "@hono/node-server": "^1.19.5",
     "commander": "^14.0.1",
     "esbuild": "^0.25.10",
-    "hono": "^4.9.10"
+    "hono": "^4.9.12"
   },
   "devDependencies": {
     "@hono/eslint-config": "^1.1.1",
@@ -43,6 +44,7 @@
     "eslint": "^9.37.0",
     "np": "^10.2.0",
     "prettier": "^3.6.2",
+    "publint": "^0.3.14",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

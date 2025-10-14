@@ -1,15 +1,8 @@
 import { Command } from 'commander'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Mock child_process
-vi.mock('node:child_process', () => ({
-  exec: vi.fn(),
-}))
-
-// Mock os
-vi.mock('node:os', () => ({
-  platform: vi.fn(),
-}))
+// Mock fetch
+global.fetch = vi.fn()
 
 import { docsCommand } from './index.js'
 
@@ -31,78 +24,136 @@ describe('docsCommand', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('should use "open" command on macOS', async () => {
-    const { exec } = await import('node:child_process')
-    const { platform } = await import('node:os')
+  it('should fetch and display llms.txt when no path provided', async () => {
+    const mockContent =
+      'Hono - Web framework built on Web Standards\n\nHono is a small, simple, and ultrafast web framework.'
 
-    vi.mocked(platform).mockReturnValue('darwin')
-    vi.mocked(exec).mockImplementation(((...args: unknown[]) => {
-      const callback = args[args.length - 1]
-      if (typeof callback === 'function') {
-        callback(null, '', '')
-      }
-      return {} as never
-    }) as never)
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockContent),
+    } as Response)
 
     await program.parseAsync(['node', 'test', 'docs'])
 
-    expect(exec).toHaveBeenCalledWith('open https://hono.dev', expect.any(Function))
-    expect(consoleLogSpy).toHaveBeenCalledWith('Opening https://hono.dev in your browser...')
+    expect(fetch).toHaveBeenCalledWith('https://hono.dev/llms.txt')
+    expect(consoleLogSpy).toHaveBeenCalledWith('Fetching Hono documentation...')
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockContent)
   })
 
-  it('should use "start" command on Windows', async () => {
-    const { exec } = await import('node:child_process')
-    const { platform } = await import('node:os')
+  it('should handle paths starting with /docs/', async () => {
+    const mockMarkdown = '# Stacks\n\nThis is about Hono stacks.'
 
-    vi.mocked(platform).mockReturnValue('win32')
-    vi.mocked(exec).mockImplementation(((...args: unknown[]) => {
-      const callback = args[args.length - 1]
-      if (typeof callback === 'function') {
-        callback(null, '', '')
-      }
-      return {} as never
-    }) as never)
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await program.parseAsync(['node', 'test', 'docs', '/docs/concepts/stacks'])
 
-    expect(exec).toHaveBeenCalledWith('start https://hono.dev', expect.any(Function))
+    expect(fetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/concepts/stacks.md'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      'Fetching Hono documentation for /docs/concepts/stacks...'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockMarkdown)
   })
 
-  it('should use "xdg-open" command on Linux', async () => {
-    const { exec } = await import('node:child_process')
-    const { platform } = await import('node:os')
+  it('should handle paths without /docs/ prefix (from root)', async () => {
+    const mockMarkdown = '# Example\n\nThis is an example.'
 
-    vi.mocked(platform).mockReturnValue('linux')
-    vi.mocked(exec).mockImplementation(((...args: unknown[]) => {
-      const callback = args[args.length - 1]
-      if (typeof callback === 'function') {
-        callback(null, '', '')
-      }
-      return {} as never
-    }) as never)
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await program.parseAsync(['node', 'test', 'docs', '/examples/stytch-auth'])
 
-    expect(exec).toHaveBeenCalledWith('xdg-open https://hono.dev', expect.any(Function))
+    expect(fetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/honojs/website/refs/heads/main/examples/stytch-auth.md'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      'Fetching Hono documentation for /examples/stytch-auth...'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockMarkdown)
   })
 
-  it('should handle errors gracefully', async () => {
-    const { exec } = await import('node:child_process')
-    const { platform } = await import('node:os')
+  it('should normalize paths without leading slash', async () => {
+    const mockMarkdown = '# Example\n\nThis is an example.'
 
-    vi.mocked(platform).mockReturnValue('darwin')
-    const error = new Error('Command failed')
-    vi.mocked(exec).mockImplementation(((...args: unknown[]) => {
-      const callback = args[args.length - 1]
-      if (typeof callback === 'function') {
-        callback(error, '', '')
-      }
-      return {} as never
-    }) as never)
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs', 'examples/basic'])
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/honojs/website/refs/heads/main/examples/basic.md'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('Fetching Hono documentation for examples/basic...')
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockMarkdown)
+  })
+
+  it('should handle fetch errors gracefully for default', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    } as Response)
 
     await program.parseAsync(['node', 'test', 'docs'])
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to open browser: Command failed')
-    expect(consoleLogSpy).toHaveBeenCalledWith('Please visit: https://hono.dev')
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching documentation:',
+      'Failed to fetch documentation: 404 Not Found'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('\nPlease visit: https://hono.dev/docs')
+  })
+
+  it('should handle fetch errors gracefully with /docs/ path', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs', '/docs/concepts/motivation'])
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching documentation:',
+      'Failed to fetch documentation: 404 Not Found'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      '\nPlease visit: https://hono.dev/docs/concepts/motivation'
+    )
+  })
+
+  it('should handle fetch errors gracefully with non-docs path', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs', '/examples/stytch-auth'])
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error fetching documentation:',
+      'Failed to fetch documentation: 404 Not Found'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      '\nPlease visit: https://hono.dev/examples/stytch-auth'
+    )
+  })
+
+  it('should handle network errors gracefully', async () => {
+    const networkError = new Error('Network error')
+    vi.mocked(fetch).mockRejectedValue(networkError)
+
+    await program.parseAsync(['node', 'test', 'docs'])
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching documentation:', 'Network error')
+    expect(consoleLogSpy).toHaveBeenCalledWith('\nPlease visit: https://hono.dev/docs')
   })
 })

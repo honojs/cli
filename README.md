@@ -1,6 +1,6 @@
-# @hono/cli
+# Hono CLI
 
-CLI for Hono
+Hono CLI for Human and AI
 
 ## Installation
 
@@ -14,37 +14,155 @@ npm install -g @hono/cli
 # Show help
 hono --help
 
-# Say hello
-hono hello
-
-# Say hello to someone
-hono hello yusuke
-
-# Start development server
-hono serve
-
-# Start server with specific file
-hono serve src/app.ts
-
-# Start server with middleware
-hono serve --use 'logger()' --use 'cors()'
-
-# Start server and show routes
-hono serve --show-routes
-
-# Open documentation in browser
+# Display documentation
 hono docs
+
+# Send request to Hono app
+hono request
+
+# Start server
+hono serve
 ```
 
 ## Commands
 
-- `hello [name]` - Say hello (default: Hono)
-- `serve [entry]` - Start development server
-  - `[entry]` - Entry file (default: `./src/index.ts`)
-  - `-p, --port <port>` - Port number (default: 3000)
-  - `--show-routes` - Show registered routes
-  - `--use <middleware>` - Use built-in middleware (can be used multiple times)
-- `docs` - Open Hono documentation in browser
+- `docs [path]` - Display Hono documentation
+- `request [file]` - Send request to Hono app using `app.request()`
+- `serve [entry]` - Start server for Hono app
+
+### `docs`
+
+Display Hono documentation content directly in your terminal.
+
+```bash
+hono docs [path]
+```
+
+**Arguments:**
+
+- `path` - Documentation path (optional)
+
+**Examples:**
+
+```bash
+# Display main documentation summary (llms.txt)
+hono docs
+
+# Display specific documentation pages
+hono docs /docs/concepts/motivation
+hono docs /docs/guides/best-practices
+hono docs /docs/api/context
+
+# Display examples and tutorials
+hono docs /examples/stytch-auth
+hono docs /examples/basic
+
+# Path normalization (these are equivalent)
+hono docs docs/concepts/stacks
+hono docs /docs/concepts/stacks
+```
+
+### `request`
+
+Send HTTP requests to your Hono application using the built-in `app.request()` method. This is particularly useful for testing and development.
+
+```bash
+hono request [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `-P, --path <path>` - Request path (default: "/")
+- `-X, --method <method>` - HTTP method (default: GET)
+- `-d, --data <data>` - Request body data
+- `-H, --header <header>` - Custom headers (can be used multiple times)
+
+**Examples:**
+
+```bash
+# GET request to default app root (uses src/index.ts or src/index.tsx)
+hono request
+
+# GET request to specific path
+hono request -P /users/123
+
+# POST request with data
+hono request -P /api/users -X POST -d '{"name":"Alice"}'
+
+# Request to specific file
+hono request -P /api src/your-app.ts
+
+# Request with custom headers
+hono request -P /api/protected -H 'Authorization: Bearer token' -H 'User-Agent: MyApp' src/your-app.ts
+
+# PUT request with data and headers to specific file
+hono request -P /api/users/1 -X PUT -d '{"name":"Bob"}' -H 'Content-Type: application/json' src/your-app.ts
+
+# Complex example with multiple options
+hono request -P /webhook -X POST -d '{"event":"test"}' -H 'Content-Type: application/json' -H 'X-API-Key: secret' my-project/server.ts
+```
+
+**Response Format:**
+
+The command returns a JSON object with the following structure:
+
+```json
+{
+  "status": 200,
+  "body": "{\"message\":\"Hello World\"}",
+  "headers": {
+    "content-type": "application/json",
+    "x-custom-header": "value"
+  }
+}
+```
+
+### `serve`
+
+Start a server for your Hono application. This is a simple server specialized for Hono applications with built-in TypeScript and JSX support.
+
+```bash
+hono serve [entry] [options]
+```
+
+**Arguments:**
+
+- `entry` - Entry file for your Hono app (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `-p, --port <port>` - Port number (default: 3000)
+- `--show-routes` - Show registered routes
+- `--use <middleware>` - Use middleware (can be used multiple times)
+
+**Examples:**
+
+```bash
+# Start server with default settings (uses ./src/index.ts)
+hono serve
+
+# Start server on specific port
+hono serve -p 8080
+
+# Start server with specific entry file
+hono serve src/app.ts
+
+# Start server and show routes
+hono serve --show-routes
+
+# Start server with middleware
+hono serve --use 'cors()'
+
+# Start server with multiple middleware
+hono serve --use 'cors()' --use 'logger()'
+
+# Combine all options
+hono serve src/app.ts -p 8080 --show-routes --use 'cors()' --use 'logger()'
+```
 
 ## Authors
 
