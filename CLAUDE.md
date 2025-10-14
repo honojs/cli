@@ -50,6 +50,43 @@ This file documents the development guidelines and design decisions for Hono CLI
 6. **Consistency**: Always refer to projects under <https://github.com/honojs> for implementation patterns and conventions
 7. **Documentation**: Always update README when adding or modifying features
 
+## Hono Documentation Reference
+
+When you need information about Hono framework, APIs, or middleware, use the following CLI commands:
+
+### Quick Documentation Access
+
+- **`hono docs`** - Display main documentation summary
+- **`hono docs <path>`** - View specific documentation pages directly in terminal
+- **`hono search <query>`** - Search through Hono documentation with keyword matching
+
+### Common Usage Examples
+
+```bash
+# Search for specific topics
+hono search middleware
+hono search "getting started"
+hono search jwt
+hono search cors
+
+# View specific documentation
+hono docs /docs/api/context
+hono docs /docs/guides/middleware
+hono docs /docs/concepts/routing
+hono docs /examples/basic
+
+# Get overview of all Hono features
+hono docs
+```
+
+### Recommended Workflow
+
+1. **Search first**: Use `hono search <keyword>` to find relevant documentation
+2. **View locally**: Use the provided `hono docs` command from search results to read full content
+3. **Reference online**: Use the URL from search results for detailed browsing if needed
+
+This approach ensures you have quick access to accurate, up-to-date Hono information without leaving the terminal.
+
 ## Tech Stack
 
 - **Language**: TypeScript
