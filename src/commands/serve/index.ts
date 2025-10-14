@@ -100,7 +100,7 @@ export function serveCommand(program: Command) {
         serve(
           {
             fetch: baseApp.fetch,
-            port: options.port ? Number.parseInt(options.port) : 3000,
+            port: options.port ? Number.parseInt(options.port) : 7070,
           },
           (info) => {
             console.log(`Listening on http://localhost:${info.port}`)

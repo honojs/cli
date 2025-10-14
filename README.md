@@ -135,7 +135,7 @@ hono serve [entry] [options]
 
 **Options:**
 
-- `-p, --port <port>` - Port number (default: 3000)
+- `-p, --port <port>` - Port number (default: 7070)
 - `--show-routes` - Show registered routes
 - `--use <middleware>` - Use middleware (can be used multiple times)
 
