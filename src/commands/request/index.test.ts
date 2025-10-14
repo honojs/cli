@@ -253,14 +253,7 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/api/noheader',
-      'test-app.js',
-    ])
+    await program.parseAsync(['node', 'test', 'request', '-P', '/api/noheader', 'test-app.js'])
 
     // Should not include any custom headers, only default ones
     const output = consoleLogSpy.mock.calls[0][0] as string
@@ -285,7 +278,7 @@ describe('requestCommand', () => {
       '-P',
       '/api/malformed',
       '-H',
-      'MalformedHeader',  // Missing colon
+      'MalformedHeader', // Missing colon
       '-H',
       'ValidHeader: value',
       'test-app.js',
