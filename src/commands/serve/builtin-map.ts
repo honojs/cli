@@ -41,4 +41,45 @@ export const builtinMap: Record<string, string> = {
 
   // Static Files (Node.js specific)
   serveStatic: '@hono/node-server/serve-static',
+
+  // Helpers - Accepts
+  accepts: 'hono/accepts',
+
+  // Helpers - Adapter
+  env: 'hono/adapter',
+  getRuntimeKey: 'hono/adapter',
+
+  // Helpers - Connection Info
+  getConnInfo: 'hono/conninfo',
+
+  // Helpers - Cookie
+  getCookie: 'hono/cookie',
+  getSignedCookie: 'hono/cookie',
+  setCookie: 'hono/cookie',
+  setSignedCookie: 'hono/cookie',
+  deleteCookie: 'hono/cookie',
+
+  // Helpers - CSS
+  css: 'hono/css',
+  rawCssString: 'hono/css',
+  viewTransition: 'hono/css',
+  createCssContext: 'hono/css',
+  createCssMiddleware: 'hono/css',
+
+  // Helpers - HTML
+  html: 'hono/html',
+  raw: 'hono/html',
+
+  // Helpers - JWT (different from middleware)
+  sign: 'hono/jwt',
+  verify: 'hono/jwt',
+  decode: 'hono/jwt',
+
+  // Helpers - Proxy
+  proxy: 'hono/proxy',
+
+  // Helpers - Streaming
+  stream: 'hono/streaming',
+  streamText: 'hono/streaming',
+  streamSSE: 'hono/streaming',
 }

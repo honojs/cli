@@ -1,3 +1,4 @@
+import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
@@ -9,7 +10,6 @@ import { pathToFileURL } from 'node:url'
 import { builtinMap } from './builtin-map.js'
 
 // Keep serveStatic to prevent bundler removal
-import { serve } from './server.js'
 ;[serveStatic].forEach((f) => {
   if (typeof f === 'function') {
     // useless process to avoid being deleted by bundler
@@ -72,22 +72,35 @@ export function serveCommand(program: Command) {
           }
         }
 
+        // Import all builtin functions from the builtin map
+        const allFunctions: Record<string, any> = {}
+        const uniqueModules = [...new Set(Object.values(builtinMap))]
+
+        for (const modulePath of uniqueModules) {
+          try {
+            const module = await import(modulePath)
+            // Add all exported functions from this module
+            for (const [funcName, modulePathInMap] of Object.entries(builtinMap)) {
+              if (modulePathInMap === modulePath && module[funcName]) {
+                allFunctions[funcName] = module[funcName]
+              }
+            }
+          } catch (error) {
+            // Skip modules that can't be imported (optional dependencies)
+          }
+        }
+
         const baseApp = new Hono()
         // Apply middleware from --use options
         for (const use of options.use || []) {
           baseApp.use(async (c, next) => {
-            // Check if it's a built-in function
-            const functionName = use.match(/^(\w+)\(/)?.[1]
-            if (functionName && builtinMap[functionName]) {
-              const module = await import(builtinMap[functionName])
-              const fn = module[functionName]
-              const evalRes = eval(use.replace(functionName, 'fn'))
-              return typeof evalRes === 'function' ? evalRes(c, next) : evalRes
-            } else {
-              // Fallback to regular eval
-              const evalRes = eval(use)
-              return typeof evalRes === 'function' ? evalRes(c, next) : evalRes
-            }
+            // Create function with all available functions in scope
+            const functionNames = Object.keys(allFunctions)
+            const functionValues = Object.values(allFunctions)
+
+            const func = new Function('c', 'next', ...functionNames, `return (${use})`)
+            const middleware = func(c, next, ...functionValues)
+            return typeof middleware === 'function' ? middleware(c, next) : middleware
           })
         }
 
