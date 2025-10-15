@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { execFile } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
