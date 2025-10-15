@@ -50,8 +50,8 @@ export const builtinMap: Record<string, string> = {
   env: 'hono/adapter',
   getRuntimeKey: 'hono/adapter',
 
-  // Helpers - Connection Info
-  getConnInfo: 'hono/conninfo',
+  // Helpers - Connection Info (Node.js specific)
+  getConnInfo: '@hono/node-server/conninfo',
 
   // Helpers - Cookie
   getCookie: 'hono/cookie',
