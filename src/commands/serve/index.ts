@@ -75,12 +75,11 @@ export function serveCommand(program: Command) {
         const baseApp = new Hono()
         // Apply middleware from --use options
         for (const use of options.use || []) {
+          // Create function with all available functions in scope
+          const functionNames = Object.keys(allFunctions)
+          const functionValues = Object.values(allFunctions)
+          const func = new Function('c', 'next', ...functionNames, `return (${use})`)
           baseApp.use(async (c, next) => {
-            // Create function with all available functions in scope
-            const functionNames = Object.keys(allFunctions)
-            const functionValues = Object.values(allFunctions)
-
-            const func = new Function('c', 'next', ...functionNames, `return (${use})`)
             const middleware = func(c, next, ...functionValues)
             return typeof middleware === 'function' ? middleware(c, next) : middleware
           })
