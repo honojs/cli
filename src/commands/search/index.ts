@@ -34,8 +34,9 @@ export function searchCommand(program: Command) {
     .command('search')
     .argument('<query>', 'Search query for Hono documentation')
     .option('-l, --limit <number>', 'Number of results to show (default: 5)', '5')
+    .option('-p, --pretty', 'Display results in human-readable format')
     .description('Search Hono documentation')
-    .action(async (query: string, options: { limit: string }) => {
+    .action(async (query: string, options: { limit: string; pretty?: boolean }) => {
       // Search-only API key - safe to embed in public code
       const ALGOLIA_APP_ID = '1GIFSU1REV'
       const ALGOLIA_API_KEY = 'c6a0f86b9a9f8551654600f28317a9e9'
@@ -45,7 +46,9 @@ export function searchCommand(program: Command) {
       const searchUrl = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX}/query`
 
       try {
-        console.log(`Searching for "${query}"...`)
+        if (options.pretty) {
+          console.log(`Searching for "${query}"...`)
+        }
 
         const response = await fetch(searchUrl, {
           method: 'POST',
@@ -67,30 +70,28 @@ export function searchCommand(program: Command) {
         const data: AlgoliaResponse = await response.json()
 
         if (data.hits.length === 0) {
-          console.log('\nNo results found.')
+          if (options.pretty) {
+            console.log('\nNo results found.')
+          } else {
+            console.log(JSON.stringify({ query, total: 0, results: [] }, null, 2))
+          }
           return
         }
 
-        console.log(`\nFound ${data.hits.length} results:\n`)
+        // Helper function to clean HTML tags completely
+        const cleanHighlight = (text: string) => text.replace(/<[^>]*>/g, '')
 
-        data.hits.forEach((hit, index) => {
-          // Helper function to convert HTML highlights to terminal formatting
-          const formatHighlight = (text: string) => {
-            return text
-              .replace(/<span class="algolia-docsearch-suggestion--highlight">/g, '\x1b[33m') // Yellow
-              .replace(/<\/span>/g, '\x1b[0m') // Reset
-          }
-
-          // Helper function to clean HTML tags completely
-          const cleanHighlight = (text: string) => text.replace(/<[^>]*>/g, '')
-
-          // Get title from various sources, with highlight support
+        const results = data.hits.map((hit) => {
+          // Get title from various sources
           let title = hit.title
+          let highlightedTitle = title
           if (!title && hit._highlightResult?.hierarchy?.lvl1) {
-            title = formatHighlight(hit._highlightResult.hierarchy.lvl1.value)
+            title = cleanHighlight(hit._highlightResult.hierarchy.lvl1.value)
+            highlightedTitle = hit._highlightResult.hierarchy.lvl1.value
           }
           if (!title) {
             title = hit.hierarchy?.lvl1 || hit.hierarchy?.lvl0 || 'Untitled'
+            highlightedTitle = title
           }
 
           // Build hierarchy path
@@ -105,34 +106,53 @@ export function searchCommand(program: Command) {
             hierarchyParts.push(cleanHighlight(hit.hierarchy.lvl2))
           }
 
-          const hierarchyPath = hierarchyParts.length > 0 ? hierarchyParts.join(' > ') : ''
-
+          const category = hierarchyParts.length > 0 ? hierarchyParts.join(' > ') : ''
           const url = hit.url
           const urlPath = new URL(url).pathname
 
-          console.log(`${index + 1}. ${title}`)
-          if (hierarchyPath) {
-            console.log(`   Category: ${hierarchyPath}`)
+          return {
+            title,
+            highlightedTitle,
+            category,
+            url,
+            path: urlPath,
           }
-
-          // Show content excerpt if available, with highlight support
-          if (hit.content) {
-            const excerpt =
-              hit.content.length > 100 ? hit.content.slice(0, 100) + '...' : hit.content
-            console.log(`   Description: ${excerpt}`)
-          } else if (hit._highlightResult?.content) {
-            const highlightedContent = formatHighlight(hit._highlightResult.content.value)
-            const excerpt =
-              highlightedContent.length > 100
-                ? highlightedContent.slice(0, 100) + '...'
-                : highlightedContent
-            console.log(`   Description: ${excerpt}`)
-          }
-
-          console.log(`   URL: ${url}`)
-          console.log(`   Command: hono docs ${urlPath}`)
-          console.log('')
         })
+
+        if (options.pretty) {
+          console.log(`\nFound ${data.hits.length} results:\n`)
+
+          // Helper function to convert HTML highlights to terminal formatting
+          const formatHighlight = (text: string) => {
+            return text
+              .replace(/<span class="algolia-docsearch-suggestion--highlight">/g, '\x1b[33m') // Yellow
+              .replace(/<\/span>/g, '\x1b[0m') // Reset
+          }
+
+          results.forEach((result, index) => {
+            console.log(`${index + 1}. ${formatHighlight(result.highlightedTitle || result.title)}`)
+            if (result.category) {
+              console.log(`   Category: ${result.category}`)
+            }
+            console.log(`   URL: ${result.url}`)
+            console.log(`   Command: hono docs ${result.path}`)
+            console.log('')
+          })
+        } else {
+          // Remove highlighted title from JSON output
+          const jsonResults = results.map(({ highlightedTitle, ...result }) => result)
+          console.log(
+            JSON.stringify(
+              {
+                query,
+                total: data.hits.length,
+                results: jsonResults,
+              },
+              null,
+              2
+            )
+          )
+        }
       } catch (error) {
         console.error(
           'Error searching documentation:',
