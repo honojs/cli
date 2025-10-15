@@ -10,18 +10,31 @@ describe('docsCommand', () => {
   let program: Command
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+  let originalIsTTY: boolean | undefined
 
   beforeEach(() => {
     program = new Command()
     docsCommand(program)
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    // Save original isTTY and set to true for tests by default
+    originalIsTTY = process.stdin.isTTY
+    process.stdin.isTTY = true
+
     vi.clearAllMocks()
   })
 
   afterEach(() => {
     consoleLogSpy.mockRestore()
     consoleErrorSpy.mockRestore()
+
+    // Restore original isTTY
+    if (originalIsTTY !== undefined) {
+      process.stdin.isTTY = originalIsTTY
+    } else {
+      delete (process.stdin as any).isTTY
+    }
   })
 
   it('should fetch and display llms.txt when no path provided', async () => {
@@ -155,5 +168,88 @@ describe('docsCommand', () => {
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching documentation:', 'Network error')
     expect(consoleLogSpy).toHaveBeenCalledWith('\nPlease visit: https://hono.dev/docs')
+  })
+
+  it('should handle stdin input when no path provided', async () => {
+    const mockMarkdown = '# Middleware\n\nThis is about middleware.'
+    const stdinPath = '/docs/concepts/middleware'
+
+    // Mock process.stdin
+    const originalStdin = process.stdin
+    const mockStdin = {
+      isTTY: false,
+      [Symbol.asyncIterator]: async function* () {
+        yield Buffer.from(stdinPath)
+      },
+    }
+    Object.assign(process.stdin, mockStdin)
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs'])
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/concepts/middleware.md'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      'Fetching Hono documentation for /docs/concepts/middleware...'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockMarkdown)
+
+    // Restore stdin
+    Object.assign(process.stdin, originalStdin)
+  })
+
+  it('should handle quoted stdin input (jq output without -r)', async () => {
+    const mockMarkdown = '# API\n\nThis is about API.'
+    const quotedStdinPath = '"/docs/api/context"' // Quoted path from jq
+
+    // Mock process.stdin
+    const originalStdin = process.stdin
+    const mockStdin = {
+      isTTY: false,
+      [Symbol.asyncIterator]: async function* () {
+        yield Buffer.from(quotedStdinPath)
+      },
+    }
+    Object.assign(process.stdin, mockStdin)
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockMarkdown),
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs'])
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/api/context.md'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      'Fetching Hono documentation for /docs/api/context...'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockMarkdown)
+
+    // Restore stdin
+    Object.assign(process.stdin, originalStdin)
+  })
+
+  it('should fallback to llms.txt when stdin is TTY', async () => {
+    const mockContent = 'Hono documentation'
+
+    // isTTY is already true from beforeEach
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockContent),
+    } as Response)
+
+    await program.parseAsync(['node', 'test', 'docs'])
+
+    expect(fetch).toHaveBeenCalledWith('https://hono.dev/llms.txt')
+    expect(consoleLogSpy).toHaveBeenCalledWith('Fetching Hono documentation...')
+    expect(consoleLogSpy).toHaveBeenCalledWith('\n' + mockContent)
   })
 })
