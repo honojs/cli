@@ -1,9 +1,8 @@
 import type { Command } from 'commander'
-import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
 import { existsSync, realpathSync } from 'node:fs'
-import { extname, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
+import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
@@ -58,39 +57,14 @@ export async function executeRequest(
     resolvedAppPath = resolve(process.cwd(), entry)
   }
 
-  const ext = extname(entry)
-
   if (!existsSync(resolvedAppPath)) {
     throw new Error(`Entry file ${entry} does not exist`)
   }
 
-  let app: Hono
   const appFilePath = realpathSync(resolvedAppPath)
-
-  if (['.ts', '.tsx', '.jsx'].includes(ext)) {
-    // Use esbuild to bundle TypeScript/JSX files
-    const result = await esbuild.build({
-      entryPoints: [appFilePath],
-      bundle: true,
-      write: false,
-      format: 'esm',
-      target: 'node20',
-      jsx: 'automatic',
-      jsxImportSource: 'hono/jsx',
-      platform: 'node',
-      external: ['@hono/node-server'],
-    })
-
-    // Execute the bundled code using data URL
-    const code = result.outputFiles[0].text
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-    const module = await import(dataUrl)
-    app = module.default
-  } else {
-    // Regular JS files can be imported directly
-    const module = await import(pathToFileURL(appFilePath).href)
-    app = module.default
-  }
+  const app: Hono = await buildAndImportApp(appFilePath, {
+    external: ['@hono/node-server'],
+  })
 
   if (!app || typeof app.request !== 'function') {
     throw new Error('No valid Hono app exported from the file')

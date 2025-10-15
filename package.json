@@ -33,14 +33,15 @@
   },
   "homepage": "https://hono.dev",
   "dependencies": {
+    "@hono/node-server": "^1.19.5",
     "commander": "^14.0.1",
-    "esbuild": "^0.25.10"
+    "esbuild": "^0.25.10",
+    "hono": "^4.9.12"
   },
   "devDependencies": {
     "@hono/eslint-config": "^1.1.1",
     "@types/node": "^24.7.0",
     "eslint": "^9.37.0",
-    "hono": "^4.9.12",
     "np": "^10.2.0",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",

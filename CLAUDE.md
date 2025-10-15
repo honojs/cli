@@ -89,6 +89,11 @@ For efficient documentation access from web URLs, convert paths using the follow
 
 Simply remove the `https://hono.dev` portion and append the path to the `hono docs` command to access documentation directly in the terminal.
 
+**Important**: When you need to fetch information from Hono documentation (e.g., `https://hono.dev/docs/middleware/builtin/basic-auth`), always use the `hono docs` command instead of WebFetch. For example:
+
+- Instead of: `WebFetch(https://hono.dev/docs/middleware/builtin/basic-auth)`
+- Use: `hono docs /docs/middleware/builtin/basic-auth`
+
 ### Recommended Workflow
 
 1. **Search first**: Use `hono search <keyword>` to find relevant documentation
