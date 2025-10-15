@@ -8,13 +8,9 @@
     "declaration": true,
     "skipLibCheck": true,
     "types": [
-      "node",
-      "vitest/globals"
+      "node"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-  },
-  "include": [
-    "src",
-  ]
+  }
 }

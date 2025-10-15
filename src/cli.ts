@@ -2,9 +2,11 @@ import { Command } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createCommand } from './commands/create/index.js'
 import { docsCommand } from './commands/docs/index.js'
 import { optimizeCommand } from './commands/optimize/index.js'
+import { requestCommand } from './commands/request/index.js'
+import { searchCommand } from './commands/search/index.js'
+import { serveCommand } from './commands/serve/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -20,8 +22,10 @@ program
   .version(packageJson.version, '-v, --version', 'display version number')
 
 // Register commands
-createCommand(program)
 docsCommand(program)
 optimizeCommand(program)
+searchCommand(program)
+requestCommand(program)
+serveCommand(program)
 
 program.parse()
