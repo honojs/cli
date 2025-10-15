@@ -30,7 +30,7 @@ hono serve
 ## Commands
 
 - `docs [path]` - Display Hono documentation
-- `search [query]` - Search Hono documentation
+- `search <query>` - Search Hono documentation
 - `request [file]` - Send request to Hono app using `app.request()`
 - `serve [entry]` - Start server for Hono app
 
@@ -60,10 +60,6 @@ hono docs /docs/api/context
 # Display examples and tutorials
 hono docs /examples/stytch-auth
 hono docs /examples/basic
-
-# Path normalization (these are equivalent)
-hono docs docs/concepts/stacks
-hono docs /docs/concepts/stacks
 ```
 
 ### `search`
@@ -81,41 +77,55 @@ hono search <query> [options]
 **Options:**
 
 - `-l, --limit <number>` - Number of results to show (default: 5, max: 20)
+- `-p, --pretty` - Display results in human-readable format (default: JSON output)
 
 **Examples:**
 
 ```bash
-# Search for middleware documentation
+# Search for middleware documentation (JSON output by default)
 hono search middleware
+
+# Search with pretty formatting for human-readable output
+hono search middleware --pretty
 
 # Search with custom result limit
 hono search "getting started" --limit 10
-
-# Search for specific topics
-hono search jwt
-hono search "cors middleware"
-hono search routing
 ```
 
-**Search Results:**
+**Output Format:**
 
-Each result includes:
+By default, the command outputs JSON for easy integration with other tools:
 
-- **Title** - The documentation page title with search terms highlighted
-- **Category** - Hierarchical path showing the document structure
-- **URL** - Direct link to the documentation page
-- **Command** - Corresponding `hono docs` command to view the content locally
+```json
+{
+  "query": "middleware",
+  "total": 5,
+  "results": [
+    {
+      "title": "Middleware ​",
+      "category": "",
+      "url": "https://hono.dev/docs/guides/middleware#middleware",
+      "path": "/docs/guides/middleware"
+    },
+    {
+      "title": "Third-party Middleware - Hono",
+      "category": "Middleware",
+      "url": "https://hono.dev/docs/middleware/third-party#VPSidebarNav",
+      "path": "/docs/middleware/third-party"
+    }
+  ]
+}
+```
 
-Example output:
+With the `--pretty` flag, results are displayed in a human-readable format:
 
 ```
 1. Middleware ​
-   Category: Middleware ​
    URL: https://hono.dev/docs/guides/middleware#middleware
    Command: hono docs /docs/guides/middleware
 
 2. Third-party Middleware - Hono
-   Category: Third-party Middleware - Hono > Middleware
+   Category: Middleware
    URL: https://hono.dev/docs/middleware/third-party#VPSidebarNav
    Command: hono docs /docs/middleware/third-party
 ```
@@ -155,13 +165,10 @@ hono request -P /api/users -X POST -d '{"name":"Alice"}'
 hono request -P /api src/your-app.ts
 
 # Request with custom headers
-hono request -P /api/protected -H 'Authorization: Bearer token' -H 'User-Agent: MyApp' src/your-app.ts
-
-# PUT request with data and headers to specific file
-hono request -P /api/users/1 -X PUT -d '{"name":"Bob"}' -H 'Content-Type: application/json' src/your-app.ts
-
-# Complex example with multiple options
-hono request -P /webhook -X POST -d '{"event":"test"}' -H 'Content-Type: application/json' -H 'X-API-Key: secret' my-project/server.ts
+hono request -P /api/protected \
+  -H 'Authorization: Bearer token' \
+  -H 'User-Agent: MyApp' \
+  src/your-app.ts
 ```
 
 **Response Format:**
@@ -204,7 +211,7 @@ hono serve [entry] [options]
 hono serve
 
 # Start server on specific port
-hono serve -p 8080 src/app.ts
+hono serve -p 3000 src/app.ts
 
 # Start server with specific entry file
 hono serve src/app.ts
@@ -219,10 +226,9 @@ hono serve --use 'cors()' src/app.ts
 hono serve --use 'cors()' --use 'logger()' src/app.ts
 
 # Start server with authentication and static file serving
-hono serve --use 'basicAuth({username:"foo", password:"bar"})' --use "serveStatic({ root: './' })"
-
-# Combine all options
-hono serve -p 8080 --show-routes --use 'cors()' --use 'logger()' src/app.ts
+hono serve \
+  --use 'basicAuth({ username: "foo", password: "bar" })' \
+  --use "serveStatic({ root: './' })"
 ```
 
 ## Tips
@@ -234,9 +240,6 @@ The `search` command outputs JSON by default, making it easy to pipe results to 
 ```bash
 # Search and view documentation in one command
 hono search "middleware" | jq '.results[0].path' | hono docs
-
-# Pretty output for human reading
-hono search "middleware" --pretty
 ```
 
 ## Authors
