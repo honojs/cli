@@ -3,7 +3,7 @@ import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
 import { execFile } from 'node:child_process'
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { buildAndImportApp } from '../../utils/build.js'
 
@@ -66,10 +66,10 @@ export function optimizeCommand(program: Command) {
         assignRouterStatement = 'this.router = new TrieRouter()'
       }
 
-      const buildResult = await esbuild.build({
+      await esbuild.build({
         entryPoints: [appFilePath],
+        outfile: resolve(process.cwd(), options.outfile),
         bundle: true,
-        write: false,
         format: 'esm',
         target: 'node20',
         platform: 'node',
@@ -116,8 +116,5 @@ export class Hono extends HonoBase {
           },
         ],
       })
-
-      mkdirSync(dirname(options.outfile), { recursive: true })
-      writeFileSync(options.outfile, buildResult.outputFiles[0].text)
     })
 }
