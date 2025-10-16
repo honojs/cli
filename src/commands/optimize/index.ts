@@ -3,7 +3,7 @@ import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
 import { execFile } from 'node:child_process'
-import { existsSync, realpathSync } from 'node:fs'
+import { existsSync, realpathSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { buildAndImportApp } from '../../utils/build.js'
 
@@ -33,6 +33,7 @@ export function optimizeCommand(program: Command) {
         external: ['@hono/node-server'],
       })
 
+      let routerName
       let importStatement
       let assignRouterStatement
       try {
@@ -54,22 +55,28 @@ export function optimizeCommand(program: Command) {
         })
 
         if (hasPreparedRegExpRouter) {
+          routerName = 'PreparedRegExpRouter'
           importStatement = "import { PreparedRegExpRouter } from 'hono/router/reg-exp-router'"
           assignRouterStatement = `const routerParams = ${serialized}
     this.router = new PreparedRegExpRouter(...routerParams)`
         } else {
+          routerName = 'RegExpRouter'
           importStatement = "import { RegExpRouter } from 'hono/router/reg-exp-router'"
           assignRouterStatement = 'this.router = new RegExpRouter()'
         }
       } catch {
         // fallback to default router
+        routerName = 'TrieRouter'
         importStatement = "import { TrieRouter } from 'hono/router/trie-router'"
         assignRouterStatement = 'this.router = new TrieRouter()'
       }
 
+      console.log(`Router: ${routerName}`)
+
+      const outfile = resolve(process.cwd(), options.outfile)
       await esbuild.build({
         entryPoints: [appFilePath],
-        outfile: resolve(process.cwd(), options.outfile),
+        outfile,
         bundle: true,
         minify: options.minify,
         format: 'esm',
@@ -118,5 +125,8 @@ export class Hono extends HonoBase {
           },
         ],
       })
+
+      const outfileStat = statSync(outfile)
+      console.log(`App: ${options.outfile} (${(outfileStat.size / 1024).toFixed(2)} KB)`)
     })
 }
