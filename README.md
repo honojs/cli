@@ -25,6 +25,9 @@ hono request
 
 # Start server
 hono serve
+
+# Generate an optimized Hono app
+hono optimize
 ```
 
 ## Commands
@@ -33,7 +36,7 @@ hono serve
 - `search <query>` - Search Hono documentation
 - `request [file]` - Send request to Hono app using `app.request()`
 - `serve [entry]` - Start server for Hono app
-- `optimize [entry]` - generate an optimized Hono app
+- `optimize [entry]` - Generate an optimized Hono app
 
 ### `docs`
 
