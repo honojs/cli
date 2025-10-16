@@ -259,6 +259,9 @@ hono optimize
 
 # Specify entry file and output file
 hono optimize -o dist/app.js src/app.ts
+
+# Export bundled file with minification
+hono optimize -m
 ```
 
 ## Tips

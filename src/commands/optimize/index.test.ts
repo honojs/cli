@@ -179,6 +179,25 @@ describe('optimizeCommand', () => {
         content: `this.router = new RegExpRouter()`,
       },
     },
+    {
+      name: 'specify minify option',
+      args: ['-m'],
+      files: [
+        {
+          path: './src/index.ts',
+          content: `
+            import { Hono } from 'hono'
+            const app = new Hono<{ Bindings: { FOO: string } }>()
+            app.get('/', (c) => c.text('Hello, World!'))
+            export default app
+            `,
+        },
+      ],
+      result: {
+        path: './dist/index.js',
+        lineCount: 2,
+      },
+    },
   ])(
     'should success to optimize: $name',
     { timeout: 0 },
@@ -198,7 +217,14 @@ describe('optimizeCommand', () => {
         writeFileSync(join(dir, file.path), file.content)
       }
       await program.parseAsync(['node', 'hono', 'optimize', ...(args ?? [])])
-      expect(readFileSync(join(dir, result.path), 'utf-8')).toMatch(result.content)
+
+      const content = readFileSync(join(dir, result.path), 'utf-8')
+      if (result.lineCount) {
+        expect(content.split('\n').length).toBe(result.lineCount)
+      }
+      if (result.content) {
+        expect(content).toMatch(result.content)
+      }
     }
   )
 })

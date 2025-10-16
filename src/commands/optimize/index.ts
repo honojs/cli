@@ -15,7 +15,8 @@ export function optimizeCommand(program: Command) {
     .description('Build optimized Hono class')
     .argument('[entry]', 'entry file')
     .option('-o, --outfile [outfile]', 'output file', 'dist/index.js')
-    .action(async (entry: string, options: { outfile: string }) => {
+    .option('-m, --minify', 'minify output file')
+    .action(async (entry: string, options: { outfile: string; minify?: boolean }) => {
       if (!entry) {
         entry =
           DEFAULT_ENTRY_CANDIDATES.find((entry) => existsSync(entry)) ?? DEFAULT_ENTRY_CANDIDATES[0]
@@ -70,6 +71,7 @@ export function optimizeCommand(program: Command) {
         entryPoints: [appFilePath],
         outfile: resolve(process.cwd(), options.outfile),
         bundle: true,
+        minify: options.minify,
         format: 'esm',
         target: 'node20',
         platform: 'node',
