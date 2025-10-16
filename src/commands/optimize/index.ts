@@ -71,7 +71,8 @@ export function optimizeCommand(program: Command) {
         assignRouterStatement = 'this.router = new TrieRouter()'
       }
 
-      console.log(`⚡️Router: ${routerName}`)
+      console.log('[Optimized]')
+      console.log(`  Router: ${routerName}`)
 
       const outfile = resolve(process.cwd(), options.outfile)
       await esbuild.build({
@@ -127,6 +128,6 @@ export class Hono extends HonoBase {
       })
 
       const outfileStat = statSync(outfile)
-      console.log(`🔥App: ${options.outfile} (${(outfileStat.size / 1024).toFixed(2)} KB)`)
+      console.log(`  Output: ${options.outfile} (${(outfileStat.size / 1024).toFixed(2)} KB)`)
     })
 }
