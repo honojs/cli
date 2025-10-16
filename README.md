@@ -1,6 +1,10 @@
 # Hono CLI
 
-CLI for Human and AI with Hono
+Hono CLI is a CLI for Humans and AI who use Hono.
+
+It's not a `create-*` command, not only for dev, build, and deploy, but also not a Vite wrapper. Built on an entirely new concept.
+
+Hono CLI will give you the `hono` command. For Humans, you can use sub-commands specialized for Hono for simple usages. For AI, providing sub-commands to build your Hono application efficiently with AI coding.
 
 ## Installation
 
