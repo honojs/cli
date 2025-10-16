@@ -46,8 +46,8 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.ts',
-        content: `this.router = new PreparedRegExpRouter(...routerParams) as unknown as typeof this.router`,
+        path: './dist/index.js',
+        content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
     {
@@ -64,8 +64,8 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.ts',
-        content: `this.router = new PreparedRegExpRouter(...routerParams) as unknown as typeof this.router`,
+        path: './dist/index.js',
+        content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
     {
@@ -82,7 +82,7 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.js',
+        path: './dist/index.js',
         content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
@@ -100,7 +100,7 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.js',
+        path: './dist/index.js',
         content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
@@ -119,41 +119,13 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.ts',
-        content: `this.router = new PreparedRegExpRouter(...routerParams) as unknown as typeof this.router`,
-      },
-    },
-    {
-      name: 'specify entry multiple entry files',
-      args: ['./src/app1.ts', './src/app2.ts'],
-      files: [
-        {
-          path: './src/app1.ts',
-          content: `
-              import { Hono } from 'hono'
-              const app = new Hono<{ Bindings: { FOO: string } }>()
-              app.get('/app1', (c) => c.text('Hello, World!'))
-              export default app
-              `,
-        },
-        {
-          path: './src/app2.ts',
-          content: `
-              import { Hono } from 'hono'
-              const app = new Hono<{ Bindings: { FOO: string } }>()
-              app.get('/app2', (c) => c.text('Hello, World!'))
-              export default app
-              `,
-        },
-      ],
-      result: {
-        path: './src/hono-optimized.ts',
-        content: `[{"ALL":[/^$/,[],{"/app1":[[],[]],"/app2":[[],[]]}]},{"/app1":[[[""],null]],"/app2":[[[""],null]]}]`,
+        path: './dist/index.js',
+        content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
     {
       name: 'specify outfile option',
-      args: ['-o', './src/hono-o.ts'],
+      args: ['-o', './dist/app.js'],
       files: [
         {
           path: './src/index.ts',
@@ -166,8 +138,8 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-o.ts',
-        content: `this.router = new PreparedRegExpRouter(...routerParams) as unknown as typeof this.router`,
+        path: './dist/app.js',
+        content: `this.router = new PreparedRegExpRouter(...routerParams)`,
       },
     },
     {
@@ -184,7 +156,7 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.ts',
+        path: './dist/index.js',
         content: `this.router = new TrieRouter()`,
       },
     },
@@ -203,7 +175,7 @@ describe('optimizeCommand', () => {
         },
       ],
       result: {
-        path: './src/hono-optimized.ts',
+        path: './dist/index.js',
         content: `this.router = new RegExpRouter()`,
       },
     },
