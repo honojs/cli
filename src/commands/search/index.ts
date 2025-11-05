@@ -65,7 +65,7 @@ export function searchCommand(program: Command) {
           },
           body: JSON.stringify({
             query,
-            hitsPerPage: options.limit,
+            hitsPerPage: options.limit || 5,
           }),
         })
 
