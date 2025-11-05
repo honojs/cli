@@ -6,8 +6,12 @@ import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
+const validMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] as const
+
+type HttpMethod = (typeof validMethods)[number]
+
 interface RequestOptions {
-  method?: string
+  method?: HttpMethod
   data?: string
   header?: string[]
   path?: string
@@ -19,7 +23,13 @@ export function requestCommand(program: Command) {
     .description('Send request to Hono app using app.request()')
     .argument('[file]', 'Path to the Hono app file')
     .option('-P, --path <path>', 'Request path', '/')
-    .option('-X, --method <method>', 'HTTP method', 'GET')
+    .option('-X, --method <method>', 'HTTP method', (value: string) => {
+      const method = value.toUpperCase()
+      if (!validMethods.includes(method as HttpMethod)) {
+        throw new Error(`Invalid HTTP method: ${value}`)
+      }
+      return method as HttpMethod
+    })
     .option('-d, --data <data>', 'Request body data')
     .option(
       '-H, --header <header>',

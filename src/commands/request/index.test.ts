@@ -287,4 +287,49 @@ describe('requestCommand', () => {
       )
     )
   })
+
+  it('should handle POST request with lowercase method', async () => {
+    const mockApp = new Hono()
+    mockApp.post('/data', async (c) => {
+      const body = await c.req.text()
+      return c.json({ received: body }, 201)
+    })
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/data',
+      '-X',
+      'post',
+      '-d',
+      'test data',
+      'test-app.js',
+    ])
+
+    const expectedOutput = JSON.stringify(
+      {
+        status: 201,
+        body: '{"received":"test data"}',
+        headers: { 'content-type': 'application/json' },
+      },
+      null,
+      2
+    )
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(expectedOutput)
+  })
+
+  it('should throw error for invalid method', async () => {
+    const mockApp = new Hono()
+    setupBasicMocks('test-app.js', mockApp)
+
+    await expect(
+      program.parseAsync(['node', 'test', 'request', '-X', 'hoge', 'test-app.js'])
+    ).rejects.toThrow('Invalid HTTP method: hoge')
+  })
 })
