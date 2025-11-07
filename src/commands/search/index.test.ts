@@ -12,6 +12,7 @@ describe('Search Command', () => {
   beforeEach(() => {
     program = new Command()
     vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
@@ -147,5 +148,39 @@ describe('Search Command', () => {
         }),
       }
     )
+  })
+
+  describe('should warn log when limit is out of range', () => {
+    it.each([0, 21, 'a'])('should warn when limit is %s', async (limit) => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const mockResponse = { hits: [] }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      searchCommand(program)
+
+      await program.parseAsync(['node', 'test', 'search', 'test', '--limit', String(limit)])
+
+      expect(warnSpy).toHaveBeenCalledWith('Limit must be a number between 1 and 20\n')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://1GIFSU1REV-dsn.algolia.net/1/indexes/hono/query',
+        {
+          method: 'POST',
+          headers: {
+            'X-Algolia-API-Key': 'c6a0f86b9a9f8551654600f28317a9e9',
+            'X-Algolia-Application-Id': '1GIFSU1REV',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: 'test',
+            hitsPerPage: 5,
+          }),
+        }
+      )
+    })
   })
 })

@@ -33,16 +33,22 @@ export function searchCommand(program: Command) {
   program
     .command('search')
     .argument('<query>', 'Search query for Hono documentation')
-    .option('-l, --limit <number>', 'Number of results to show (default: 5)', '5')
+    .option('-l, --limit <number>', 'Number of results to show (default: 5)', (value) => {
+      const parsed = parseInt(value, 10)
+      if (isNaN(parsed) || parsed < 1 || parsed > 20) {
+        console.warn('Limit must be a number between 1 and 20\n')
+        return 5
+      }
+      return parsed
+    })
     .option('-p, --pretty', 'Display results in human-readable format')
     .description('Search Hono documentation')
-    .action(async (query: string, options: { limit: string; pretty?: boolean }) => {
+    .action(async (query: string, options: { limit?: number; pretty?: boolean }) => {
       // Search-only API key - safe to embed in public code
       const ALGOLIA_APP_ID = '1GIFSU1REV'
       const ALGOLIA_API_KEY = 'c6a0f86b9a9f8551654600f28317a9e9'
       const ALGOLIA_INDEX = 'hono'
 
-      const limit = Math.max(1, Math.min(20, parseInt(options.limit, 10) || 5))
       const searchUrl = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX}/query`
 
       try {
@@ -59,7 +65,7 @@ export function searchCommand(program: Command) {
           },
           body: JSON.stringify({
             query,
-            hitsPerPage: limit,
+            hitsPerPage: options.limit || 5,
           }),
         })
 
