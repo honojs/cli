@@ -21,8 +21,8 @@ export function serveCommand(program: Command) {
     .description('Start server')
     .argument('[entry]', 'entry file')
     .option('-p, --port <port>', 'port number', (value) => {
-      const parsed = parseInt(value, 10)
-      if (isNaN(parsed) || parsed < 0 || parsed > 65535) {
+      const parsed = parseInt(value, 10) // 2048GB will be 2048. So we need to check the original value which consists of only digits.
+      if (!/^\d+$/.test(value) || parsed < 0 || parsed > 65535) {
         console.warn('Port must be a number between 0 and 65535. Using default port 7070.\n')
         return 7070
       }
@@ -101,7 +101,7 @@ export function serveCommand(program: Command) {
         serve(
           {
             fetch: baseApp.fetch,
-            port: options.port || 7070,
+            port: options.port ?? 7070,
           },
           (info) => {
             console.log(`Listening on http://localhost:${info.port}`)

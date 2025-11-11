@@ -116,6 +116,23 @@ describe('serveCommand', () => {
     )
   })
 
+  it('should start server with custom port 0 by allocating a ephemeral port', async () => {
+    mockModules.existsSync.mockReturnValue(false)
+    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
+      return `${cwd}/${path}`
+    })
+
+    await program.parseAsync(['node', 'test', 'serve', '-p', '0'])
+
+    expect(mockServe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        port: 0,
+      }),
+      expect.any(Function)
+    )
+  })
+
   it('should serve app that responds correctly to requests', async () => {
     const mockApp = new Hono()
     mockApp.get('/', (c) => c.text('Hello World'))
@@ -258,7 +275,7 @@ describe('serveCommand', () => {
   })
 
   describe('port validation', () => {
-    it.each(['-1', '65536', 'invalid'])(
+    it.each(['-1', '65536', '2048GB', 'invalid'])(
       'should warn and use default port when port is %s',
       async (port) => {
         const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
