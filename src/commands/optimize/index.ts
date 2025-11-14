@@ -18,7 +18,7 @@ export function optimizeCommand(program: Command) {
     .option('-m, --minify', 'minify output file')
     .option('-t, --target [target]', 'environment target (e.g., node24, deno2, es2024)', 'node20')
     .action(
-      async (entry: string, options: { outfile: string; minify?: boolean; target?: string }) => {
+      async (entry: string, options: { outfile: string; minify?: boolean; target: string }) => {
         if (!entry) {
           entry =
             DEFAULT_ENTRY_CANDIDATES.find((entry) => existsSync(entry)) ??
