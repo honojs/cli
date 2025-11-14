@@ -254,6 +254,8 @@ hono optimize [entry] [options]
 **Options:**
 
 - `-o, --outfile <outfile>` - Output file
+- `-m, --minify` - minify output file
+- `-t, --target [target]` - environment target
 
 **Examples:**
 
@@ -266,6 +268,9 @@ hono optimize -o dist/app.js src/app.ts
 
 # Export bundled file with minification
 hono optimize -m
+
+# Specify environment target
+hono optimize -t es2024
 ```
 
 ## Tips
