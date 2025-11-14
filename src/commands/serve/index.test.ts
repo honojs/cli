@@ -276,30 +276,16 @@ describe('serveCommand', () => {
 
   describe('port validation', () => {
     it.each(['-1', '65536', '2048GB', 'invalid'])(
-      'should warn and use default port when port is %s',
+      'should throw error when port is invalid %s',
       async (port) => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
         mockModules.existsSync.mockReturnValue(false)
         mockModules.resolve.mockImplementation((cwd: string, path: string) => {
           return `${cwd}/${path}`
         })
 
-        await program.parseAsync(['node', 'test', 'serve', '-p', port])
-
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          'Port must be a number between 0 and 65535. Using default port 7070.\n'
+        expect(program.parseAsync(['node', 'test', 'serve', '-p', port])).rejects.toThrow(
+          `Port must be a number between 0 and 65535. Received: ${port}\n`
         )
-
-        expect(mockServe).toHaveBeenCalledWith(
-          expect.objectContaining({
-            fetch: expect.any(Function),
-            port: 7070,
-          }),
-          expect.any(Function)
-        )
-
-        consoleWarnSpy.mockRestore()
       }
     )
   })

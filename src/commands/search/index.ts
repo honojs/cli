@@ -35,7 +35,10 @@ export function searchCommand(program: Command) {
     .argument('<query>', 'Search query for Hono documentation')
     .option('-l, --limit <number>', 'Number of results to show (default: 5)', (value) => {
       const parsed = parseInt(value, 10)
-      if (isNaN(parsed) || parsed < 1 || parsed > 20) {
+      if (isNaN(parsed) || parsed < 1) {
+        throw new Error(`Limit must be a number between 1 and 20. Received: ${value}\n`)
+      }
+      if (parsed > 20) {
         console.warn('Limit must be a number between 1 and 20\n')
         return 5
       }
