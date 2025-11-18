@@ -1,31 +1,25 @@
-import { Command } from 'commander'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { docsCommand } from './commands/docs/index.js'
-import { optimizeCommand } from './commands/optimize/index.js'
-import { requestCommand } from './commands/request/index.js'
-import { searchCommand } from './commands/search/index.js'
-import { serveCommand } from './commands/serve/index.js'
+import { Tako } from '@takojs/tako'
+import pkg from '../package.json' with { type: 'json' }
+import { docsArgs, docsCommand, docsValidation } from './commands/docs/index.js'
+// import { optimizeArgs, optimizeCommand, optimizeValidation } from './commands/optimize/index.js' // TODO: replace commander with @takojs/tako
+import { requestArgs, requestCommand, requestValidation } from './commands/request/index.js'
+import { searchArgs, searchCommand, searchValidation } from './commands/search/index.js'
+import { serveArgs, serveCommand, serveValidation } from './commands/serve/index.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const rootArgs = {
+  metadata: {
+    version: pkg.version,
+    help: pkg.description,
+  },
+}
 
-// Read version from package.json
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'))
-
-const program = new Command()
-
-program
-  .name('hono')
-  .description('CLI for Hono')
-  .version(packageJson.version, '-v, --version', 'display version number')
+const tako = new Tako()
 
 // Register commands
-docsCommand(program)
-optimizeCommand(program)
-searchCommand(program)
-requestCommand(program)
-serveCommand(program)
+tako.command('docs', docsArgs, docsValidation, docsCommand)
+// tako.command("optimize", optimizeArgs, optimizeValidation, optimizeCommand) // TODO: replace commander with @takojs/tako
+tako.command('request', requestArgs, requestValidation, requestCommand)
+tako.command('search', searchArgs, searchValidation, searchCommand)
+tako.command('serve', serveArgs, serveValidation, serveCommand)
 
-program.parse()
+tako.cli(rootArgs)

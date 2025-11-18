@@ -1,4 +1,4 @@
-import type { Command } from 'commander'
+import type { TakoArgs, TakoHandler } from '@takojs/tako'
 
 interface AlgoliaHit {
   title?: string
@@ -29,142 +29,179 @@ interface AlgoliaResponse {
   hits: AlgoliaHit[]
 }
 
-export function searchCommand(program: Command) {
-  program
-    .command('search')
-    .argument('<query>', 'Search query for Hono documentation')
-    .option('-l, --limit <number>', 'Number of results to show (default: 5)', (value) => {
-      const parsed = parseInt(value, 10)
-      if (isNaN(parsed) || parsed < 1 || parsed > 20) {
-        console.warn('Limit must be a number between 1 and 20\n')
-        return 5
-      }
-      return parsed
+export const searchArgs: TakoArgs = {
+  config: {
+    options: {
+      limit: {
+        type: 'string',
+        short: 'l',
+      },
+      pretty: {
+        type: 'boolean',
+        short: 'p',
+      },
+    },
+  },
+  metadata: {
+    help: 'Search Hono documentation',
+    options: {
+      limit: {
+        help: 'Number of results to show (default: 5)',
+        placeholder: '<number>',
+      },
+      pretty: {
+        help: 'Display results in human-readable format',
+      },
+    },
+  },
+}
+
+export const searchValidation: TakoHandler = (c, next) => {
+  if (!c.scriptArgs.positionals[0]) {
+    c.print({ message: 'Error: Missing required argument "query"', style: 'red', level: 'error' })
+    return
+  }
+  const { limit } = c.scriptArgs.values
+  if (limit) {
+    const parsed = parseInt(limit as string, 10)
+    if (isNaN(parsed) || parsed < 1 || parsed > 20) {
+      c.print({ message: 'Limit must be a number between 1 and 20\n', style: 'yellow', level: 'warn' })
+      c.scriptArgs.values.limit = 5
+    } else {
+      c.scriptArgs.values.limit = parsed
+    }
+  }
+  next()
+}
+
+export const searchCommand: TakoHandler = async (c) => {
+  const query = c.scriptArgs.positionals[0]
+  const { limit, pretty } = c.scriptArgs.values
+
+  // Search-only API key - safe to embed in public code
+  const ALGOLIA_APP_ID = '1GIFSU1REV'
+  const ALGOLIA_API_KEY = 'c6a0f86b9a9f8551654600f28317a9e9'
+  const ALGOLIA_INDEX = 'hono'
+
+  const searchUrl = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX}/query`
+
+  try {
+    if (pretty) {
+      c.print({ message: `Searching for "${query}"...` })
+    }
+
+    const response = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        'X-Algolia-API-Key': ALGOLIA_API_KEY,
+        'X-Algolia-Application-Id': ALGOLIA_APP_ID,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        hitsPerPage: (limit as number) || 5,
+      }),
     })
-    .option('-p, --pretty', 'Display results in human-readable format')
-    .description('Search Hono documentation')
-    .action(async (query: string, options: { limit?: number; pretty?: boolean }) => {
-      // Search-only API key - safe to embed in public code
-      const ALGOLIA_APP_ID = '1GIFSU1REV'
-      const ALGOLIA_API_KEY = 'c6a0f86b9a9f8551654600f28317a9e9'
-      const ALGOLIA_INDEX = 'hono'
 
-      const searchUrl = `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${ALGOLIA_INDEX}/query`
+    if (!response.ok) {
+      throw new Error(`Search failed: ${response.status} ${response.statusText}`)
+    }
 
-      try {
-        if (options.pretty) {
-          console.log(`Searching for "${query}"...`)
+    const data: AlgoliaResponse = await response.json()
+
+    if (data.hits.length === 0) {
+      if (pretty) {
+        c.print({ message: '\nNo results found.' })
+      } else {
+        c.print({ message: JSON.stringify({ query, total: 0, results: [] }, null, 2) })
+      }
+      return
+    }
+
+    // Helper function to clean HTML tags completely
+    const cleanHighlight = (text: string) => text.replace(/<[^>]*>/g, '')
+
+    const results = data.hits.map((hit) => {
+      // Get title from various sources
+      let title = hit.title
+      let highlightedTitle = title
+      if (!title && hit._highlightResult?.hierarchy?.lvl1) {
+        title = cleanHighlight(hit._highlightResult.hierarchy.lvl1.value)
+        highlightedTitle = hit._highlightResult.hierarchy.lvl1.value
+      }
+      if (!title) {
+        title = hit.hierarchy?.lvl1 || hit.hierarchy?.lvl0 || 'Untitled'
+        highlightedTitle = title
+      }
+
+      // Build hierarchy path
+      const hierarchyParts: string[] = []
+      if (hit.hierarchy?.lvl0 && hit.hierarchy.lvl0 !== 'Documentation') {
+        hierarchyParts.push(hit.hierarchy.lvl0)
+      }
+      if (hit.hierarchy?.lvl1 && hit.hierarchy.lvl1 !== title) {
+        hierarchyParts.push(cleanHighlight(hit.hierarchy.lvl1))
+      }
+      if (hit.hierarchy?.lvl2) {
+        hierarchyParts.push(cleanHighlight(hit.hierarchy.lvl2))
+      }
+
+      const category = hierarchyParts.length > 0 ? hierarchyParts.join(' > ') : ''
+      const url = hit.url
+      const urlPath = new URL(url).pathname
+
+      return {
+        title,
+        highlightedTitle,
+        category,
+        url,
+        path: urlPath,
+      }
+    })
+
+    if (pretty) {
+      c.print({ message: `\nFound ${data.hits.length} results:\n` })
+
+      // Helper function to convert HTML highlights to terminal formatting
+      const formatHighlight = (text: string) => {
+        return text
+          .replace(/<span class="algolia-docsearch-suggestion--highlight">/g, '\x1b[33m') // Yellow
+          .replace(/<\/span>/g, '\x1b[0m') // Reset
+      }
+
+      results.forEach((result, index) => {
+        c.print({ message: `${index + 1}. ${formatHighlight(result.highlightedTitle || result.title)}` })
+        if (result.category) {
+          c.print({ message: `   Category: ${result.category}` })
         }
-
-        const response = await fetch(searchUrl, {
-          method: 'POST',
-          headers: {
-            'X-Algolia-API-Key': ALGOLIA_API_KEY,
-            'X-Algolia-Application-Id': ALGOLIA_APP_ID,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        c.print({ message: `   URL: ${result.url}` })
+        c.print({ message: `   Command: hono docs ${result.path}` })
+        c.print({ message: '' })
+      })
+    } else {
+      // Remove highlighted title from JSON output
+      const jsonResults = results.map(({ ...result }) => result)
+      c.print({
+        message: JSON.stringify(
+          {
             query,
-            hitsPerPage: options.limit || 5,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error(`Search failed: ${response.status} ${response.statusText}`)
-        }
-
-        const data: AlgoliaResponse = await response.json()
-
-        if (data.hits.length === 0) {
-          if (options.pretty) {
-            console.log('\nNo results found.')
-          } else {
-            console.log(JSON.stringify({ query, total: 0, results: [] }, null, 2))
-          }
-          return
-        }
-
-        // Helper function to clean HTML tags completely
-        const cleanHighlight = (text: string) => text.replace(/<[^>]*>/g, '')
-
-        const results = data.hits.map((hit) => {
-          // Get title from various sources
-          let title = hit.title
-          let highlightedTitle = title
-          if (!title && hit._highlightResult?.hierarchy?.lvl1) {
-            title = cleanHighlight(hit._highlightResult.hierarchy.lvl1.value)
-            highlightedTitle = hit._highlightResult.hierarchy.lvl1.value
-          }
-          if (!title) {
-            title = hit.hierarchy?.lvl1 || hit.hierarchy?.lvl0 || 'Untitled'
-            highlightedTitle = title
-          }
-
-          // Build hierarchy path
-          const hierarchyParts: string[] = []
-          if (hit.hierarchy?.lvl0 && hit.hierarchy.lvl0 !== 'Documentation') {
-            hierarchyParts.push(hit.hierarchy.lvl0)
-          }
-          if (hit.hierarchy?.lvl1 && hit.hierarchy.lvl1 !== title) {
-            hierarchyParts.push(cleanHighlight(hit.hierarchy.lvl1))
-          }
-          if (hit.hierarchy?.lvl2) {
-            hierarchyParts.push(cleanHighlight(hit.hierarchy.lvl2))
-          }
-
-          const category = hierarchyParts.length > 0 ? hierarchyParts.join(' > ') : ''
-          const url = hit.url
-          const urlPath = new URL(url).pathname
-
-          return {
-            title,
-            highlightedTitle,
-            category,
-            url,
-            path: urlPath,
-          }
-        })
-
-        if (options.pretty) {
-          console.log(`\nFound ${data.hits.length} results:\n`)
-
-          // Helper function to convert HTML highlights to terminal formatting
-          const formatHighlight = (text: string) => {
-            return text
-              .replace(/<span class="algolia-docsearch-suggestion--highlight">/g, '\x1b[33m') // Yellow
-              .replace(/<\/span>/g, '\x1b[0m') // Reset
-          }
-
-          results.forEach((result, index) => {
-            console.log(`${index + 1}. ${formatHighlight(result.highlightedTitle || result.title)}`)
-            if (result.category) {
-              console.log(`   Category: ${result.category}`)
-            }
-            console.log(`   URL: ${result.url}`)
-            console.log(`   Command: hono docs ${result.path}`)
-            console.log('')
-          })
-        } else {
-          // Remove highlighted title from JSON output
-          const jsonResults = results.map(({ highlightedTitle, ...result }) => result)
-          console.log(
-            JSON.stringify(
-              {
-                query,
-                total: data.hits.length,
-                results: jsonResults,
-              },
-              null,
-              2
-            )
-          )
-        }
-      } catch (error) {
-        console.error(
-          'Error searching documentation:',
-          error instanceof Error ? error.message : String(error)
-        )
-        console.log('\nPlease visit: https://hono.dev/docs')
-      }
+            total: data.hits.length,
+            results: jsonResults,
+          },
+          null,
+          2
+        ),
+      })
+    }
+  } catch (error) {
+    c.print({
+      message: [
+        'Error searching documentation:',
+        error instanceof Error ? error.message : String(error),
+      ],
+      style: 'red',
+      level: 'error',
     })
+    c.print({ message: '\nPlease visit: https://hono.dev/docs' })
+  }
 }

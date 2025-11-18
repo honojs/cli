@@ -1,7 +1,8 @@
-import type { Command } from 'commander'
+import type { TakoArgs, TakoHandler } from '@takojs/tako'
 import type { Hono } from 'hono'
 import { existsSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
+import * as process from 'node:process'
 import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
@@ -13,30 +14,7 @@ interface RequestOptions {
   path?: string
 }
 
-export function requestCommand(program: Command) {
-  program
-    .command('request')
-    .description('Send request to Hono app using app.request()')
-    .argument('[file]', 'Path to the Hono app file')
-    .option('-P, --path <path>', 'Request path', '/')
-    .option('-X, --method <method>', 'HTTP method', 'GET')
-    .option('-d, --data <data>', 'Request body data')
-    .option(
-      '-H, --header <header>',
-      'Custom headers',
-      (value: string, previous: string[]) => {
-        return previous ? [...previous, value] : [value]
-      },
-      [] as string[]
-    )
-    .action(async (file: string | undefined, options: RequestOptions) => {
-      const path = options.path || '/'
-      const result = await executeRequest(file, path, options)
-      console.log(JSON.stringify(result, null, 2))
-    })
-}
-
-export async function executeRequest(
+async function executeRequest(
   appPath: string | undefined,
   requestPath: string,
   options: RequestOptions
@@ -110,4 +88,67 @@ export async function executeRequest(
     body,
     headers: responseHeaders,
   }
+}
+
+export const requestArgs: TakoArgs = {
+  config: {
+    options: {
+      path: {
+        type: 'string',
+        short: 'P',
+        default: '/',
+      },
+      method: {
+        type: 'string',
+        short: 'X',
+        default: 'GET',
+      },
+      data: {
+        type: 'string',
+        short: 'd',
+      },
+      header: {
+        type: 'string',
+        short: 'H',
+        multiple: true,
+      },
+    },
+  },
+  metadata: {
+    help: 'Send request to Hono app using app.request()',
+    options: {
+      path: {
+        help: 'Request path',
+        placeholder: '<path>',
+      },
+      method: {
+        help: 'HTTP method',
+        placeholder: '<method>',
+      },
+      data: {
+        help: 'Request body data',
+        placeholder: '<data>',
+      },
+      header: {
+        help: 'Custom headers',
+        placeholder: '<header>',
+      },
+    },
+  },
+}
+
+export const requestValidation: TakoHandler = (_c, next) => {
+  next()
+}
+
+export const requestCommand: TakoHandler = async (c) => {
+  const file = c.scriptArgs.positionals[0]
+  const { path, method, data, header } = c.scriptArgs.values
+
+  const result = await executeRequest(file, path as string, {
+    method: method as string,
+    data: data as string,
+    header: header as string[] | undefined,
+  })
+  c.print({ message: JSON.stringify(result, null, 2) })
 }
