@@ -1,13 +1,27 @@
+import { parse } from '@babel/parser'
+import type { ClassMethod, ClassPrivateProperty, Identifier, PrivateName } from '@babel/types'
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
+import { METHOD_NAME_ALL } from 'hono/router'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
+import MagicString from 'magic-string'
 import { execFile } from 'node:child_process'
-import { existsSync, realpathSync, statSync } from 'node:fs'
+import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
+
+const REQUEST_BODY_METHODS = [
+  'parseBody',
+  'json',
+  'text',
+  'arrayBuffer',
+  'blob',
+  'formData',
+  '#cachedBody',
+]
 
 export function optimizeCommand(program: Command) {
   program
@@ -16,101 +30,123 @@ export function optimizeCommand(program: Command) {
     .argument('[entry]', 'entry file')
     .option('-o, --outfile [outfile]', 'output file', 'dist/index.js')
     .option('-m, --minify', 'minify output file')
-    .action(async (entry: string, options: { outfile: string; minify?: boolean }) => {
-      if (!entry) {
-        entry =
-          DEFAULT_ENTRY_CANDIDATES.find((entry) => existsSync(entry)) ?? DEFAULT_ENTRY_CANDIDATES[0]
-      }
+    .option(
+      '--no-request-body-api-removal',
+      'do not remove request body APIs if they are not needed'
+    )
+    .action(
+      async (
+        entry: string,
+        options: { outfile: string; minify?: boolean; requestBodyApiRemoval: boolean }
+      ) => {
+        if (!entry) {
+          entry =
+            DEFAULT_ENTRY_CANDIDATES.find((entry) => existsSync(entry)) ??
+            DEFAULT_ENTRY_CANDIDATES[0]
+        }
 
-      const appPath = resolve(process.cwd(), entry)
+        const appPath = resolve(process.cwd(), entry)
 
-      if (!existsSync(appPath)) {
-        throw new Error(`Entry file ${entry} does not exist`)
-      }
+        if (!existsSync(appPath)) {
+          throw new Error(`Entry file ${entry} does not exist`)
+        }
 
-      const appFilePath = realpathSync(appPath)
-      const app: Hono = await buildAndImportApp(appFilePath, {
-        external: ['@hono/node-server'],
-      })
-
-      let routerName
-      let importStatement
-      let assignRouterStatement
-      try {
-        const serialized = serializeInitParams(
-          buildInitParams({
-            paths: app.routes.map(({ path }) => path),
-          })
-        )
-
-        const hasPreparedRegExpRouter = await new Promise<boolean>((resolve) => {
-          const child = execFile(process.execPath, [
-            '--input-type=module',
-            '-e',
-            "try { (await import('hono/router/reg-exp-router')).PreparedRegExpRouter && process.exit(0) } finally { process.exit(1) }",
-          ])
-          child.on('exit', (code) => {
-            resolve(code === 0)
-          })
+        const appFilePath = realpathSync(appPath)
+        const app: Hono = await buildAndImportApp(appFilePath, {
+          external: ['@hono/node-server'],
         })
 
-        if (hasPreparedRegExpRouter) {
-          routerName = 'PreparedRegExpRouter'
-          importStatement = "import { PreparedRegExpRouter } from 'hono/router/reg-exp-router'"
-          assignRouterStatement = `const routerParams = ${serialized}
+        let routerName
+        let importStatement
+        let assignRouterStatement
+        try {
+          const serialized = serializeInitParams(
+            buildInitParams({
+              paths: app.routes.map(({ path }) => path),
+            })
+          )
+
+          const hasPreparedRegExpRouter = await new Promise<boolean>((resolve) => {
+            const child = execFile(process.execPath, [
+              '--input-type=module',
+              '-e',
+              "try { (await import('hono/router/reg-exp-router')).PreparedRegExpRouter && process.exit(0) } finally { process.exit(1) }",
+            ])
+            child.on('exit', (code) => {
+              resolve(code === 0)
+            })
+          })
+
+          if (hasPreparedRegExpRouter) {
+            routerName = 'PreparedRegExpRouter'
+            importStatement = "import { PreparedRegExpRouter } from 'hono/router/reg-exp-router'"
+            assignRouterStatement = `const routerParams = ${serialized}
     this.router = new PreparedRegExpRouter(...routerParams)`
-        } else {
-          routerName = 'RegExpRouter'
-          importStatement = "import { RegExpRouter } from 'hono/router/reg-exp-router'"
-          assignRouterStatement = 'this.router = new RegExpRouter()'
+          } else {
+            routerName = 'RegExpRouter'
+            importStatement = "import { RegExpRouter } from 'hono/router/reg-exp-router'"
+            assignRouterStatement = 'this.router = new RegExpRouter()'
+          }
+        } catch {
+          // fallback to default router
+          routerName = 'TrieRouter'
+          importStatement = "import { TrieRouter } from 'hono/router/trie-router'"
+          assignRouterStatement = 'this.router = new TrieRouter()'
         }
-      } catch {
-        // fallback to default router
-        routerName = 'TrieRouter'
-        importStatement = "import { TrieRouter } from 'hono/router/trie-router'"
-        assignRouterStatement = 'this.router = new TrieRouter()'
-      }
 
-      console.log('[Optimized]')
-      console.log(`  Router: ${routerName}`)
+        const removed = []
+        const removeRequestBodyApi =
+          options.requestBodyApiRemoval !== false &&
+          app.routes.every(({ method }) =>
+            [METHOD_NAME_ALL, 'GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
+          )
 
-      const outfile = resolve(process.cwd(), options.outfile)
-      await esbuild.build({
-        entryPoints: [appFilePath],
-        outfile,
-        bundle: true,
-        minify: options.minify,
-        format: 'esm',
-        target: 'node20',
-        platform: 'node',
-        jsx: 'automatic',
-        jsxImportSource: 'hono/jsx',
-        plugins: [
-          {
-            name: 'hono-optimize',
-            setup(build) {
-              const honoPseudoImportPath = 'hono-optimized-pseudo-import-path'
+        console.log('[Optimized]')
+        console.log(`  Router: ${routerName}`)
+        if (removeRequestBodyApi) {
+          removed.push('Request body APIs')
+        }
+        if (removed.length > 0) {
+          console.log(`  Removed: ${removed.join(', ')}`)
+        }
 
-              build.onResolve({ filter: /^hono$/ }, async (args) => {
-                if (!args.importer) {
-                  // prevent recursive resolution of "hono"
-                  return undefined
-                }
+        const outfile = resolve(process.cwd(), options.outfile)
+        await esbuild.build({
+          entryPoints: [appFilePath],
+          outfile,
+          bundle: true,
+          minify: options.minify,
+          format: 'esm',
+          target: 'node20',
+          platform: 'node',
+          jsx: 'automatic',
+          jsxImportSource: 'hono/jsx',
+          plugins: [
+            {
+              name: 'hono-optimize',
+              setup(build) {
+                const honoPseudoImportPath = 'hono-optimized-pseudo-import-path'
 
-                // resolve original import path for "hono"
-                const resolved = await build.resolve(args.path, {
-                  kind: 'import-statement',
-                  resolveDir: args.resolveDir,
+                build.onResolve({ filter: /^hono$/ }, async (args) => {
+                  if (!args.importer) {
+                    // prevent recursive resolution of "hono"
+                    return undefined
+                  }
+
+                  // resolve original import path for "hono"
+                  const resolved = await build.resolve(args.path, {
+                    kind: 'import-statement',
+                    resolveDir: args.resolveDir,
+                  })
+
+                  // mark "honoOptimize" to the resolved path for filtering
+                  return {
+                    path: join(dirname(resolved.path), honoPseudoImportPath),
+                  }
                 })
-
-                // mark "honoOptimize" to the resolved path for filtering
-                return {
-                  path: join(dirname(resolved.path), honoPseudoImportPath),
-                }
-              })
-              build.onLoad({ filter: new RegExp(`/${honoPseudoImportPath}$`) }, async () => {
-                return {
-                  contents: `
+                build.onLoad({ filter: new RegExp(`/${honoPseudoImportPath}$`) }, async () => {
+                  return {
+                    contents: `
 import { HonoBase } from 'hono/hono-base'
 ${importStatement}
 export class Hono extends HonoBase {
@@ -120,14 +156,120 @@ export class Hono extends HonoBase {
   }
 }
 `,
-                }
-              })
-            },
-          },
-        ],
-      })
+                  }
+                })
 
-      const outfileStat = statSync(outfile)
-      console.log(`  Output: ${options.outfile} (${(outfileStat.size / 1024).toFixed(2)} KB)`)
-    })
+                if (removeRequestBodyApi) {
+                  const honoRequestPseudoImportPath = 'hono-optimized-request-pseudo-import-path'
+                  build.onResolve({ filter: /request\.js$/ }, async (args) => {
+                    if (!args.importer) {
+                      return undefined
+                    }
+
+                    // resolve original import path for "request"
+                    const resolved = await build.resolve(args.path, {
+                      kind: 'import-statement',
+                      resolveDir: args.resolveDir,
+                    })
+
+                    // mark "honoOptimize" to the resolved path for filtering
+                    return {
+                      path: join(dirname(resolved.path), honoRequestPseudoImportPath),
+                    }
+                  })
+                  build.onLoad(
+                    { filter: new RegExp(`/${honoRequestPseudoImportPath}$`) },
+                    async (args) => {
+                      let contents = readFileSync(join(dirname(args.path), 'request.js'), 'utf-8')
+
+                      contents = removeHonoRequestBodyApis(contents)
+                      return {
+                        contents,
+                      }
+                    }
+                  )
+                }
+              },
+            },
+          ],
+        })
+
+        const outfileStat = statSync(outfile)
+        console.log(`  Output: ${options.outfile} (${(outfileStat.size / 1024).toFixed(2)} KB)`)
+      }
+    )
 }
+
+type NodeWithRange = { start: number | null | undefined; end: number | null | undefined }
+type ClassElementNode = (ClassMethod | ClassPrivateProperty) & NodeWithRange
+
+const removeHonoRequestBodyApis = (contents: string): string => {
+  const ast = parse(contents, {
+    sourceType: 'module',
+    plugins: [
+      'classPrivateProperties',
+      'classPrivateMethods',
+      'privateIn',
+      'importMeta',
+      'topLevelAwait',
+    ],
+  })
+
+  const magic = new MagicString(contents)
+  let modified = false
+
+  for (const statement of ast.program.body as ((typeof ast.program.body)[number] &
+    NodeWithRange)[]) {
+    if (statement.type !== 'VariableDeclaration') {
+      continue
+    }
+
+    for (const declaration of statement.declarations) {
+      if (
+        declaration.id.type !== 'Identifier' ||
+        declaration.id.name !== 'HonoRequest' ||
+        !declaration.init ||
+        declaration.init.type !== 'ClassExpression'
+      ) {
+        continue
+      }
+
+      for (const member of declaration.init.body.body as ClassElementNode[]) {
+        if (!shouldRemoveClassMember(member)) {
+          continue
+        }
+        const start = member.start ?? 0
+        const end = member.end ?? start
+        magic.remove(start, end)
+        modified = true
+      }
+    }
+  }
+
+  return modified ? magic.toString() : contents
+}
+
+const shouldRemoveClassMember = (member: ClassElementNode): boolean => {
+  if (
+    member.type === 'ClassMethod' &&
+    isIdentifier(member.key) &&
+    REQUEST_BODY_METHODS.includes(member.key.name)
+  ) {
+    return true
+  }
+
+  if (
+    member.type === 'ClassPrivateProperty' &&
+    isPrivateIdentifier(member.key) &&
+    REQUEST_BODY_METHODS.includes(`#${member.key.id.name}`)
+  ) {
+    return true
+  }
+
+  return false
+}
+
+const isIdentifier = (key: ClassMethod['key']): key is Identifier => key.type === 'Identifier'
+
+const isPrivateIdentifier = (key: ClassPrivateProperty['key']): key is PrivateName =>
+  key.type === 'PrivateName'
