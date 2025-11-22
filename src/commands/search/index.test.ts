@@ -1,16 +1,17 @@
-import { Command } from 'commander'
+import { Tako } from '@takojs/tako'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { searchCommand } from './index.js'
+import { searchArgs, searchCommand, searchValidation } from './index.js'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 describe('Search Command', () => {
-  let program: Command
+  let tako: Tako
 
   beforeEach(() => {
-    program = new Command()
+    tako = new Tako()
+    tako.command('search', searchArgs, searchValidation, searchCommand)
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -44,9 +45,8 @@ describe('Search Command', () => {
     })
 
     const logSpy = vi.spyOn(console, 'log')
-    searchCommand(program)
 
-    await program.parseAsync(['node', 'test', 'search', 'middleware'])
+    await tako.cli({ config: { args: ['search', 'middleware'] } })
 
     // Get the JSON output
     const jsonOutput = logSpy.mock.calls[0][0]
@@ -63,12 +63,14 @@ describe('Search Command', () => {
       results: [
         {
           title: 'Getting Started',
+          highlightedTitle: 'Getting Started',
           category: '',
           url: 'https://hono.dev/docs/getting-started',
           path: '/docs/getting-started',
         },
         {
           title: 'Middleware',
+          highlightedTitle: 'Middleware',
           category: 'Basic Usage',
           url: 'https://hono.dev/docs/middleware',
           path: '/docs/middleware',
@@ -88,9 +90,8 @@ describe('Search Command', () => {
     })
 
     const logSpy = vi.spyOn(console, 'log')
-    searchCommand(program)
 
-    await program.parseAsync(['node', 'test', 'search', 'nonexistent'])
+    await tako.cli({ config: { args: ['search', 'nonexistent'] } })
 
     const jsonOutput = logSpy.mock.calls[0][0]
 
@@ -114,9 +115,7 @@ describe('Search Command', () => {
       statusText: 'Not Found',
     })
 
-    searchCommand(program)
-
-    await program.parseAsync(['node', 'test', 'search', 'test'])
+    await tako.cli({ config: { args: ['search', 'test'] } })
 
     expect(errorSpy).toHaveBeenCalled()
   })
@@ -129,9 +128,7 @@ describe('Search Command', () => {
       json: async () => mockResponse,
     })
 
-    searchCommand(program)
-
-    await program.parseAsync(['node', 'test', 'search', 'test', '--limit', '3'])
+    await tako.cli({ config: { args: ['search', 'test', '--limit', '3'] } })
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://1GIFSU1REV-dsn.algolia.net/1/indexes/hono/query',
@@ -160,9 +157,7 @@ describe('Search Command', () => {
         json: async () => mockResponse,
       })
 
-      searchCommand(program)
-
-      await program.parseAsync(['node', 'test', 'search', 'test', '--limit', String(limit)])
+      await tako.cli({ config: { args: ['search', 'test', '--limit', String(limit)] } })
 
       expect(warnSpy).toHaveBeenCalledWith('Limit must be a number between 1 and 20\n')
 

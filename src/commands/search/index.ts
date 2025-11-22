@@ -61,14 +61,14 @@ export const searchValidation: TakoHandler = (c, next) => {
     c.print({ message: 'Error: Missing required argument "query"', style: 'red', level: 'error' })
     return
   }
-  const { limit } = c.scriptArgs.values
+  const { limit } = c.scriptArgs.values as { limit?: string }
   if (limit) {
-    const parsed = parseInt(limit as string, 10)
+    const parsed = parseInt(limit, 10)
     if (isNaN(parsed) || parsed < 1 || parsed > 20) {
       c.print({ message: 'Limit must be a number between 1 and 20\n', style: 'yellow', level: 'warn' })
-      c.scriptArgs.values.limit = 5
+      c.args.values.limit = 5
     } else {
-      c.scriptArgs.values.limit = parsed
+      c.args.values.limit = parsed
     }
   }
   next()
@@ -76,7 +76,8 @@ export const searchValidation: TakoHandler = (c, next) => {
 
 export const searchCommand: TakoHandler = async (c) => {
   const query = c.scriptArgs.positionals[0]
-  const { limit, pretty } = c.scriptArgs.values
+  const { pretty } = c.scriptArgs.values
+  const { limit } = c.args.values as { limit?: number }
 
   // Search-only API key - safe to embed in public code
   const ALGOLIA_APP_ID = '1GIFSU1REV'
@@ -99,7 +100,7 @@ export const searchCommand: TakoHandler = async (c) => {
       },
       body: JSON.stringify({
         query,
-        hitsPerPage: (limit as number) || 5,
+        hitsPerPage: limit || 5,
       }),
     })
 

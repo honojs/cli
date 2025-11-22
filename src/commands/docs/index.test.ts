@@ -1,20 +1,21 @@
-import { Command } from 'commander'
+import { Tako } from '@takojs/tako'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { Buffer } from 'node:buffer'
+import * as process from 'node:process'
+import { docsArgs, docsCommand, docsValidation } from './index.js'
 
 // Mock fetch
-global.fetch = vi.fn()
-
-import { docsCommand } from './index.js'
+globalThis.fetch = vi.fn()
 
 describe('docsCommand', () => {
-  let program: Command
+  let tako: Tako
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
   let originalIsTTY: boolean | undefined
 
   beforeEach(() => {
-    program = new Command()
-    docsCommand(program)
+    tako = new Tako()
+    tako.command('docs', docsArgs, docsValidation, docsCommand)
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -46,7 +47,7 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockContent),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
 
     expect(fetch).toHaveBeenCalledWith('https://hono.dev/llms.txt')
     expect(consoleLogSpy).toHaveBeenCalledWith('Fetching Hono documentation...')
@@ -61,7 +62,7 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockMarkdown),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs', '/docs/concepts/stacks'])
+    await tako.cli({ config: { args: ['docs', '/docs/concepts/stacks'] } })
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/concepts/stacks.md'
@@ -80,7 +81,7 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockMarkdown),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs', '/examples/stytch-auth'])
+    await tako.cli({ config: { args: ['docs', '/examples/stytch-auth'] } })
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/examples/stytch-auth.md'
@@ -99,7 +100,7 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockMarkdown),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs', 'examples/basic'])
+    await tako.cli({ config: { args: ['docs', 'examples/basic'] } })
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/examples/basic.md'
@@ -115,7 +116,7 @@ describe('docsCommand', () => {
       statusText: 'Not Found',
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error fetching documentation:',
@@ -131,7 +132,7 @@ describe('docsCommand', () => {
       statusText: 'Not Found',
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs', '/docs/concepts/motivation'])
+    await tako.cli({ config: { args: ['docs', '/docs/concepts/motivation'] } })
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error fetching documentation:',
@@ -149,7 +150,7 @@ describe('docsCommand', () => {
       statusText: 'Not Found',
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs', '/examples/stytch-auth'])
+    await tako.cli({ config: { args: ['docs', '/examples/stytch-auth'] } })
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error fetching documentation:',
@@ -164,7 +165,7 @@ describe('docsCommand', () => {
     const networkError = new Error('Network error')
     vi.mocked(fetch).mockRejectedValue(networkError)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching documentation:', 'Network error')
     expect(consoleLogSpy).toHaveBeenCalledWith('\nPlease visit: https://hono.dev/docs')
@@ -189,7 +190,8 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockMarkdown),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
+    await new Promise(process.nextTick)
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/concepts/middleware.md'
@@ -222,7 +224,8 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockMarkdown),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
+    await new Promise(process.nextTick)
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/api/context.md'
@@ -246,7 +249,7 @@ describe('docsCommand', () => {
       text: () => Promise.resolve(mockContent),
     } as Response)
 
-    await program.parseAsync(['node', 'test', 'docs'])
+    await tako.cli({ config: { args: ['docs'] } })
 
     expect(fetch).toHaveBeenCalledWith('https://hono.dev/llms.txt')
     expect(consoleLogSpy).toHaveBeenCalledWith('Fetching Hono documentation...')

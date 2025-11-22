@@ -8,6 +8,7 @@ import { serveArgs, serveCommand, serveValidation } from './commands/serve/index
 
 const rootArgs = {
   metadata: {
+    cliName: "hono",
     version: pkg.version,
     help: pkg.description,
   },
@@ -22,4 +23,4 @@ tako.command('request', requestArgs, requestValidation, requestCommand)
 tako.command('search', searchArgs, searchValidation, searchCommand)
 tako.command('serve', serveArgs, serveValidation, serveCommand)
 
-tako.cli(rootArgs)
+await tako.cli(rootArgs)

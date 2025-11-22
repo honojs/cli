@@ -1,6 +1,8 @@
-import { Command } from 'commander'
+import { Tako } from '@takojs/tako'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import * as process from 'node:process'
+import { requestArgs, requestCommand, requestValidation } from './index.js'
 
 // Mock dependencies
 vi.mock('node:fs', () => ({
@@ -16,10 +18,8 @@ vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
 }))
 
-import { requestCommand } from './index.js'
-
 describe('requestCommand', () => {
-  let program: Command
+  let tako: Tako
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let mockModules: any
   let mockBuildAndImportApp: any
@@ -34,8 +34,8 @@ describe('requestCommand', () => {
   }
 
   beforeEach(async () => {
-    program = new Command()
-    requestCommand(program)
+    tako = new Tako()
+    tako.command('request', requestArgs, requestValidation, requestCommand)
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     // Get mocked modules
@@ -62,7 +62,8 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/', 'test-app.js'])
+    await tako.cli({ config: { args: ['request', '-P', '/', 'test-app.js'] } })
+    await new Promise(process.nextTick)
 
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
@@ -90,18 +91,21 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/data',
-      '-X',
-      'POST',
-      '-d',
-      'test data',
-      'test-app.js',
-    ])
+    await tako.cli({
+      config: {
+        args: [
+          'request',
+          '-P',
+          '/data',
+          '-X',
+          'POST',
+          '-d',
+          'test data',
+          'test-app.js',
+        ],
+      },
+    })
+    await new Promise(process.nextTick)
 
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
@@ -136,7 +140,8 @@ describe('requestCommand', () => {
     })
     mockBuildAndImportApp.mockResolvedValue(mockApp)
 
-    await program.parseAsync(['node', 'test', 'request'])
+    await tako.cli({ config: { args: ['request'] } })
+    await new Promise(process.nextTick)
 
     // Verify resolve was called with correct arguments for default candidates
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'src/index.ts')
@@ -169,16 +174,19 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/api/test',
-      '-H',
-      'Authorization: Bearer token123',
-      'test-app.js',
-    ])
+    await tako.cli({
+      config: {
+        args: [
+          'request',
+          '-P',
+          '/api/test',
+          '-H',
+          'Authorization: Bearer token123',
+          'test-app.js',
+        ],
+      },
+    })
+    await new Promise(process.nextTick)
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
       JSON.stringify(
@@ -205,20 +213,23 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/api/multi',
-      '-H',
-      'Authorization: Bearer token456',
-      '-H',
-      'User-Agent: TestClient/1.0',
-      '-H',
-      'X-Custom-Header: custom-value',
-      'test-app.js',
-    ])
+    await tako.cli({
+      config: {
+        args: [
+          'request',
+          '-P',
+          '/api/multi',
+          '-H',
+          'Authorization: Bearer token456',
+          '-H',
+          'User-Agent: TestClient/1.0',
+          '-H',
+          'X-Custom-Header: custom-value',
+          'test-app.js',
+        ],
+      },
+    })
+    await new Promise(process.nextTick)
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
       JSON.stringify(
@@ -243,7 +254,8 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/api/noheader', 'test-app.js'])
+    await tako.cli({ config: { args: ['request', '-P', '/api/noheader', 'test-app.js'] } })
+    await new Promise(process.nextTick)
 
     // Should not include any custom headers, only default ones
     const output = consoleLogSpy.mock.calls[0][0] as string
@@ -261,18 +273,21 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/api/malformed',
-      '-H',
-      'MalformedHeader', // Missing colon
-      '-H',
-      'ValidHeader: value',
-      'test-app.js',
-    ])
+    await tako.cli({
+      config: {
+        args: [
+          'request',
+          '-P',
+          '/api/malformed',
+          '-H',
+          'MalformedHeader', // Missing colon
+          '-H',
+          'ValidHeader: value',
+          'test-app.js',
+        ],
+      },
+    })
+    await new Promise(process.nextTick)
 
     // Should still work, malformed header is ignored
     expect(consoleLogSpy).toHaveBeenCalledWith(

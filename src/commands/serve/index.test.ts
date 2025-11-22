@@ -1,6 +1,8 @@
-import { Command } from 'commander'
+import { Tako } from '@takojs/tako'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import * as process from 'node:process'
+import { serveArgs, serveCommand, serveValidation } from './index.js'
 
 // Mock dependencies
 vi.mock('node:fs', () => ({
@@ -40,18 +42,16 @@ vi.mock('./builtin-map.js', () => ({
   },
 }))
 
-import { serveCommand } from './index.js'
-
 describe('serveCommand', () => {
-  let program: Command
+  let tako: Tako
   let mockModules: any
   let mockServe: any
   let mockShowRoutes: any
   let capturedFetchFunction: any
 
   beforeEach(async () => {
-    program = new Command()
-    serveCommand(program)
+    tako = new Tako()
+    tako.command('serve', serveArgs, serveValidation, serveCommand)
 
     // Get mocked modules
     mockModules = {
@@ -86,7 +86,8 @@ describe('serveCommand', () => {
       return `${cwd}/${path}`
     })
 
-    await program.parseAsync(['node', 'test', 'serve'])
+    await tako.cli({ config: { args: ['serve'] } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called with default port 7070
     expect(mockServe).toHaveBeenCalledWith(
@@ -104,7 +105,8 @@ describe('serveCommand', () => {
       return `${cwd}/${path}`
     })
 
-    await program.parseAsync(['node', 'test', 'serve', '-p', '8080'])
+    await tako.cli({ config: { args: ['serve', '-p', '8080'] } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called with custom port
     expect(mockServe).toHaveBeenCalledWith(
@@ -135,7 +137,8 @@ describe('serveCommand', () => {
     // Mock the import of JS file
     vi.doMock(absolutePath, () => ({ default: mockApp }))
 
-    await program.parseAsync(['node', 'test', 'serve', 'app.js'])
+    await tako.cli({ config: { args: ['serve', 'app.js'] } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test the captured fetch function
     const rootRequest = new Request('http://localhost:7070/')
@@ -154,7 +157,8 @@ describe('serveCommand', () => {
       return `${cwd}/${path}`
     })
 
-    await program.parseAsync(['node', 'test', 'serve'])
+    await tako.cli({ config: { args: ['serve'] } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test 404 behavior with default empty app
     const request = new Request('http://localhost:7070/non-existent')
@@ -163,7 +167,8 @@ describe('serveCommand', () => {
   })
 
   it('should create default empty app when no entry argument provided', async () => {
-    await program.parseAsync(['node', 'test', 'serve'])
+    await tako.cli({ config: { args: ['serve'] } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called
     expect(mockServe).toHaveBeenCalledWith(
@@ -222,15 +227,18 @@ describe('serveCommand', () => {
     vi.doMock('hono/basic-auth', () => ({ basicAuth: mockBasicAuth }))
     vi.doMock('hono/proxy', () => ({ proxy: mockProxy }))
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'serve',
-      '--use',
-      'basicAuth({username: "hono", password: "hono"})',
-      '--use',
-      '(c) => proxy(`https://ramen-api.dev${new URL(c.req.url).pathname}`)',
-    ])
+    await tako.cli({
+      config: {
+        args: [
+          'serve',
+          '--use',
+          'basicAuth({username: "hono", password: "hono"})',
+          '--use',
+          '(c) => proxy(`https://ramen-api.dev${new URL(c.req.url).pathname}`)',
+        ],
+      },
+    })
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test without auth - should get 401
     const unauthorizedRequest = new Request('http://localhost:7070/shops')

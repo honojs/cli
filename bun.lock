@@ -6,7 +6,7 @@
       "name": "@hono/cli",
       "dependencies": {
         "@hono/node-server": "^1.19.5",
-        "@takojs/tako": "^1.1.0",
+        "@takojs/tako": "^1.3.0",
         "esbuild": "^0.25.10",
         "hono": "^4.9.12",
       },
@@ -228,7 +228,7 @@
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@2.3.0", "", {}, "sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg=="],
 
-    "@takojs/tako": ["@takojs/tako@1.1.0", "", {}, "sha512-rRJS/KwTe3DOFvj6TFQr3JIYSb/e528BHgHg0+JnbNSxjgWXrrdiW33PtRcJogZfUis4MIdJkobDZWNAedS9HA=="],
+    "@takojs/tako": ["@takojs/tako@1.3.0", "", {}, "sha512-vefFTQykYUohsTNB3Z1jNkP4mKtpRCLodJONqKGtw+XWxt9JoGoDdGo9ZeFDzj2VFJjWS2zbuQTKMgtKPVHAMQ=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
