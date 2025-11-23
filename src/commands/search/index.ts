@@ -56,7 +56,7 @@ export const searchArgs: TakoArgs = {
   },
 }
 
-export const searchValidation: TakoHandler = (c, next) => {
+export const searchValidation: TakoHandler = async (c, next) => {
   if (!c.scriptArgs.positionals[0]) {
     c.print({ message: 'Error: Missing required argument "query"', style: 'red', level: 'error' })
     return
@@ -65,13 +65,17 @@ export const searchValidation: TakoHandler = (c, next) => {
   if (limit) {
     const parsed = parseInt(limit, 10)
     if (isNaN(parsed) || parsed < 1 || parsed > 20) {
-      c.print({ message: 'Limit must be a number between 1 and 20\n', style: 'yellow', level: 'warn' })
+      c.print({
+        message: 'Limit must be a number between 1 and 20\n',
+        style: 'yellow',
+        level: 'warn',
+      })
       c.args.values.limit = 5
     } else {
       c.args.values.limit = parsed
     }
   }
-  next()
+  await next()
 }
 
 export const searchCommand: TakoHandler = async (c) => {
@@ -171,7 +175,9 @@ export const searchCommand: TakoHandler = async (c) => {
       }
 
       results.forEach((result, index) => {
-        c.print({ message: `${index + 1}. ${formatHighlight(result.highlightedTitle || result.title)}` })
+        c.print({
+          message: `${index + 1}. ${formatHighlight(result.highlightedTitle || result.title)}`,
+        })
         if (result.category) {
           c.print({ message: `   Category: ${result.category}` })
         }

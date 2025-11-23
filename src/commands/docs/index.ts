@@ -31,8 +31,8 @@ export const docsArgs: TakoArgs = {
   },
 }
 
-export const docsValidation: TakoHandler = (_c, next) => {
-  next()
+export const docsValidation: TakoHandler = async (_c, next) => {
+  await next()
 }
 
 export const docsCommand: TakoHandler = async (c) => {
@@ -56,7 +56,7 @@ export const docsCommand: TakoHandler = async (c) => {
         c.print({
           message: [
             'Error reading from stdin:',
-            error instanceof Error ? error.message : String(error)
+            error instanceof Error ? error.message : String(error),
           ],
           style: 'red',
           level: 'error',

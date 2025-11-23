@@ -50,8 +50,8 @@ export const serveArgs: TakoArgs = {
   },
 }
 
-export const serveValidation: TakoHandler = (_c, next) => {
-  next()
+export const serveValidation: TakoHandler = async (_c, next) => {
+  await next()
 }
 
 export const serveCommand: TakoHandler = async (c) => {

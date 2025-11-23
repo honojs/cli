@@ -137,8 +137,8 @@ export const requestArgs: TakoArgs = {
   },
 }
 
-export const requestValidation: TakoHandler = (_c, next) => {
-  next()
+export const requestValidation: TakoHandler = async (_c, next) => {
+  await next()
 }
 
 export const requestCommand: TakoHandler = async (c) => {

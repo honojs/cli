@@ -87,7 +87,6 @@ describe('serveCommand', () => {
     })
 
     await tako.cli({ config: { args: ['serve'] } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called with default port 7070
     expect(mockServe).toHaveBeenCalledWith(
@@ -106,7 +105,6 @@ describe('serveCommand', () => {
     })
 
     await tako.cli({ config: { args: ['serve', '-p', '8080'] } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called with custom port
     expect(mockServe).toHaveBeenCalledWith(
@@ -138,7 +136,6 @@ describe('serveCommand', () => {
     vi.doMock(absolutePath, () => ({ default: mockApp }))
 
     await tako.cli({ config: { args: ['serve', 'app.js'] } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test the captured fetch function
     const rootRequest = new Request('http://localhost:7070/')
@@ -158,7 +155,6 @@ describe('serveCommand', () => {
     })
 
     await tako.cli({ config: { args: ['serve'] } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test 404 behavior with default empty app
     const request = new Request('http://localhost:7070/non-existent')
@@ -168,7 +164,6 @@ describe('serveCommand', () => {
 
   it('should create default empty app when no entry argument provided', async () => {
     await tako.cli({ config: { args: ['serve'] } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Verify serve was called
     expect(mockServe).toHaveBeenCalledWith(
@@ -238,7 +233,6 @@ describe('serveCommand', () => {
         ],
       },
     })
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Test without auth - should get 401
     const unauthorizedRequest = new Request('http://localhost:7070/shops')

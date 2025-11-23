@@ -8,7 +8,7 @@ import { serveArgs, serveCommand, serveValidation } from './commands/serve/index
 
 const rootArgs = {
   metadata: {
-    cliName: "hono",
+    cliName: 'hono',
     version: pkg.version,
     help: pkg.description,
   },

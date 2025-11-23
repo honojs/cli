@@ -191,7 +191,6 @@ describe('docsCommand', () => {
     } as Response)
 
     await tako.cli({ config: { args: ['docs'] } })
-    await new Promise(process.nextTick)
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/concepts/middleware.md'
@@ -225,7 +224,6 @@ describe('docsCommand', () => {
     } as Response)
 
     await tako.cli({ config: { args: ['docs'] } })
-    await new Promise(process.nextTick)
 
     expect(fetch).toHaveBeenCalledWith(
       'https://raw.githubusercontent.com/honojs/website/refs/heads/main/docs/api/context.md'
