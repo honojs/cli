@@ -29,9 +29,10 @@ export function optimizeCommand(program: Command) {
       }
 
       const appFilePath = realpathSync(appPath)
-      const app: Hono = await buildAndImportApp(appFilePath, {
+      const buildIterator = buildAndImportApp(appFilePath, {
         external: ['@hono/node-server'],
       })
+      const app: Hono = (await buildIterator.next()).value
 
       let routerName
       let importStatement
