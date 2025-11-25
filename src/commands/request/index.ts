@@ -22,7 +22,7 @@ export function requestCommand(program: Command) {
     .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <data>', 'Request body data')
-    .option('-w, --watch', 'Watch for changes and re-run the request', false)
+    .option('-w, --watch', 'Watch for changes and resend request', false)
     .option(
       '-H, --header <header>',
       'Custom headers',
