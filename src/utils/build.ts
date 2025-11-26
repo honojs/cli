@@ -1,5 +1,6 @@
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
+import { Buffer } from 'node:buffer'
 
 export interface BuildOptions {
   external?: string[]

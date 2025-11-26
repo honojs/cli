@@ -1,6 +1,7 @@
 import type { context, PluginBuild } from 'esbuild'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { Buffer } from 'node:buffer'
 
 // Mock dependencies
 vi.mock('esbuild', () => ({

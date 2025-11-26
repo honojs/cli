@@ -1,13 +1,14 @@
-import { Command } from 'commander'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { Tako } from '@takojs/tako'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { execFile } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { optimizeCommand } from './index'
+import * as process from 'node:process'
+import { optimizeArgs, optimizeCommand, optimizeValidation } from './index'
 
-const program = new Command()
-optimizeCommand(program)
+const tako = new Tako()
+tako.command('optimize', optimizeArgs, optimizeValidation, optimizeCommand)
 
 const npmInstall = async () =>
   new Promise<void>((resolve) => {
@@ -27,7 +28,7 @@ describe('optimizeCommand', () => {
 
   it('should throws an error if entry file not found', async () => {
     await expect(
-      program.parseAsync(['node', 'hono', 'optimize', './non-existent-file.ts'])
+      tako.cli({ config: { args: ['optimize', './non-existent-file.ts'] } })
     ).rejects.toThrowError()
   })
 
@@ -216,7 +217,7 @@ describe('optimizeCommand', () => {
       for (const file of files) {
         writeFileSync(join(dir, file.path), file.content)
       }
-      await program.parseAsync(['node', 'hono', 'optimize', ...(args ?? [])])
+      await tako.cli({ config: { args: ['optimize', ...(args ?? [])] } })
 
       const content = readFileSync(join(dir, result.path), 'utf-8')
       if (result.lineCount) {

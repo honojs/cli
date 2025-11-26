@@ -1,7 +1,8 @@
-import type { Command } from 'commander'
+import type { Tako, TakoArgs, TakoHandler } from '@takojs/tako'
 import type { Hono } from 'hono'
 import { existsSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
+import * as process from 'node:process'
 import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
@@ -11,35 +12,6 @@ interface RequestOptions {
   data?: string
   header?: string[]
   path?: string
-  watch: boolean
-}
-
-export function requestCommand(program: Command) {
-  program
-    .command('request')
-    .description('Send request to Hono app using app.request()')
-    .argument('[file]', 'Path to the Hono app file')
-    .option('-P, --path <path>', 'Request path', '/')
-    .option('-X, --method <method>', 'HTTP method', 'GET')
-    .option('-d, --data <data>', 'Request body data')
-    .option('-w, --watch', 'Watch for changes and resend request', false)
-    .option(
-      '-H, --header <header>',
-      'Custom headers',
-      (value: string, previous: string[]) => {
-        return previous ? [...previous, value] : [value]
-      },
-      [] as string[]
-    )
-    .action(async (file: string | undefined, options: RequestOptions) => {
-      const path = options.path || '/'
-      const watch = options.watch
-      const buildIterator = getBuildIterator(file, watch)
-      for await (const app of buildIterator) {
-        const result = await executeRequest(app, path, options)
-        console.log(JSON.stringify(result, null, 2))
-      }
-    })
 }
 
 export function getBuildIterator(
@@ -73,27 +45,32 @@ export function getBuildIterator(
   })
 }
 
-export async function executeRequest(
-  app: Hono,
-  requestPath: string,
-  options: RequestOptions
+async function executeRequest(
+  c: Tako,
+  app: Hono
 ): Promise<{ status: number; body: string; headers: Record<string, string> }> {
+  if (!app || typeof app.request !== 'function') {
+    throw new Error('No valid Hono app exported from the file')
+  }
+
+  const { path: requestPath, method, data, header } = c.scriptArgs.values as RequestOptions
+
   // Build request
-  const url = new URL(requestPath, 'http://localhost')
+  const url = new URL(requestPath || '/', 'http://localhost')
   const requestInit: RequestInit = {
-    method: options.method || 'GET',
+    method: method || 'GET',
   }
 
   // Add request body if provided
-  if (options.data) {
-    requestInit.body = options.data
+  if (data) {
+    requestInit.body = data
   }
 
   // Add headers if provided
-  if (options.header && options.header.length > 0) {
+  if (header && header.length > 0) {
     const headers = new Headers()
-    for (const header of options.header) {
-      const [key, value] = header.split(':', 2)
+    for (const h of header) {
+      const [key, value] = h.split(':', 2)
       if (key && value) {
         headers.set(key.trim(), value.trim())
       }
@@ -117,5 +94,87 @@ export async function executeRequest(
     status: response.status,
     body,
     headers: responseHeaders,
+  }
+}
+
+export const requestArgs: TakoArgs = {
+  config: {
+    options: {
+      path: {
+        type: 'string',
+        short: 'P',
+        default: '/',
+      },
+      method: {
+        type: 'string',
+        short: 'X',
+        default: 'GET',
+      },
+      data: {
+        type: 'string',
+        short: 'd',
+      },
+      header: {
+        type: 'string',
+        short: 'H',
+        multiple: true,
+      },
+      watch: {
+        type: 'boolean',
+        short: 'w',
+        default: false,
+      },
+    },
+  },
+  metadata: {
+    help: 'Send request to Hono app using app.request()',
+    placeholder: '[file]',
+    options: {
+      path: {
+        help: 'Request path',
+        placeholder: '<path>',
+      },
+      method: {
+        help: 'HTTP method',
+        placeholder: '<method>',
+      },
+      data: {
+        help: 'Request body data',
+        placeholder: '<data>',
+      },
+      header: {
+        help: 'Custom headers',
+        placeholder: '<header>',
+      },
+      watch: {
+        help: 'Watch for changes and resend request',
+        placeholder: '<header>',
+      },
+    },
+  },
+}
+
+export const requestValidation: TakoHandler = async (_c, next) => {
+  await next()
+}
+
+export const requestCommand: TakoHandler = async (c) => {
+  try {
+    const file = c.scriptArgs.positionals[0]
+    const { watch } = c.scriptArgs.values as { watch: boolean }
+
+    const buildIterator = getBuildIterator(file, watch)
+    for await (const app of buildIterator) {
+      const result = await executeRequest(c, app)
+      if (result) {
+        c.print({ message: JSON.stringify(result, null, 2) })
+      }
+    }
+  } catch (error) {
+    c.print({
+      message: ['Error:', error instanceof Error ? error.message : String(error)],
+      style: 'red',
+      level: 'error',
+    })
   }
 }
