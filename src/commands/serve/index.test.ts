@@ -83,6 +83,23 @@ describe('serveCommand', () => {
     )
   })
 
+  it('should start server with custom port 0 by allocating a ephemeral port', async () => {
+    mockModules.existsSync.mockReturnValue(false)
+    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
+      return `${cwd}/${path}`
+    })
+
+    await program.parseAsync(['node', 'test', 'serve', '-p', '0'])
+
+    expect(mockServe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        port: 0,
+      }),
+      expect.any(Function)
+    )
+  })
+
   it('should serve app that responds correctly to requests', async () => {
     const appDir = mkdtempSync(join(tmpdir(), 'hono-cli-serve-test'))
     mkdirSync(appDir, { recursive: true })
@@ -226,5 +243,21 @@ export default app
     const unknownResponse = await capturedFetchFunction(unknownRequest)
     expect(unknownResponse.status).toBe(404)
     expect(await unknownResponse.text()).toBe('API endpoint not found')
+  })
+
+  describe('port validation', () => {
+    it.each(['-1', '65536', '2048GB', 'invalid'])(
+      'should throw error when port is invalid %s',
+      async (port) => {
+        mockModules.existsSync.mockReturnValue(false)
+        mockModules.resolve.mockImplementation((cwd: string, path: string) => {
+          return `${cwd}/${path}`
+        })
+
+        expect(program.parseAsync(['node', 'test', 'serve', '-p', port])).rejects.toThrow(
+          `Port must be a number between 0 and 65535. Received: ${port}\n`
+        )
+      }
+    )
   })
 })
