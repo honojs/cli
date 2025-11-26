@@ -1,31 +1,43 @@
+import type { context, PluginBuild } from 'esbuild'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Buffer } from 'node:buffer'
 
 // Mock dependencies
 vi.mock('esbuild', () => ({
-  build: vi.fn(),
+  context: vi.fn(),
 }))
 
 vi.mock('node:url', () => ({
   pathToFileURL: vi.fn(),
 }))
 
-vi.mock('node:path', () => ({
-  extname: vi.fn(),
-}))
-
 import { buildAndImportApp } from './build.js'
 
 describe('buildAndImportApp', () => {
+  let mockEsbuildDispose: any
   let mockEsbuild: any
-  let mockPathToFileURL: any
-  let mockExtname: any
+
+  const setupBundledCode = (code: string) => {
+    mockEsbuild.mockImplementation((param: Parameters<typeof context>[0]) => {
+      let onEnd: (result: any) => void
+      param.plugins?.[0].setup({
+        onEnd: (cb: (result: any) => void) => {
+          onEnd = cb
+        },
+      } as PluginBuild)
+      onEnd!({ outputFiles: [{ text: code }] })
+
+      return {
+        watch: vi.fn(),
+        dispose: mockEsbuildDispose,
+      }
+    })
+  }
 
   beforeEach(async () => {
-    mockEsbuild = vi.mocked((await import('esbuild')).build)
-    mockPathToFileURL = vi.mocked((await import('node:url')).pathToFileURL)
-    mockExtname = vi.mocked((await import('node:path')).extname)
+    mockEsbuildDispose = vi.fn()
+    mockEsbuild = vi.mocked((await import('esbuild')).context)
 
     vi.clearAllMocks()
   })
@@ -39,18 +51,15 @@ describe('buildAndImportApp', () => {
     const filePath = '/path/to/app.ts'
     const bundledCode = 'export default app;'
 
-    mockExtname.mockReturnValue('.ts')
-    mockEsbuild.mockResolvedValue({
-      outputFiles: [{ text: bundledCode }],
-    })
-
+    setupBundledCode(bundledCode)
     // Mock dynamic import
     const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
     vi.doMock(dataUrl, () => ({ default: mockApp }))
 
-    const result = await buildAndImportApp(filePath)
+    const buildIterator = buildAndImportApp(filePath)
+    const result = (await buildIterator.next()).value
 
-    expect(mockExtname).toHaveBeenCalledWith(filePath)
+    expect(mockEsbuildDispose).toHaveBeenCalled() // watch: false
     expect(mockEsbuild).toHaveBeenCalledWith({
       entryPoints: [filePath],
       bundle: true,
@@ -61,6 +70,46 @@ describe('buildAndImportApp', () => {
       jsxImportSource: 'hono/jsx',
       platform: 'node',
       external: [],
+      plugins: [
+        {
+          name: 'watch',
+          setup: expect.any(Function),
+        },
+      ],
+    })
+    expect(result).toBe(mockApp)
+  })
+
+  it('should not dispose context when watch is true', async () => {
+    const mockApp = new Hono()
+    const filePath = '/path/to/app.ts'
+    const bundledCode = 'export default app;'
+
+    setupBundledCode(bundledCode)
+    // Mock dynamic import
+    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
+    vi.doMock(dataUrl, () => ({ default: mockApp }))
+
+    const buildIterator = buildAndImportApp(filePath, { watch: true })
+    const result = (await buildIterator.next()).value
+
+    expect(mockEsbuildDispose).not.toHaveBeenCalled() // watch: true
+    expect(mockEsbuild).toHaveBeenCalledWith({
+      entryPoints: [filePath],
+      bundle: true,
+      write: false,
+      format: 'esm',
+      target: 'node20',
+      jsx: 'automatic',
+      jsxImportSource: 'hono/jsx',
+      platform: 'node',
+      external: [],
+      plugins: [
+        {
+          name: 'watch',
+          setup: expect.any(Function),
+        },
+      ],
     })
     expect(result).toBe(mockApp)
   })
@@ -73,16 +122,14 @@ describe('buildAndImportApp', () => {
       external: ['@hono/node-server'],
     }
 
-    mockExtname.mockReturnValue('.jsx')
-    mockEsbuild.mockResolvedValue({
-      outputFiles: [{ text: bundledCode }],
-    })
+    setupBundledCode(bundledCode)
 
     // Mock dynamic import
     const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
     vi.doMock(dataUrl, () => ({ default: mockApp }))
 
-    const result = await buildAndImportApp(filePath, options)
+    const buildIterator = buildAndImportApp(filePath, options)
+    const result = (await buildIterator.next()).value
 
     expect(mockEsbuild).toHaveBeenCalledWith({
       entryPoints: [filePath],
@@ -94,6 +141,12 @@ describe('buildAndImportApp', () => {
       jsxImportSource: 'hono/jsx',
       platform: 'node',
       external: ['@hono/node-server'],
+      plugins: [
+        {
+          name: 'watch',
+          setup: expect.any(Function),
+        },
+      ],
     })
     expect(result).toBe(mockApp)
   })
@@ -103,16 +156,14 @@ describe('buildAndImportApp', () => {
     const filePath = '/path/to/app.tsx'
     const bundledCode = 'export default app;'
 
-    mockExtname.mockReturnValue('.tsx')
-    mockEsbuild.mockResolvedValue({
-      outputFiles: [{ text: bundledCode }],
-    })
+    setupBundledCode(bundledCode)
 
     // Mock dynamic import
     const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
     vi.doMock(dataUrl, () => ({ default: mockApp }))
 
-    const result = await buildAndImportApp(filePath)
+    const buildIterator = buildAndImportApp(filePath)
+    const result = (await buildIterator.next()).value
 
     expect(mockEsbuild).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -124,45 +175,14 @@ describe('buildAndImportApp', () => {
     expect(result).toBe(mockApp)
   })
 
-  it('should directly import JavaScript file without building', async () => {
-    const mockApp = new Hono()
-    const filePath = '/path/to/app.js'
-    const fileUrl = new URL(`file://${filePath}`)
-
-    mockExtname.mockReturnValue('.js')
-    mockPathToFileURL.mockReturnValue(fileUrl)
-
-    // Mock dynamic import for JS file
-    vi.doMock(fileUrl.href, () => ({ default: mockApp }))
-
-    const result = await buildAndImportApp(filePath)
-
-    expect(mockExtname).toHaveBeenCalledWith(filePath)
-    expect(mockPathToFileURL).toHaveBeenCalledWith(filePath)
-    expect(mockEsbuild).not.toHaveBeenCalled()
-    expect(result).toBe(mockApp)
-  })
-
   it('should handle esbuild errors', async () => {
     const filePath = '/path/to/app.ts'
     const buildError = new Error('Build failed')
 
-    mockExtname.mockReturnValue('.ts')
     mockEsbuild.mockRejectedValue(buildError)
+    const buildIterator = buildAndImportApp(filePath)
 
-    await expect(buildAndImportApp(filePath)).rejects.toThrow('Build failed')
-  })
-
-  it('should handle import errors for JS files', async () => {
-    const filePath = '/path/to/nonexistent.js'
-    const fileUrl = new URL(`file://${filePath}`)
-
-    mockExtname.mockReturnValue('.js')
-    mockPathToFileURL.mockReturnValue(fileUrl)
-
-    // Since we can't easily mock dynamic import, just test with a non-existent module
-    // The import will naturally fail
-    await expect(buildAndImportApp(filePath)).rejects.toThrow()
+    await expect(buildIterator.next()).rejects.toThrow('Build failed')
   })
 
   it('should use default empty options when none provided', async () => {
@@ -170,16 +190,14 @@ describe('buildAndImportApp', () => {
     const filePath = '/path/to/app.ts'
     const bundledCode = 'export default app;'
 
-    mockExtname.mockReturnValue('.ts')
-    mockEsbuild.mockResolvedValue({
-      outputFiles: [{ text: bundledCode }],
-    })
+    setupBundledCode(bundledCode)
 
     // Mock dynamic import
     const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
     vi.doMock(dataUrl, () => ({ default: mockApp }))
 
-    await buildAndImportApp(filePath)
+    const buildIterator = buildAndImportApp(filePath)
+    await buildIterator.next()
 
     expect(mockEsbuild).toHaveBeenCalledWith({
       entryPoints: [filePath],
@@ -191,6 +209,12 @@ describe('buildAndImportApp', () => {
       jsxImportSource: 'hono/jsx',
       platform: 'node',
       external: [],
+      plugins: [
+        {
+          name: 'watch',
+          setup: expect.any(Function),
+        },
+      ],
     })
   })
 })

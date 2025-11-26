@@ -12,6 +12,7 @@ interface RequestOptions {
   data?: string
   header?: string[]
   path?: string
+  watch: boolean
 }
 
 async function executeRequest(
