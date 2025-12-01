@@ -47,6 +47,11 @@ describe('serveCommand', () => {
       resolve: vi.fn(),
     }
 
+    mockModules = {
+      existsSync: vi.fn(),
+      resolve: vi.fn(),
+    }
+
     // Capture the fetch function passed to serve
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockServe.mockImplementation((options: any, callback?: any) => {
