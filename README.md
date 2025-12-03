@@ -156,6 +156,7 @@ hono request [file] [options]
 - `-X, --method <method>` - HTTP method (default: GET)
 - `-d, --data <data>` - Request body data
 - `-H, --header <header>` - Custom headers (can be used multiple times)
+- `-w, --watch` - Watch for changes and resend request
 
 **Examples:**
 

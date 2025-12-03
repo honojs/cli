@@ -24,13 +24,27 @@ describe('requestCommand', () => {
   let mockModules: any
   let mockBuildAndImportApp: any
 
+  const createBuildIterator = (app: Hono) => {
+    const iterator = {
+      next: vi
+        .fn()
+        .mockResolvedValueOnce({ value: app, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      [Symbol.asyncIterator]() {
+        return this
+      },
+    }
+    return iterator
+  }
+
   const setupBasicMocks = (appPath: string, mockApp: Hono) => {
     mockModules.existsSync.mockReturnValue(true)
     mockModules.realpathSync.mockReturnValue(appPath)
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {
       return `${cwd}/${path}`
     })
-    mockBuildAndImportApp.mockResolvedValue(mockApp)
+    mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
   }
 
   beforeEach(async () => {
@@ -66,6 +80,41 @@ describe('requestCommand', () => {
 
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
+
+    expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
+      external: ['@hono/node-server'],
+      watch: false,
+    })
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: '{"message":"Hello"}',
+          headers: { 'content-type': 'application/json' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
+  it('should handle GET request to specific file', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync(['node', 'test', 'request', '-w', '-P', '/', 'test-app.js'])
+
+    // Verify resolve was called with correct arguments
+    expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
+
+    expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
+      external: ['@hono/node-server'],
+      watch: true,
+    })
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
       JSON.stringify(
@@ -134,7 +183,7 @@ describe('requestCommand', () => {
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {
       return `${cwd}/${path}`
     })
-    mockBuildAndImportApp.mockResolvedValue(mockApp)
+    mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
     await program.parseAsync(['node', 'test', 'request'])
 

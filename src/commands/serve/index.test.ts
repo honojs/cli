@@ -1,26 +1,11 @@
 import { Command } from 'commander'
-import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { execFile } from 'node:child_process'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 // Mock dependencies
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-  realpathSync: vi.fn(),
-}))
-
-vi.mock('node:path', () => ({
-  extname: vi.fn(),
-  resolve: vi.fn(),
-}))
-
-vi.mock('node:url', () => ({
-  pathToFileURL: vi.fn(),
-}))
-
-vi.mock('esbuild', () => ({
-  build: vi.fn(),
-}))
-
 vi.mock('@hono/node-server', () => ({
   serve: vi.fn(),
 }))
@@ -44,6 +29,7 @@ import { serveCommand } from './index.js'
 
 describe('serveCommand', () => {
   let program: Command
+  let mockEsbuild: any
   let mockModules: any
   let mockServe: any
   let mockShowRoutes: any
@@ -53,17 +39,13 @@ describe('serveCommand', () => {
     program = new Command()
     serveCommand(program)
 
-    // Get mocked modules
-    mockModules = {
-      existsSync: vi.mocked((await import('node:fs')).existsSync),
-      realpathSync: vi.mocked((await import('node:fs')).realpathSync),
-      extname: vi.mocked((await import('node:path')).extname),
-      resolve: vi.mocked((await import('node:path')).resolve),
-      pathToFileURL: vi.mocked((await import('node:url')).pathToFileURL),
-    }
-
     mockServe = vi.mocked((await import('@hono/node-server')).serve)
     mockShowRoutes = vi.mocked((await import('hono/dev')).showRoutes)
+
+    mockModules = {
+      existsSync: vi.fn(),
+      resolve: vi.fn(),
+    }
 
     // Capture the fetch function passed to serve
     mockServe.mockImplementation((options: any, callback?: any) => {
@@ -81,11 +63,6 @@ describe('serveCommand', () => {
   })
 
   it('should start server with default port', async () => {
-    mockModules.existsSync.mockReturnValue(false)
-    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
-      return `${cwd}/${path}`
-    })
-
     await program.parseAsync(['node', 'test', 'serve'])
 
     // Verify serve was called with default port 7070
@@ -99,11 +76,6 @@ describe('serveCommand', () => {
   })
 
   it('should start server with custom port', async () => {
-    mockModules.existsSync.mockReturnValue(false)
-    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
-      return `${cwd}/${path}`
-    })
-
     await program.parseAsync(['node', 'test', 'serve', '-p', '8080'])
 
     // Verify serve was called with custom port
@@ -116,26 +88,57 @@ describe('serveCommand', () => {
     )
   })
 
-  it('should serve app that responds correctly to requests', async () => {
-    const mockApp = new Hono()
-    mockApp.get('/', (c) => c.text('Hello World'))
-    mockApp.get('/api', (c) => c.json({ message: 'API response' }))
-
-    const expectedPath = 'app.js'
-    const absolutePath = `${process.cwd()}/${expectedPath}`
-
-    mockModules.existsSync.mockReturnValue(true)
-    mockModules.realpathSync.mockReturnValue(absolutePath)
-    mockModules.extname.mockReturnValue('.js')
+  it('should start server with custom port 0 by allocating a ephemeral port', async () => {
+    mockModules.existsSync.mockReturnValue(false)
     mockModules.resolve.mockImplementation((cwd: string, path: string) => {
       return `${cwd}/${path}`
     })
-    mockModules.pathToFileURL.mockReturnValue(new URL(`file://${absolutePath}`))
 
-    // Mock the import of JS file
-    vi.doMock(absolutePath, () => ({ default: mockApp }))
+    await program.parseAsync(['node', 'test', 'serve', '-p', '0'])
 
-    await program.parseAsync(['node', 'test', 'serve', 'app.js'])
+    expect(mockServe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fetch: expect.any(Function),
+        port: 0,
+      }),
+      expect.any(Function)
+    )
+  })
+
+  it('should serve app that responds correctly to requests', async () => {
+    const appDir = mkdtempSync(join(tmpdir(), 'hono-cli-serve-test'))
+    mkdirSync(appDir, { recursive: true })
+    const appFile = join(appDir, 'app.ts')
+    writeFileSync(
+      appFile,
+      `
+import { Hono } from 'hono'
+
+const app = new Hono()
+app.get('/', (c) => c.text('Hello World'))
+app.get('/api', (c) => c.json({ message: 'API response' }))
+
+export default app
+`
+    )
+    writeFileSync(
+      join(appDir, 'package.json'),
+      JSON.stringify({
+        type: 'module',
+        dependencies: {
+          hono: 'latest',
+        },
+      })
+    )
+    process.chdir(appDir)
+    await new Promise<void>((resolve) => {
+      const child = execFile('npm', ['install'])
+      child.on('exit', () => {
+        resolve()
+      })
+    })
+
+    await program.parseAsync(['node', 'test', 'serve', appFile])
 
     // Test the captured fetch function
     const rootRequest = new Request('http://localhost:7070/')
@@ -149,11 +152,6 @@ describe('serveCommand', () => {
   })
 
   it('should return 404 for non-existent routes when no app file exists', async () => {
-    mockModules.existsSync.mockReturnValue(false)
-    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
-      return `${cwd}/${path}`
-    })
-
     await program.parseAsync(['node', 'test', 'serve'])
 
     // Test 404 behavior with default empty app
@@ -181,11 +179,6 @@ describe('serveCommand', () => {
   })
 
   it('should handle typical use case: basicAuth + proxy to ramen-api.dev', async () => {
-    mockModules.existsSync.mockReturnValue(false)
-    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
-      return `${cwd}/${path}`
-    })
-
     // Mock basicAuth middleware
     const mockBasicAuth = vi.fn().mockImplementation(() => {
       return async (c: any, next: any) => {
@@ -255,5 +248,21 @@ describe('serveCommand', () => {
     const unknownResponse = await capturedFetchFunction(unknownRequest)
     expect(unknownResponse.status).toBe(404)
     expect(await unknownResponse.text()).toBe('API endpoint not found')
+  })
+
+  describe('port validation', () => {
+    it.each(['-1', '65536', '2048GB', 'invalid'])(
+      'should throw error when port is invalid %s',
+      async (port) => {
+        mockModules.existsSync.mockReturnValue(false)
+        mockModules.resolve.mockImplementation((cwd: string, path: string) => {
+          return `${cwd}/${path}`
+        })
+
+        expect(program.parseAsync(['node', 'test', 'serve', '-p', port])).rejects.toThrow(
+          `Port must be a number between 0 and 65535. Received: ${port}\n`
+        )
+      }
+    )
   })
 })

@@ -11,6 +11,7 @@ interface RequestOptions {
   data?: string
   header?: string[]
   path?: string
+  watch: boolean
 }
 
 export function requestCommand(program: Command) {
@@ -21,6 +22,7 @@ export function requestCommand(program: Command) {
     .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <data>', 'Request body data')
+    .option('-w, --watch', 'Watch for changes and resend request', false)
     .option(
       '-H, --header <header>',
       'Custom headers',
@@ -31,16 +33,19 @@ export function requestCommand(program: Command) {
     )
     .action(async (file: string | undefined, options: RequestOptions) => {
       const path = options.path || '/'
-      const result = await executeRequest(file, path, options)
-      console.log(JSON.stringify(result, null, 2))
+      const watch = options.watch
+      const buildIterator = getBuildIterator(file, watch)
+      for await (const app of buildIterator) {
+        const result = await executeRequest(app, path, options)
+        console.log(JSON.stringify(result, null, 2))
+      }
     })
 }
 
-export async function executeRequest(
+export function getBuildIterator(
   appPath: string | undefined,
-  requestPath: string,
-  options: RequestOptions
-): Promise<{ status: number; body: string; headers: Record<string, string> }> {
+  watch: boolean
+): AsyncGenerator<Hono> {
   // Determine entry file path
   let entry: string
   let resolvedAppPath: string
@@ -62,14 +67,17 @@ export async function executeRequest(
   }
 
   const appFilePath = realpathSync(resolvedAppPath)
-  const app: Hono = await buildAndImportApp(appFilePath, {
+  return buildAndImportApp(appFilePath, {
     external: ['@hono/node-server'],
+    watch,
   })
+}
 
-  if (!app || typeof app.request !== 'function') {
-    throw new Error('No valid Hono app exported from the file')
-  }
-
+export async function executeRequest(
+  app: Hono,
+  requestPath: string,
+  options: RequestOptions
+): Promise<{ status: number; body: string; headers: Record<string, string> }> {
   // Build request
   const url = new URL(requestPath, 'http://localhost')
   const requestInit: RequestInit = {
