@@ -29,10 +29,11 @@ import { serveCommand } from './index.js'
 
 describe('serveCommand', () => {
   let program: Command
-  let mockEsbuild: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockModules: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockServe: any
-  let mockShowRoutes: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let capturedFetchFunction: any
 
   beforeEach(async () => {
@@ -40,7 +41,11 @@ describe('serveCommand', () => {
     serveCommand(program)
 
     mockServe = vi.mocked((await import('@hono/node-server')).serve)
-    mockShowRoutes = vi.mocked((await import('hono/dev')).showRoutes)
+
+    mockModules = {
+      existsSync: vi.fn(),
+      resolve: vi.fn(),
+    }
 
     mockModules = {
       existsSync: vi.fn(),
@@ -48,6 +53,7 @@ describe('serveCommand', () => {
     }
 
     // Capture the fetch function passed to serve
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockServe.mockImplementation((options: any, callback?: any) => {
       capturedFetchFunction = options.fetch
       if (callback) {
@@ -181,6 +187,7 @@ export default app
   it('should handle typical use case: basicAuth + proxy to ramen-api.dev', async () => {
     // Mock basicAuth middleware
     const mockBasicAuth = vi.fn().mockImplementation(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return async (c: any, next: any) => {
         const auth = c.req.header('Authorization')
         if (!auth || auth !== 'Basic aG9ubzpob25v') {

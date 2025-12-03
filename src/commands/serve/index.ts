@@ -62,6 +62,7 @@ export function serveCommand(program: Command) {
         }
 
         // Import all builtin functions from the builtin map
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allFunctions: Record<string, any> = {}
         const uniqueModules = [...new Set(Object.values(builtinMap))]
 
@@ -74,7 +75,7 @@ export function serveCommand(program: Command) {
                 allFunctions[funcName] = module[funcName]
               }
             }
-          } catch (error) {
+          } catch {
             // Skip modules that can't be imported (optional dependencies)
           }
         }
