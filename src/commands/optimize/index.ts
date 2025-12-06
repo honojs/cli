@@ -19,6 +19,7 @@ import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
+const HONO_REMOVAL_METHODS = ['route', 'mount', 'fire']
 const REQUEST_BODY_METHODS = [
   'parseBody',
   'json',
@@ -28,8 +29,7 @@ const REQUEST_BODY_METHODS = [
   'formData',
   '#cachedBody',
 ]
-
-const CONTEXT_RESPONSE_METHODS = ['body', 'json', 'text', 'html']
+const CONTEXT_RESPONSE_METHODS = ['body', 'json', 'text', 'html', 'redirect']
 
 export function optimizeCommand(program: Command) {
   program
@@ -40,8 +40,9 @@ export function optimizeCommand(program: Command) {
     .option('-m, --minify', 'minify output file')
     .option(
       '--no-request-body-api-removal',
-      'do not remove request body APIs if they are not needed'
+      'do not remove request body APIs even if they are not needed'
     )
+    .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
     .option('--context-response-api-removal', 'remove response utility APIs from Context object')
     .action(
       async (
@@ -50,6 +51,7 @@ export function optimizeCommand(program: Command) {
           outfile: string
           minify?: boolean
           requestBodyApiRemoval: boolean
+          honoApiRemoval: boolean
           contextResponseApiRemoval: boolean
         }
       ) => {
@@ -68,6 +70,63 @@ export function optimizeCommand(program: Command) {
         const appFilePath = realpathSync(appPath)
         const app: Hono = await buildAndImportApp(appFilePath, {
           external: ['@hono/node-server'],
+          plugins: [
+            {
+              name: 'hono-optimize',
+              setup(build) {
+                const honoPseudoImportPath = 'hono-optimized-pseudo-import-path'
+
+                build.onResolve({ filter: /^hono$/ }, async (args) => {
+                  if (!args.importer) {
+                    // prevent recursive resolution of "hono"
+                    return undefined
+                  }
+
+                  // resolve original import path for "hono"
+                  const resolved = await build.resolve(args.path, {
+                    kind: 'import-statement',
+                    resolveDir: args.resolveDir,
+                  })
+
+                  // mark "honoOptimize" to the resolved path for filtering
+                  return {
+                    path: join(dirname(resolved.path), honoPseudoImportPath),
+                  }
+                })
+                build.onLoad({ filter: new RegExp(`/${honoPseudoImportPath}$`) }, async () => {
+                  return {
+                    contents: `
+import { HonoBase } from 'hono/hono-base'
+import { TrieRouter } from 'hono/router/trie-router'
+
+export class Hono extends HonoBase {
+  constructor(options = {}) {
+    super(options)
+    this.router = options.router ?? new TrieRouter()
+  }
+
+  unusedMethods = ${JSON.stringify(
+    HONO_REMOVAL_METHODS.reduce(
+      (acc, method) => {
+        acc[method] = 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
+  )}
+  ${HONO_REMOVAL_METHODS.map(
+    (method) => `get ${method}() {
+    delete this.unusedMethods["${method}"]
+    return super.${method}
+  }`
+  ).join('\n')}
+}
+`,
+                  }
+                })
+              },
+            },
+          ],
         })
 
         let routerName
@@ -114,6 +173,11 @@ export function optimizeCommand(program: Command) {
           app.routes.every(({ method }) =>
             [METHOD_NAME_ALL, 'GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
           )
+        const unusedHonoMethods: Record<string, number> = (
+          app as Hono & { unusedMethods: Record<string, number> }
+        ).unusedMethods
+        const removeHonoApi =
+          options.honoApiRemoval !== false && Object.keys(unusedHonoMethods).length > 0
 
         console.log('[Optimized]')
         console.log(`  Router: ${routerName}`)
@@ -122,6 +186,9 @@ export function optimizeCommand(program: Command) {
         }
         if (options.contextResponseApiRemoval) {
           removed.push('Context response APIs')
+        }
+        if (removeHonoApi) {
+          removed.push(`Hono APIs (${Object.keys(unusedHonoMethods).join(', ')})`)
         }
         if (removed.length > 0) {
           console.log(`  Removed: ${removed.join(', ')}`)
@@ -231,6 +298,37 @@ export class Hono extends HonoBase {
                       let contents = readFileSync(join(dirname(args.path), 'context.js'), 'utf-8')
 
                       contents = removeApis(contents, 'Context', CONTEXT_RESPONSE_METHODS)
+                      return {
+                        contents,
+                      }
+                    }
+                  )
+                }
+
+                if (removeHonoApi) {
+                  const honoPseudoImportPath = 'hono-base-optimized-pseudo-import-path'
+                  build.onResolve({ filter: /hono-base\.js$|^hono\/hono-base$/ }, async (args) => {
+                    if (!args.importer) {
+                      return undefined
+                    }
+
+                    // resolve original import path for "context"
+                    const resolved = await build.resolve(args.path, {
+                      kind: 'import-statement',
+                      resolveDir: args.resolveDir,
+                    })
+
+                    // mark "honoOptimize" to the resolved path for filtering
+                    return {
+                      path: join(dirname(resolved.path), honoPseudoImportPath),
+                    }
+                  })
+                  build.onLoad(
+                    { filter: new RegExp(`/${honoPseudoImportPath}$`) },
+                    async (args) => {
+                      let contents = readFileSync(join(dirname(args.path), 'hono-base.js'), 'utf-8')
+
+                      contents = removeApis(contents, 'Hono', Object.keys(unusedHonoMethods))
                       return {
                         contents,
                       }
