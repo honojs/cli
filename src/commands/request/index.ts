@@ -2,7 +2,6 @@ import type { Command } from 'commander'
 import type { Hono } from 'hono'
 import { existsSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
-import type { JSONData } from '../../types/branded-types.js'
 import { buildAndImportApp } from '../../utils/build.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
@@ -40,7 +39,11 @@ export function requestCommand(program: Command) {
       const buildIterator = getBuildIterator(file, watch)
       for await (const app of buildIterator) {
         const result = await executeRequest(app, path, options)
-        const outputBody = parseResponseBody(result.body)
+        const outputBody = formatResponseBody(
+          result.body,
+          result.headers['content-type'],
+          options.exclude
+        )
         const buffer = await result.response.clone().arrayBuffer()
         if (isBinaryResponse(buffer)) {
           console.warn('Binary output can mess up your terminal.')
@@ -140,11 +143,25 @@ export async function executeRequest(
   }
 }
 
-const parseResponseBody = (responseBody: string): JSONData | string => {
-  try {
-    return JSON.parse(responseBody) as JSONData
-  } catch {
-    return responseBody
+const formatResponseBody = (
+  responseBody: string,
+  contentType: string | undefined,
+  excludeOption: boolean
+): string => {
+  switch (contentType) {
+    case 'application/json': // expect c.json(data) response
+      try {
+        const parsedJSON = JSON.parse(responseBody)
+        if (excludeOption) {
+          return JSON.stringify(parsedJSON, null, 2)
+        }
+        return parsedJSON
+      } catch {
+        console.error('Response indicated JSON content type but failed to parse JSON.')
+        return responseBody
+      }
+    default:
+      return responseBody
   }
 }
 

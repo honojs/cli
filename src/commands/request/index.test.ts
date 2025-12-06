@@ -408,6 +408,6 @@ describe('requestCommand', () => {
     mockApp.get('/data', (c) => c.json(jsonBody))
     setupBasicMocks('test-app.js', mockApp)
     await program.parseAsync(['node', 'test', 'request', '-P', '/data', '--exclude', 'test-app.js'])
-    expect(consoleLogSpy).toHaveBeenCalledWith(jsonBody)
+    expect(consoleLogSpy).toHaveBeenCalledWith(JSON.stringify(jsonBody, null, 2))
   })
 })
