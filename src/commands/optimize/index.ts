@@ -1,5 +1,11 @@
 import { parse } from '@babel/parser'
-import type { ClassMethod, ClassPrivateProperty, Identifier, PrivateName } from '@babel/types'
+import type {
+  ClassMethod,
+  ClassProperty,
+  ClassPrivateProperty,
+  Identifier,
+  PrivateName,
+} from '@babel/types'
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
@@ -23,6 +29,8 @@ const REQUEST_BODY_METHODS = [
   '#cachedBody',
 ]
 
+const CONTEXT_RESPONSE_METHODS = ['body', 'json', 'text', 'html']
+
 export function optimizeCommand(program: Command) {
   program
     .command('optimize')
@@ -34,10 +42,16 @@ export function optimizeCommand(program: Command) {
       '--no-request-body-api-removal',
       'do not remove request body APIs if they are not needed'
     )
+    .option('--context-response-api-removal', 'remove response utility APIs from Context object')
     .action(
       async (
         entry: string,
-        options: { outfile: string; minify?: boolean; requestBodyApiRemoval: boolean }
+        options: {
+          outfile: string
+          minify?: boolean
+          requestBodyApiRemoval: boolean
+          contextResponseApiRemoval: boolean
+        }
       ) => {
         if (!entry) {
           entry =
@@ -105,6 +119,9 @@ export function optimizeCommand(program: Command) {
         console.log(`  Router: ${routerName}`)
         if (removeRequestBodyApi) {
           removed.push('Request body APIs')
+        }
+        if (options.contextResponseApiRemoval) {
+          removed.push('Context response APIs')
         }
         if (removed.length > 0) {
           console.log(`  Removed: ${removed.join(', ')}`)
@@ -182,7 +199,38 @@ export class Hono extends HonoBase {
                     async (args) => {
                       let contents = readFileSync(join(dirname(args.path), 'request.js'), 'utf-8')
 
-                      contents = removeHonoRequestBodyApis(contents)
+                      contents = removeApis(contents, 'HonoRequest', REQUEST_BODY_METHODS)
+                      return {
+                        contents,
+                      }
+                    }
+                  )
+                }
+
+                if (options.contextResponseApiRemoval) {
+                  const honoRequestPseudoImportPath = 'hono-optimized-context-pseudo-import-path'
+                  build.onResolve({ filter: /context\.js$/ }, async (args) => {
+                    if (!args.importer) {
+                      return undefined
+                    }
+
+                    // resolve original import path for "context"
+                    const resolved = await build.resolve(args.path, {
+                      kind: 'import-statement',
+                      resolveDir: args.resolveDir,
+                    })
+
+                    // mark "honoOptimize" to the resolved path for filtering
+                    return {
+                      path: join(dirname(resolved.path), honoRequestPseudoImportPath),
+                    }
+                  })
+                  build.onLoad(
+                    { filter: new RegExp(`/${honoRequestPseudoImportPath}$`) },
+                    async (args) => {
+                      let contents = readFileSync(join(dirname(args.path), 'context.js'), 'utf-8')
+
+                      contents = removeApis(contents, 'Context', CONTEXT_RESPONSE_METHODS)
                       return {
                         contents,
                       }
@@ -201,9 +249,9 @@ export class Hono extends HonoBase {
 }
 
 type NodeWithRange = { start: number | null | undefined; end: number | null | undefined }
-type ClassElementNode = (ClassMethod | ClassPrivateProperty) & NodeWithRange
+type ClassElementNode = (ClassMethod | ClassProperty | ClassPrivateProperty) & NodeWithRange
 
-const removeHonoRequestBodyApis = (contents: string): string => {
+const removeApis = (contents: string, className: string, methods: string[]): string => {
   const ast = parse(contents, {
     sourceType: 'module',
     plugins: [
@@ -227,7 +275,7 @@ const removeHonoRequestBodyApis = (contents: string): string => {
     for (const declaration of statement.declarations) {
       if (
         declaration.id.type !== 'Identifier' ||
-        declaration.id.name !== 'HonoRequest' ||
+        declaration.id.name !== className ||
         !declaration.init ||
         declaration.init.type !== 'ClassExpression'
       ) {
@@ -235,7 +283,7 @@ const removeHonoRequestBodyApis = (contents: string): string => {
       }
 
       for (const member of declaration.init.body.body as ClassElementNode[]) {
-        if (!shouldRemoveClassMember(member)) {
+        if (!shouldRemoveClassMember(member, methods)) {
           continue
         }
         const start = member.start ?? 0
@@ -249,11 +297,11 @@ const removeHonoRequestBodyApis = (contents: string): string => {
   return modified ? magic.toString() : contents
 }
 
-const shouldRemoveClassMember = (member: ClassElementNode): boolean => {
+const shouldRemoveClassMember = (member: ClassElementNode, methods: string[]): boolean => {
   if (
-    member.type === 'ClassMethod' &&
+    (member.type === 'ClassMethod' || member.type === 'ClassProperty') &&
     isIdentifier(member.key) &&
-    REQUEST_BODY_METHODS.includes(member.key.name)
+    methods.includes(member.key.name)
   ) {
     return true
   }
@@ -261,7 +309,7 @@ const shouldRemoveClassMember = (member: ClassElementNode): boolean => {
   if (
     member.type === 'ClassPrivateProperty' &&
     isPrivateIdentifier(member.key) &&
-    REQUEST_BODY_METHODS.includes(`#${member.key.id.name}`)
+    methods.includes(`#${member.key.id.name}`)
   ) {
     return true
   }
