@@ -1,10 +1,13 @@
 import * as esbuild from 'esbuild'
+import type { Plugin } from 'esbuild'
 import { extname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 export interface BuildOptions {
   external?: string[]
+  plugins?: Plugin[]
 }
+
 
 /**
  * Build and import a TypeScript/JSX/JS file as an app
@@ -23,7 +26,8 @@ export async function buildAndImportApp(filePath: string, options: BuildOptions 
       jsx: 'automatic',
       jsxImportSource: 'hono/jsx',
       platform: 'node',
-      external: options.external || [],
+      external: [],
+      ...options,
     })
 
     // Execute the bundled code using data URL
