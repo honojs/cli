@@ -142,7 +142,7 @@ export async function executeRequest(
 
 const parsedResponseBody = (responseBody: string): JSONData | string => {
   try {
-    return JSON.stringify(JSON.parse(responseBody), null, 2) as JSONData
+    return JSON.parse(responseBody) as JSONData
   } catch {
     return responseBody
   }

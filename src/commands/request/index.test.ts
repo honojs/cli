@@ -93,7 +93,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: JSON.stringify({ message: 'Hello' }, null, 2),
+          body: { message: 'Hello' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -123,7 +123,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: JSON.stringify({ message: 'Hello' }, null, 2),
+          body: { message: 'Hello' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -161,7 +161,7 @@ describe('requestCommand', () => {
     const expectedOutput = JSON.stringify(
       {
         status: 201,
-        body: JSON.stringify({ received: 'test data' }, null, 2),
+        body: { received: 'test data' },
         headers: { 'content-type': 'application/json', 'x-custom-header': 'test-value' },
       },
       null,
@@ -198,7 +198,7 @@ describe('requestCommand', () => {
     const expectedOutput = JSON.stringify(
       {
         status: 200,
-        body: JSON.stringify({ message: 'Default app' }, null, 2),
+        body: { message: 'Default app' },
         headers: { 'content-type': 'application/json' },
       },
       null,
@@ -236,7 +236,9 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: JSON.stringify({ auth: 'Bearer token123' }, null, 2),
+          body: {
+            auth: 'Bearer token123',
+          },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -276,11 +278,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: JSON.stringify(
-            { auth: 'Bearer token456', userAgent: 'TestClient/1.0', custom: 'custom-value' },
-            null,
-            2
-          ),
+          body: { auth: 'Bearer token456', userAgent: 'TestClient/1.0', custom: 'custom-value' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -335,7 +333,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: JSON.stringify({ success: true }, null, 2),
+          body: { success: true },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -410,6 +408,6 @@ describe('requestCommand', () => {
     mockApp.get('/data', (c) => c.json(jsonBody))
     setupBasicMocks('test-app.js', mockApp)
     await program.parseAsync(['node', 'test', 'request', '-P', '/data', '--exclude', 'test-app.js'])
-    expect(consoleLogSpy).toHaveBeenCalledWith(JSON.stringify(jsonBody, null, 2))
+    expect(consoleLogSpy).toHaveBeenCalledWith(jsonBody)
   })
 })
