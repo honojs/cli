@@ -40,7 +40,7 @@ export function requestCommand(program: Command) {
       const buildIterator = getBuildIterator(file, watch)
       for await (const app of buildIterator) {
         const result = await executeRequest(app, path, options)
-        const outputBody = parsedResponseBody(result.body)
+        const outputBody = parseResponseBody(result.body)
         const buffer = await result.response.clone().arrayBuffer()
         if (isBinaryResponse(buffer)) {
           console.warn('Binary output can mess up your terminal.')
@@ -140,7 +140,7 @@ export async function executeRequest(
   }
 }
 
-const parsedResponseBody = (responseBody: string): JSONData | string => {
+const parseResponseBody = (responseBody: string): JSONData | string => {
   try {
     return JSON.parse(responseBody) as JSONData
   } catch {
