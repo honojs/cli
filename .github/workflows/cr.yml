@@ -1,4 +1,4 @@
-name: cr
+name: CR
 on:
   push:
     branches: [main]
