@@ -14,7 +14,6 @@ jobs:
   publish:
     if: github.repository == 'honojs/cli' && (github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'cr-tracked'))
     runs-on: ubuntu-latest
-    name: 'Publish: pkg.pr.new'
     steps:
       - uses: actions/checkout@v6
         with:
