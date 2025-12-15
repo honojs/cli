@@ -84,6 +84,7 @@ describe('requestCommand', () => {
     expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
       external: ['@hono/node-server'],
       watch: false,
+      sourcemap: true,
     })
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -114,6 +115,7 @@ describe('requestCommand', () => {
     expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
       external: ['@hono/node-server'],
       watch: true,
+      sourcemap: true,
     })
 
     expect(consoleLogSpy).toHaveBeenCalledWith(

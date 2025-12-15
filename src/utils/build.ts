@@ -4,6 +4,7 @@ import type { Hono } from 'hono'
 export interface BuildOptions {
   external?: string[]
   watch?: boolean
+  sourcemap?: boolean
 }
 
 /**
@@ -25,6 +26,9 @@ export async function* buildAndImportApp(
 
   const context = await esbuild.context({
     entryPoints: [filePath],
+    sourcemap: options.sourcemap ?? false,
+    sourcesContent: false,
+    sourceRoot: process.cwd(),
     bundle: true,
     write: false,
     format: 'esm',
@@ -40,7 +44,10 @@ export async function* buildAndImportApp(
           build.onEnd(async (result) => {
             try {
               // Execute the bundled code using data URL
-              const code = result.outputFiles?.[0]?.text || ''
+              let code = result.outputFiles?.[0]?.text || ''
+              if (options.sourcemap) {
+                code += `\n//# sourceURL=file://${process.cwd()}/__hono_cli_bundle__.js`
+              }
               const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
               const module = await import(dataUrl)
               const app = module.default

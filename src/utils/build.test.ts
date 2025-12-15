@@ -63,6 +63,9 @@ describe('buildAndImportApp', () => {
       entryPoints: [filePath],
       bundle: true,
       write: false,
+      sourcemap: false,
+      sourcesContent: false,
+      sourceRoot: process.cwd(),
       format: 'esm',
       target: 'node20',
       jsx: 'automatic',
@@ -97,6 +100,9 @@ describe('buildAndImportApp', () => {
       entryPoints: [filePath],
       bundle: true,
       write: false,
+      sourcemap: false,
+      sourcesContent: false,
+      sourceRoot: process.cwd(),
       format: 'esm',
       target: 'node20',
       jsx: 'automatic',
@@ -134,6 +140,9 @@ describe('buildAndImportApp', () => {
       entryPoints: [filePath],
       bundle: true,
       write: false,
+      sourcemap: false,
+      sourcesContent: false,
+      sourceRoot: process.cwd(),
       format: 'esm',
       target: 'node20',
       jsx: 'automatic',
@@ -174,6 +183,33 @@ describe('buildAndImportApp', () => {
     expect(result).toBe(mockApp)
   })
 
+  it('should build and import file with sourcemap', async () => {
+    const mockApp = new Hono()
+    const filePath = '/path/to/app.ts'
+    const bundledCode = 'export default app;'
+
+    setupBundledCode(bundledCode)
+
+    // Mock dynamic import
+    const dataUrl = `data:text/javascript;base64,${Buffer.from(`${bundledCode}\n//# sourceURL=file://${process.cwd()}/__hono_cli_bundle__.js`).toString('base64')}`
+    vi.doMock(dataUrl, () => ({ default: mockApp }))
+
+    const buildIterator = buildAndImportApp(filePath, { sourcemap: true })
+    const result = (await buildIterator.next()).value
+
+    expect(mockEsbuild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryPoints: [filePath],
+        jsx: 'automatic',
+        jsxImportSource: 'hono/jsx',
+        sourcemap: true,
+        sourcesContent: false,
+        sourceRoot: process.cwd(),
+      })
+    )
+    expect(result).toBe(mockApp)
+  })
+
   it('should handle esbuild errors', async () => {
     const filePath = '/path/to/app.ts'
     const buildError = new Error('Build failed')
@@ -202,6 +238,9 @@ describe('buildAndImportApp', () => {
       entryPoints: [filePath],
       bundle: true,
       write: false,
+      sourcemap: false,
+      sourcesContent: false,
+      sourceRoot: process.cwd(),
       format: 'esm',
       target: 'node20',
       jsx: 'automatic',

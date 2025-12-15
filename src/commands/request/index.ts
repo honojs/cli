@@ -70,6 +70,7 @@ export function getBuildIterator(
   return buildAndImportApp(appFilePath, {
     external: ['@hono/node-server'],
     watch,
+    sourcemap: true,
   })
 }
 
