@@ -1,6 +1,6 @@
 {
   "name": "@hono/cli",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "type": "module",
   "bin": {
     "hono": "dist/cli.js"
@@ -46,6 +46,7 @@
     "eslint": "^9.37.0",
     "magic-string": "^0.30.21",
     "np": "^10.2.0",
+    "pkg-pr-new": "^0.0.62",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",
     "tsup": "^8.5.0",

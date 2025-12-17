@@ -227,4 +227,72 @@ describe('optimizeCommand', () => {
       }
     }
   )
+
+  it.each(
+    [
+      'node14',
+      'node18',
+      'node20',
+      'node22',
+      'node24',
+      'node26',
+      'deno1',
+      'deno2',
+      'es2022',
+      'es2024',
+    ].map((target) => ({
+      name: `should success with environment target: ${target}`,
+      target: target,
+    }))
+  )('$name', { timeout: 0 }, async ({ target }) => {
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({
+        name: 'hono-cli-optimize-test',
+        type: 'module',
+        dependencies: {
+          hono: 'latest',
+        },
+      })
+    )
+    await npmInstall()
+    writeFileSync(
+      join(dir, './src/index.ts'),
+      `
+            import { Hono } from 'hono'
+            const app = new Hono()
+            app.get('/', (c) => c.text('Hello, World!'))
+            export default app
+            `
+    )
+
+    const promise = program.parseAsync(['node', 'hono', 'optimize', '-t', target])
+    await expect(promise).resolves.not.toThrow()
+  })
+
+  it('should throw an error with invalid environment target', async () => {
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify({
+        name: 'hono-cli-optimize-test',
+        type: 'module',
+        dependencies: {
+          hono: 'latest',
+        },
+      })
+    )
+    await npmInstall()
+    writeFileSync(
+      join(dir, './src/index.ts'),
+      `
+            import { Hono } from 'hono'
+            const app = new Hono()
+            app.get('/', (c) => c.text('Hello, World!'))
+            export default app
+            `
+    )
+
+    const promise = program.parseAsync(['node', 'hono', 'optimize', '-t', 'hoge'])
+    await expect(promise).rejects.toThrowError()
+  })
 })

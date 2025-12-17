@@ -44,12 +44,14 @@ export function optimizeCommand(program: Command) {
     )
     .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
     .option('--context-response-api-removal', 'remove response utility APIs from Context object')
+    .option('-t, --target [target]', 'environment target (e.g., node24, deno2, es2024)', 'node20')
     .action(
       async (
         entry: string,
         options: {
           outfile: string
           minify?: boolean
+          target: string
           requestBodyApiRemoval: boolean
           honoApiRemoval: boolean
           contextResponseApiRemoval: boolean
@@ -68,7 +70,7 @@ export function optimizeCommand(program: Command) {
         }
 
         const appFilePath = realpathSync(appPath)
-        const app: Hono = await buildAndImportApp(appFilePath, {
+        const buildIterator = buildAndImportApp(appFilePath, {
           external: ['@hono/node-server'],
           plugins: [
             {
@@ -128,6 +130,7 @@ export class Hono extends HonoBase {
             },
           ],
         })
+        const app: Hono = (await buildIterator.next()).value
 
         let routerName
         let importStatement
@@ -201,7 +204,7 @@ export class Hono extends HonoBase {
           bundle: true,
           minify: options.minify,
           format: 'esm',
-          target: 'node20',
+          target: options.target,
           platform: 'node',
           jsx: 'automatic',
           jsxImportSource: 'hono/jsx',
