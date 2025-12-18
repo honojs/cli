@@ -43,7 +43,7 @@ export function optimizeCommand(program: Command) {
       'do not remove request body APIs even if they are not needed'
     )
     .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
-    .option('--context-response-api-removal', 'remove response utility APIs from Context object')
+    .option('--no-context-response-api-removal', 'remove response utility APIs from Context object')
     .option('-t, --target [target]', 'environment target (e.g., node24, deno2, es2024)', 'node20')
     .action(
       async (
@@ -68,6 +68,14 @@ export function optimizeCommand(program: Command) {
         if (!existsSync(appPath)) {
           throw new Error(`Entry file ${entry} does not exist`)
         }
+
+        const unusedContextResponseMethods = new Set(
+          options.contextResponseApiRemoval ? CONTEXT_RESPONSE_METHODS : []
+        )
+        const contextResponseMethodsRegExp = new RegExp(
+          `(?<=\\.)${[...unusedContextResponseMethods].join('|')}(?=\\()`,
+          'g'
+        )
 
         const appFilePath = realpathSync(appPath)
         const buildIterator = buildAndImportApp(appFilePath, {
@@ -125,6 +133,17 @@ export class Hono extends HonoBase {
 }
 `,
                   }
+                })
+
+                build.onLoad({ filter: /\.(?:jsx?|tsx?)/ }, async ({ path }) => {
+                  if (!path.match(/node_modules(\/|\\)hono(\/|\\)dist/)) {
+                    ;(readFileSync(path, 'utf8').match(contextResponseMethodsRegExp) || []).forEach(
+                      (m) => {
+                        unusedContextResponseMethods.delete(m)
+                      }
+                    )
+                  }
+                  return undefined
                 })
               },
             },
@@ -187,14 +206,14 @@ export class Hono extends HonoBase {
         if (removeRequestBodyApi) {
           removed.push('Request body APIs')
         }
-        if (options.contextResponseApiRemoval) {
-          removed.push('Context response APIs')
+        if (unusedContextResponseMethods.size !== 0) {
+          removed.push(`Context response APIs (${[...unusedContextResponseMethods].join(', ')})`)
         }
         if (removeHonoApi) {
           removed.push(`Hono APIs (${Object.keys(unusedHonoMethods).join(', ')})`)
         }
         if (removed.length > 0) {
-          console.log(`  Removed: ${removed.join(', ')}`)
+          console.log(`  Removed:\n${removed.map((r) => `    ${r}`).join('\n')}`)
         }
 
         const outfile = resolve(process.cwd(), options.outfile)
@@ -300,7 +319,7 @@ export class Hono extends HonoBase {
                     async (args) => {
                       let contents = readFileSync(join(dirname(args.path), 'context.js'), 'utf-8')
 
-                      contents = removeApis(contents, 'Context', CONTEXT_RESPONSE_METHODS)
+                      contents = removeApis(contents, 'Context', [...unusedContextResponseMethods])
                       return {
                         contents,
                       }
