@@ -244,6 +244,12 @@ hono serve \
 
 Generate an optimized Hono class and export bundled file.
 
+This command automatically applies the following optimizations to reduce bundle size:
+
+- **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when your application only uses GET, HEAD, or OPTIONS methods
+- **Context response API removal**: Removes unused response utility APIs (`c.body()`, `c.json()`, `c.text()`, `c.html()`, `c.redirect()`) from Context object
+- **Hono API removal**: Removes unused Hono methods (`route`, `mount`, `fire`) that are only used during application initialization
+
 ```bash
 hono optimize [entry] [options]
 ```
@@ -257,6 +263,9 @@ hono optimize [entry] [options]
 - `-o, --outfile <outfile>` - Output file
 - `-m, --minify` - minify output file
 - `-t, --target [target]` - environment target
+- `--no-request-body-api-removal` - Disable request body API removal optimization
+- `--no-context-response-api-removal` - Disable response utility API removal from Context object
+- `--no-hono-api-removal` - Disable Hono API removal optimization
 
 **Examples:**
 
@@ -272,6 +281,11 @@ hono optimize -m
 
 # Specify environment target
 hono optimize -t es2024
+
+# Disable specific optimizations
+hono optimize -m --no-request-body-api-removal
+hono optimize -m --no-context-response-api-removal
+hono optimize -m --no-hono-api-removal
 ```
 
 ## Tips
