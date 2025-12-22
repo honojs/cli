@@ -43,7 +43,10 @@ export function optimizeCommand(program: Command) {
       'do not remove request body APIs even if they are not needed'
     )
     .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
-    .option('--no-context-response-api-removal', 'remove response utility APIs from Context object')
+    .option(
+      '--no-context-response-api-removal',
+      'do not remove response utility APIs from Context object'
+    )
     .option('-t, --target [target]', 'environment target (e.g., node24, deno2, es2024)', 'node20')
     .action(
       async (
