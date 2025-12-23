@@ -21,6 +21,7 @@ import { requestCommand } from './index.js'
 describe('requestCommand', () => {
   let program: Command
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>
   let mockModules: any
   let mockBuildAndImportApp: any
 
@@ -51,6 +52,7 @@ describe('requestCommand', () => {
     program = new Command()
     requestCommand(program)
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     // Get mocked modules
     mockModules = {
@@ -66,6 +68,7 @@ describe('requestCommand', () => {
 
   afterEach(() => {
     consoleLogSpy.mockRestore()
+    consoleWarnSpy.mockRestore()
     vi.restoreAllMocks()
   })
 
@@ -91,7 +94,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: '{"message":"Hello"}',
+          body: { message: 'Hello' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -100,7 +103,7 @@ describe('requestCommand', () => {
     )
   })
 
-  it('should handle GET request to specific file', async () => {
+  it('should handle GET request to specific file with watch option', async () => {
     const mockApp = new Hono()
     mockApp.get('/', (c) => c.json({ message: 'Hello' }))
 
@@ -122,7 +125,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: '{"message":"Hello"}',
+          body: { message: 'Hello' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -160,7 +163,7 @@ describe('requestCommand', () => {
     const expectedOutput = JSON.stringify(
       {
         status: 201,
-        body: '{"received":"test data"}',
+        body: { received: 'test data' },
         headers: { 'content-type': 'application/json', 'x-custom-header': 'test-value' },
       },
       null,
@@ -197,7 +200,7 @@ describe('requestCommand', () => {
     const expectedOutput = JSON.stringify(
       {
         status: 200,
-        body: '{"message":"Default app"}',
+        body: { message: 'Default app' },
         headers: { 'content-type': 'application/json' },
       },
       null,
@@ -235,7 +238,9 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: '{"auth":"Bearer token123"}',
+          body: {
+            auth: 'Bearer token123',
+          },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -275,7 +280,7 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: '{"auth":"Bearer token456","userAgent":"TestClient/1.0","custom":"custom-value"}',
+          body: { auth: 'Bearer token456', userAgent: 'TestClient/1.0', custom: 'custom-value' },
           headers: { 'content-type': 'application/json' },
         },
         null,
@@ -330,12 +335,81 @@ describe('requestCommand', () => {
       JSON.stringify(
         {
           status: 200,
-          body: '{"success":true}',
+          body: { success: true },
           headers: { 'content-type': 'application/json' },
         },
         null,
         2
       )
     )
+  })
+
+  it('should handle HTML response', async () => {
+    const mockApp = new Hono()
+    const htmlContent = '<h1>Hello World</h1>'
+    mockApp.get('/html', (c) => c.html(htmlContent))
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '-P', '/html', 'test-app.js'])
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: htmlContent,
+          headers: { 'content-type': 'text/html; charset=UTF-8' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
+  it('should handle XML response', async () => {
+    const mockApp = new Hono()
+    const xmlContent = '<root><message>Hello</message></root>'
+    mockApp.get('/xml', (c) => c.body(xmlContent, 200, { 'Content-Type': 'application/xml' }))
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '-P', '/xml', 'test-app.js'])
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: xmlContent,
+          headers: { 'content-type': 'application/xml' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
+  it('should warn on binary PNG response', async () => {
+    const mockApp = new Hono()
+    const pngData = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])
+    mockApp.get('/image.png', (c) => c.body(pngData.buffer, 200, { 'Content-Type': 'image/png' }))
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '-P', '/image.png', 'test-app.js'])
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Binary output can mess up your terminal.')
+    expect(consoleLogSpy).not.toHaveBeenCalled()
+  })
+
+  it('should warn on binary PDF response', async () => {
+    const mockApp = new Hono()
+    const pdfData = new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55, 0, 0, 0, 0])
+    mockApp.get('/document.pdf', (c) =>
+      c.body(pdfData.buffer, 200, { 'Content-Type': 'application/pdf' })
+    )
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '-P', '/document.pdf', 'test-app.js'])
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Binary output can mess up your terminal.')
+    expect(consoleLogSpy).not.toHaveBeenCalled()
+  })
+
+  it('should exclude protocol headers when --exclude is used', async () => {
+    const mockApp = new Hono()
+    const jsonBody = { message: 'Success' }
+    mockApp.get('/data', (c) => c.json(jsonBody))
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '-P', '/data', '--exclude', 'test-app.js'])
+    expect(consoleLogSpy).toHaveBeenCalledWith(JSON.stringify(jsonBody, null, 2))
   })
 })

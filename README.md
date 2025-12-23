@@ -157,6 +157,7 @@ hono request [file] [options]
 - `-d, --data <data>` - Request body data
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
+- `-e, --exclude` - Exclude protocol response headers in the output
 
 **Examples:**
 
