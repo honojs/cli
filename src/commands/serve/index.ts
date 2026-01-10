@@ -56,6 +56,7 @@ export function serveCommand(program: Command) {
             const appFilePath = realpathSync(appPath)
             const buildIterator = buildAndImportApp(appFilePath, {
               external: ['@hono/node-server'],
+              sourcemap: true,
             })
             app = (await buildIterator.next()).value
           }
