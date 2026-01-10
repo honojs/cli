@@ -79,12 +79,15 @@ export async function* buildAndImportApp(
   })
 
   await context.watch()
-  if (!options.watch) {
-    await context.dispose()
-  }
 
   do {
-    yield await appPromise!
+    const app = await appPromise!
+    if (!options.watch) {
+      // `context.dispose()` must be called after first build result to avoid race condition
+      // https://github.com/honojs/cli/issues/66
+      await context.dispose()
+    }
+    yield app
     preparePromise()
   } while (options.watch)
 }
