@@ -9,13 +9,14 @@
     "build": "tsup",
     "watch": "tsup --watch",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest --run",
     "test:watch": "vitest watch",
     "lint": "eslint --ext js,ts src",
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
     "postbuild": "publint",
+    "prerelease": "bun run build",
     "release": "np"
   },
   "files": [
