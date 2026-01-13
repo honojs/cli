@@ -157,6 +157,11 @@ hono request [file] [options]
 - `-d, --data <data>` - Request body data
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
+- `-J, --json` - Output response as JSON
+- `-o, --output <file>` - Write to file instead of stdout
+- `-O, --remote-name` - Write output to file named as remote file
+- `-i, --include` - Include protocol and headers in the output
+- `-I, --head` - Show only protocol and headers in the output
 
 **Examples:**
 
