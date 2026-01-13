@@ -52,7 +52,7 @@ export function requestCommand(program: Command) {
         const outputBody = formatResponseBody(
           result.body,
           result.headers['content-type'],
-          options.json
+          options.json && !options.include
         )
         const buffer = await result.response.clone().arrayBuffer()
         const isBinaryData = isBinaryResponse(buffer)

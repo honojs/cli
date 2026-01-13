@@ -642,4 +642,31 @@ describe('requestCommand', () => {
 
     expect(consoleLogSpy).toHaveBeenCalledWith(expectedOutput)
   })
+
+  it('should display JSON body correctly with --json and --include options', async () => {
+    const mockApp = new Hono()
+    const jsonBody = { message: 'Hello JSON' }
+    mockApp.get('/json-data', (c) => c.json(jsonBody))
+    setupBasicMocks('test-app.js', mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/json-data',
+      '-J',
+      '-i',
+      'test-app.js',
+    ])
+
+    const expectedOutput = [
+      'STATUS 200',
+      'content-type: application/json',
+      '',
+      JSON.stringify(jsonBody, null, 2),
+    ].join('\n')
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(expectedOutput)
+  })
 })
