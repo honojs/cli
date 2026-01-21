@@ -82,12 +82,12 @@ export function requestCommand(program: Command) {
 
 function getOutputData(
   buffer: ArrayBuffer,
-  outputBody: string,
+  outputBody: string | object,
   isBinaryData: boolean,
   options: RequestOptions,
   status: number,
   headers: Record<string, string>
-): string | ArrayBuffer {
+): string | ArrayBuffer | object {
   if (isBinaryData) {
     return buffer
   }
@@ -112,7 +112,7 @@ function getOutputData(
 }
 
 async function handleSaveOutput(
-  saveData: string | ArrayBuffer,
+  saveData: string | ArrayBuffer | object,
   requestPath: string,
   options: RequestOptions
 ): Promise<void> {
@@ -124,7 +124,11 @@ async function handleSaveOutput(
   }
   try {
     await saveFile(
-      typeof saveData === 'string' ? new TextEncoder().encode(saveData).buffer : saveData,
+      typeof saveData === 'string'
+        ? new TextEncoder().encode(saveData).buffer
+        : saveData instanceof ArrayBuffer
+          ? saveData
+          : new TextEncoder().encode(JSON.stringify(saveData)).buffer,
       filepath
     )
     console.log(`Saved response to ${filepath}`)
@@ -217,7 +221,7 @@ const formatResponseBody = (
   responseBody: string,
   contentType: string | undefined,
   jsonOption: boolean
-): string => {
+): string | object => {
   if (contentType && contentType.indexOf('application/json') !== -1) {
     try {
       const parsedJSON = JSON.parse(responseBody)

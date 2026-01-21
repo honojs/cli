@@ -188,6 +188,29 @@ describe('requestCommand', () => {
     )
   })
 
+  // This test validates that `formatResponseBody` returns an object (not a string) when the response is JSON and the -J flag is used.
+  // It ensures that the final output JSON contains the response body as a nested object, rather than a double-stringified JSON string.
+  it('should return object body in JSON output when response is JSON and -J is used', async () => {
+    const mockApp = new Hono()
+    const jsonBody = { foo: 'bar', nested: { a: 1 } }
+    mockApp.get('/json-obj', (c) => c.json(jsonBody))
+    setupBasicMocks('test-app.js', mockApp)
+
+    await program.parseAsync(['node', 'test', 'request', '-P', '/json-obj', '-J', 'test-app.js'])
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: jsonBody, // Should be the object itself, not stringified JSON string
+          headers: { 'content-type': 'application/json' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
   it('should handle POST request with data', async () => {
     const mockApp = new Hono()
     mockApp.post('/data', async (c) => {
