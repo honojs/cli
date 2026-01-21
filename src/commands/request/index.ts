@@ -93,9 +93,9 @@ function getOutputData(
   }
 
   const headerLines: string[] = []
-  headerLines.push(`STATUS ${status}`)
+  headerLines.push(`${status}`)
   for (const key in headers) {
-    headerLines.push(`${key}: ${headers[key]}`)
+    headerLines.push(`\x1b[1m${key}\x1b[0m: ${headers[key]}`)
   }
   const headerOutput = headerLines.join('\n')
   if (options.head) {

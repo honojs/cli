@@ -664,9 +664,9 @@ describe('requestCommand', () => {
     await program.parseAsync(['node', 'test', 'request', '-P', '/text', '-i', 'test-app.js'])
 
     const expectedOutput = [
-      'STATUS 200',
-      'content-type: text/plain; charset=UTF-8',
-      'x-custom-header: IncludeValue',
+      '200',
+      '\x1b[1mcontent-type\x1b[0m: text/plain; charset=UTF-8',
+      '\x1b[1mx-custom-header\x1b[0m: IncludeValue',
       '',
       textBody,
     ].join('\n')
@@ -683,9 +683,9 @@ describe('requestCommand', () => {
     await program.parseAsync(['node', 'test', 'request', '-P', '/text', '-I', 'test-app.js'])
 
     const expectedOutput = [
-      'STATUS 200',
-      'content-type: text/plain; charset=UTF-8',
-      'x-custom-header: HeadValue',
+      '200',
+      '\x1b[1mcontent-type\x1b[0m: text/plain; charset=UTF-8',
+      '\x1b[1mx-custom-header\x1b[0m: HeadValue',
       '',
     ].join('\n')
 
@@ -701,9 +701,9 @@ describe('requestCommand', () => {
     await program.parseAsync(['node', 'test', 'request', '-P', '/text', '-i', '-I', 'test-app.js'])
 
     const expectedOutput = [
-      'STATUS 200',
-      'content-type: text/plain; charset=UTF-8',
-      'x-custom-header: PrioritizeValue',
+      '200',
+      '\x1b[1mcontent-type\x1b[0m: text/plain; charset=UTF-8',
+      '\x1b[1mx-custom-header\x1b[0m: PrioritizeValue',
       '',
     ].join('\n')
 
@@ -728,8 +728,8 @@ describe('requestCommand', () => {
     ])
 
     const expectedOutput = [
-      'STATUS 200',
-      'content-type: application/json',
+      '200',
+      '\x1b[1mcontent-type\x1b[0m: application/json',
       '',
       JSON.stringify(jsonBody, null, 2),
     ].join('\n')
