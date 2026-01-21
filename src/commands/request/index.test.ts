@@ -417,6 +417,40 @@ describe('requestCommand', () => {
     expect(consoleLogSpy).not.toHaveBeenCalled()
   })
 
+  it('should continue to next build when binary output is detected', async () => {
+    const mockApp1 = new Hono()
+    const pngData = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])
+    mockApp1.get('/resource', (c) => c.body(pngData.buffer, 200, { 'Content-Type': 'image/png' }))
+
+    const mockApp2 = new Hono()
+    const text = 'Hello, World!'
+    mockApp2.get('/resource', (c) => c.text(text))
+
+    const iterator = {
+      next: vi
+        .fn()
+        .mockResolvedValueOnce({ value: mockApp1, done: false })
+        .mockResolvedValueOnce({ value: mockApp2, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      [Symbol.asyncIterator]() {
+        return this
+      },
+    }
+    mockBuildAndImportApp.mockReturnValue(iterator)
+
+    mockModules.existsSync.mockReturnValue(true)
+    mockModules.realpathSync.mockReturnValue('test-app.js')
+    mockModules.resolve.mockImplementation((cwd: string, path: string) => {
+      return `${cwd}/${path}`
+    })
+
+    await program.parseAsync(['node', 'test', 'request', '-P', '/resource', '-w', 'test-app.js'])
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Binary output can mess up your terminal.')
+    expect(consoleLogSpy).toHaveBeenCalledWith(text)
+  })
+
   it('should save JSON response to specified file with -o option', async () => {
     const mockApp = new Hono()
     const jsonBody = { message: 'Saved JSON' }

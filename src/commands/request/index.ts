@@ -58,7 +58,7 @@ export function requestCommand(program: Command) {
         const isBinaryData = isBinaryResponse(buffer)
         if (isBinaryData && !doSaveFile) {
           console.warn('Binary output can mess up your terminal.')
-          return
+          continue
         }
 
         const outputData = getOutputData(
