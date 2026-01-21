@@ -155,6 +155,39 @@ describe('requestCommand', () => {
     )
   })
 
+  it('should handle JSON response with charset in Content-Type', async () => {
+    const mockApp = new Hono()
+    const jsonBody = { message: 'Hello JSON with Charset' }
+    mockApp.get('/json-charset', (c) =>
+      c.body(JSON.stringify(jsonBody), 200, {
+        'Content-Type': 'application/json; charset=utf-8',
+      })
+    )
+    setupBasicMocks('test-app.js', mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-P',
+      '/json-charset',
+      '-J',
+      'test-app.js',
+    ])
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      JSON.stringify(
+        {
+          status: 200,
+          body: jsonBody,
+          headers: { 'content-type': 'application/json; charset=utf-8' },
+        },
+        null,
+        2
+      )
+    )
+  })
+
   it('should handle POST request with data', async () => {
     const mockApp = new Hono()
     mockApp.post('/data', async (c) => {

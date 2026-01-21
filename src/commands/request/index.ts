@@ -218,21 +218,19 @@ const formatResponseBody = (
   contentType: string | undefined,
   jsonOption: boolean
 ): string => {
-  switch (contentType) {
-    case 'application/json': // expect c.json(data) response
-      try {
-        const parsedJSON = JSON.parse(responseBody)
-        if (jsonOption) {
-          return parsedJSON
-        }
-        return JSON.stringify(parsedJSON, null, 2)
-      } catch {
-        console.error('Response indicated JSON content type but failed to parse JSON.')
-        return responseBody
+  if (contentType && contentType.indexOf('application/json') !== -1) {
+    try {
+      const parsedJSON = JSON.parse(responseBody)
+      if (jsonOption) {
+        return parsedJSON
       }
-    default:
+      return JSON.stringify(parsedJSON, null, 2)
+    } catch {
+      console.error('Response indicated JSON content type but failed to parse JSON.')
       return responseBody
+    }
   }
+  return responseBody
 }
 
 const isBinaryResponse = (buffer: ArrayBuffer): boolean => {
