@@ -7,6 +7,9 @@ export const getFilenameFromPath = (path: string): string => {
   // If 'path' is an absolute URL, the base argument is ignored.
   const url = new URL(path, 'http://localhost')
   const pathname = url.pathname
+  if (pathname === '/') {
+    return 'index'
+  }
   const name = basename(pathname)
 
   return name

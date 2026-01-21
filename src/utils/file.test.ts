@@ -20,6 +20,10 @@ describe('getFilenameFromPath', () => {
   it('should extract filename from path with hostname', () => {
     expect(getFilenameFromPath('http://example.com:8080/foo/bar.txt')).toBe('bar.txt')
   })
+
+  it('should return "index" if the path is root', () => {
+    expect(getFilenameFromPath('/')).toBe('index')
+  })
 })
 
 describe('saveFile', () => {

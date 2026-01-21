@@ -605,6 +605,29 @@ describe('requestCommand', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith(`Saved response to image.png`)
   })
 
+  it('should save response to "index" when remote-name option is used with root path', async () => {
+    const mockApp = new Hono()
+    const htmlContent = '<html><body>Home</body></html>'
+    mockApp.get('/', (c) => c.html(htmlContent))
+    setupBasicMocks('test-app.js', mockApp)
+
+    const mockSaveFile = vi.mocked((await import('../../utils/file.js')).saveFile)
+    mockSaveFile.mockResolvedValue(undefined)
+    const mockGetFilenameFromPath = vi.mocked(
+      (await import('../../utils/file.js')).getFilenameFromPath
+    )
+    mockGetFilenameFromPath.mockReturnValue('index')
+
+    await program.parseAsync(['node', 'test', 'request', '-P', '/', '-O', 'test-app.js'])
+
+    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/')
+    expect(mockSaveFile).toHaveBeenCalledWith(
+      new TextEncoder().encode(htmlContent).buffer,
+      'index'
+    )
+    expect(consoleLogSpy).toHaveBeenCalledWith(`Saved response to index`)
+  })
+
   it('should prioritize -o over -O when both are present', async () => {
     const mockApp = new Hono()
     const textContent = 'Text content'
