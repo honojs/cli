@@ -621,10 +621,7 @@ describe('requestCommand', () => {
     await program.parseAsync(['node', 'test', 'request', '-P', '/', '-O', 'test-app.js'])
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/')
-    expect(mockSaveFile).toHaveBeenCalledWith(
-      new TextEncoder().encode(htmlContent).buffer,
-      'index'
-    )
+    expect(mockSaveFile).toHaveBeenCalledWith(new TextEncoder().encode(htmlContent).buffer, 'index')
     expect(consoleLogSpy).toHaveBeenCalledWith(`Saved response to index`)
   })
 
