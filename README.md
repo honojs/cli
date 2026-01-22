@@ -157,6 +157,7 @@ hono request [file] [options]
 - `-d, --data <data>` - Request body data
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
 
@@ -178,6 +179,9 @@ hono request -P /api/protected \
   -H 'Authorization: Bearer token' \
   -H 'User-Agent: MyApp' \
   src/your-app.ts
+
+# Request with external packages (useful for Node.js native modules)
+hono request -e pg -e dotenv src/your-app.ts
 ```
 
 **Response Format:**
@@ -212,6 +216,7 @@ hono serve [entry] [options]
 - `-p, --port <port>` - Port number (default: 7070)
 - `--show-routes` - Show registered routes
 - `--use <middleware>` - Use middleware (can be used multiple times)
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
 
@@ -238,6 +243,9 @@ hono serve --use 'cors()' --use 'logger()' src/app.ts
 hono serve \
   --use 'basicAuth({ username: "foo", password: "bar" })' \
   --use "serveStatic({ root: './' })"
+
+# Start server with external packages (useful for Node.js native modules)
+hono serve -e pg -e prisma src/app.ts
 ```
 
 ### `optimize`

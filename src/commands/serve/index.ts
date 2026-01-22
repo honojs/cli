@@ -36,10 +36,18 @@ export function serveCommand(program: Command) {
       },
       []
     )
+    .option(
+      '-e, --external <package>',
+      'Mark package as external (can be used multiple times)',
+      (value: string, previous: string[]) => {
+        return previous ? [...previous, value] : [value]
+      },
+      [] as string[]
+    )
     .action(
       async (
         entry: string | undefined,
-        options: { port?: number; showRoutes?: boolean; use?: string[] }
+        options: { port?: number; showRoutes?: boolean; use?: string[]; external?: string[] }
       ) => {
         let app: Hono
 
@@ -55,7 +63,7 @@ export function serveCommand(program: Command) {
           } else {
             const appFilePath = realpathSync(appPath)
             const buildIterator = buildAndImportApp(appFilePath, {
-              external: ['@hono/node-server'],
+              external: ['@hono/node-server', ...(options.external || [])],
               sourcemap: true,
             })
             app = (await buildIterator.next()).value

@@ -338,4 +338,72 @@ describe('requestCommand', () => {
       )
     )
   })
+
+  it('should handle single external option', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync(['node', 'test', 'request', '-e', 'pg', 'test-app.js'])
+
+    expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
+      external: ['@hono/node-server', 'pg'],
+      watch: false,
+      sourcemap: true,
+    })
+  })
+
+  it('should handle multiple external options', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '-e',
+      'pg',
+      '-e',
+      'dotenv',
+      '-e',
+      'prisma',
+      'test-app.js',
+    ])
+
+    expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
+      external: ['@hono/node-server', 'pg', 'dotenv', 'prisma'],
+      watch: false,
+      sourcemap: true,
+    })
+  })
+
+  it('should handle long flag name --external', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const expectedPath = 'test-app.js'
+    setupBasicMocks(expectedPath, mockApp)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'request',
+      '--external',
+      'pg',
+      '--external',
+      'dotenv',
+      'test-app.js',
+    ])
+
+    expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
+      external: ['@hono/node-server', 'pg', 'dotenv'],
+      watch: false,
+      sourcemap: true,
+    })
+  })
 })
