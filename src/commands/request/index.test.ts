@@ -779,4 +779,57 @@ describe('requestCommand', () => {
 
     expect(consoleLogSpy).toHaveBeenCalledWith(expectedOutput)
   })
+
+  describe('Content-Type JSON detection', () => {
+    const jsonString = '{"foo":"bar"}'
+    const formattedJsonString = JSON.stringify(JSON.parse(jsonString), null, 2)
+
+    const matchingTypes = [
+      'application/json',
+      'APPLICATION/JSON',
+      'application/json; charset=utf-8',
+      'application/json; charset=UTF-8; boundary=something',
+      'application/ld+json',
+      'application/hal+json',
+      'application/vnd.api+json',
+      'application/merge-patch+json',
+      'application/problem+json',
+      'application/geo+json',
+    ]
+
+    const nonMatchingTypes = [
+      'application/jsonx',
+      'application/jsonapi',
+      'application/json+ld',
+      'application/json+hal',
+      'text/json',
+      'text/plain',
+      'application/xml',
+      'text/plain; application/json',
+    ]
+
+    matchingTypes.forEach((contentType) => {
+      it(`should format JSON for Content-Type: ${contentType}`, async () => {
+        const mockApp = new Hono()
+        mockApp.get('/test', (c) => c.body(jsonString, 200, { 'Content-Type': contentType }))
+        setupBasicMocks('test-app.js', mockApp)
+
+        await program.parseAsync(['node', 'test', 'request', '-P', '/test', 'test-app.js'])
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(formattedJsonString)
+      })
+    })
+
+    nonMatchingTypes.forEach((contentType) => {
+      it(`should NOT format JSON for Content-Type: ${contentType}`, async () => {
+        const mockApp = new Hono()
+        mockApp.get('/test', (c) => c.body(jsonString, 200, { 'Content-Type': contentType }))
+        setupBasicMocks('test-app.js', mockApp)
+
+        await program.parseAsync(['node', 'test', 'request', '-P', '/test', 'test-app.js'])
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(jsonString)
+      })
+    })
+  })
 })

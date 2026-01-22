@@ -222,7 +222,7 @@ const formatResponseBody = (
   contentType: string | undefined,
   jsonOption: boolean
 ): string | object => {
-  if (contentType && contentType.indexOf('application/json') !== -1) {
+  if (contentType && /^application\/(json|[^;\s]+\+json)($|;)/i.test(contentType)) {
     try {
       const parsedJSON = JSON.parse(responseBody)
       if (jsonOption) {
