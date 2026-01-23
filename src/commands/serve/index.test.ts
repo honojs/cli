@@ -266,3 +266,145 @@ export default app
     )
   })
 })
+
+describe('serveCommand external option', () => {
+  it('should pass external packages to buildAndImportApp', async () => {
+    const { Hono } = await import('hono')
+    const buildModule = await import('../../utils/build.js')
+
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const mockIterator = {
+      next: vi
+        .fn()
+        .mockResolvedValueOnce({ value: mockApp, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      [Symbol.asyncIterator]() {
+        return this
+      },
+    }
+
+    const buildSpy = vi.spyOn(buildModule, 'buildAndImportApp').mockReturnValue(mockIterator)
+
+    const appDir = mkdtempSync(join(tmpdir(), 'hono-cli-external-test'))
+    const appFile = join(appDir, 'app.ts')
+    writeFileSync(appFile, 'export default {}')
+
+    const program = new Command()
+    const { serveCommand } = await import('./index.js')
+    serveCommand(program)
+
+    await program.parseAsync(['node', 'test', 'serve', '-e', 'pg', appFile])
+
+    expect(buildSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        external: ['@hono/node-server', 'pg'],
+      })
+    )
+
+    buildSpy.mockRestore()
+  })
+
+  it('should pass multiple external packages to buildAndImportApp', async () => {
+    const { Hono } = await import('hono')
+    const buildModule = await import('../../utils/build.js')
+
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const mockIterator = {
+      next: vi
+        .fn()
+        .mockResolvedValueOnce({ value: mockApp, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      [Symbol.asyncIterator]() {
+        return this
+      },
+    }
+
+    const buildSpy = vi.spyOn(buildModule, 'buildAndImportApp').mockReturnValue(mockIterator)
+
+    const appDir = mkdtempSync(join(tmpdir(), 'hono-cli-external-test'))
+    const appFile = join(appDir, 'app.ts')
+    writeFileSync(appFile, 'export default {}')
+
+    const program = new Command()
+    const { serveCommand } = await import('./index.js')
+    serveCommand(program)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'serve',
+      '-e',
+      'pg',
+      '-e',
+      'dotenv',
+      '-e',
+      'prisma',
+      appFile,
+    ])
+
+    expect(buildSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        external: ['@hono/node-server', 'pg', 'dotenv', 'prisma'],
+      })
+    )
+
+    buildSpy.mockRestore()
+  })
+
+  it('should handle --external long flag name', async () => {
+    const { Hono } = await import('hono')
+    const buildModule = await import('../../utils/build.js')
+
+    const mockApp = new Hono()
+    mockApp.get('/', (c) => c.json({ message: 'Hello' }))
+
+    const mockIterator = {
+      next: vi
+        .fn()
+        .mockResolvedValueOnce({ value: mockApp, done: false })
+        .mockResolvedValueOnce({ value: undefined, done: true }),
+      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      [Symbol.asyncIterator]() {
+        return this
+      },
+    }
+
+    const buildSpy = vi.spyOn(buildModule, 'buildAndImportApp').mockReturnValue(mockIterator)
+
+    const appDir = mkdtempSync(join(tmpdir(), 'hono-cli-external-test'))
+    const appFile = join(appDir, 'app.ts')
+    writeFileSync(appFile, 'export default {}')
+
+    const program = new Command()
+    const { serveCommand } = await import('./index.js')
+    serveCommand(program)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'serve',
+      '--external',
+      'pg',
+      '--external',
+      'dotenv',
+      appFile,
+    ])
+
+    expect(buildSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        external: ['@hono/node-server', 'pg', 'dotenv'],
+      })
+    )
+
+    buildSpy.mockRestore()
+  })
+})

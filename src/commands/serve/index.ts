@@ -8,6 +8,13 @@ import { resolve } from 'node:path'
 import { buildAndImportApp } from '../../utils/build.js'
 import { builtinMap } from './builtin-map.js'
 
+interface ServeOptions {
+  port?: number
+  showRoutes?: boolean
+  use?: string[]
+  external?: string[]
+}
+
 // Keep serveStatic to prevent bundler removal
 ;[serveStatic].forEach((f) => {
   if (typeof f === 'function') {
@@ -44,78 +51,73 @@ export function serveCommand(program: Command) {
       },
       [] as string[]
     )
-    .action(
-      async (
-        entry: string | undefined,
-        options: { port?: number; showRoutes?: boolean; use?: string[]; external?: string[] }
-      ) => {
-        let app: Hono
+    .action(async (entry: string | undefined, options: ServeOptions) => {
+      let app: Hono
 
-        if (!entry) {
-          // Create a default Hono app if no entry is provided
+      if (!entry) {
+        // Create a default Hono app if no entry is provided
+        app = new Hono()
+      } else {
+        const appPath = resolve(process.cwd(), entry)
+
+        if (!existsSync(appPath)) {
+          // Create a default Hono app if entry file doesn't exist
           app = new Hono()
         } else {
-          const appPath = resolve(process.cwd(), entry)
-
-          if (!existsSync(appPath)) {
-            // Create a default Hono app if entry file doesn't exist
-            app = new Hono()
-          } else {
-            const appFilePath = realpathSync(appPath)
-            const buildIterator = buildAndImportApp(appFilePath, {
-              external: ['@hono/node-server', ...(options.external || [])],
-              sourcemap: true,
-            })
-            app = (await buildIterator.next()).value
-          }
-        }
-
-        // Import all builtin functions from the builtin map
-        const allFunctions: Record<string, any> = {}
-        const uniqueModules = [...new Set(Object.values(builtinMap))]
-
-        for (const modulePath of uniqueModules) {
-          try {
-            const module = await import(modulePath)
-            // Add all exported functions from this module
-            for (const [funcName, modulePathInMap] of Object.entries(builtinMap)) {
-              if (modulePathInMap === modulePath && module[funcName]) {
-                allFunctions[funcName] = module[funcName]
-              }
-            }
-          } catch (error) {
-            // Skip modules that can't be imported (optional dependencies)
-          }
-        }
-
-        const baseApp = new Hono()
-        // Apply middleware from --use options
-        for (const use of options.use || []) {
-          // Create function with all available functions in scope
-          const functionNames = Object.keys(allFunctions)
-          const functionValues = Object.values(allFunctions)
-          const func = new Function('c', 'next', ...functionNames, `return (${use})`)
-          baseApp.use(async (c, next) => {
-            const middleware = func(c, next, ...functionValues)
-            return typeof middleware === 'function' ? middleware(c, next) : middleware
+          const appFilePath = realpathSync(appPath)
+          const buildIterator = buildAndImportApp(appFilePath, {
+            external: ['@hono/node-server', ...(options.external || [])],
+            sourcemap: true,
           })
+          app = (await buildIterator.next()).value
         }
-
-        baseApp.route('/', app)
-
-        if (options.showRoutes) {
-          showRoutes(baseApp)
-        }
-
-        serve(
-          {
-            fetch: baseApp.fetch,
-            port: options.port ?? 7070,
-          },
-          (info) => {
-            console.log(`Listening on http://localhost:${info.port}`)
-          }
-        )
       }
-    )
+
+      // Import all builtin functions from the builtin map
+      const allFunctions: Record<string, any> = {}
+      const uniqueModules = [...new Set(Object.values(builtinMap))]
+
+      for (const modulePath of uniqueModules) {
+        try {
+          const module = await import(modulePath)
+          // Add all exported functions from this module
+          for (const [funcName, modulePathInMap] of Object.entries(builtinMap)) {
+            if (modulePathInMap === modulePath && module[funcName]) {
+              allFunctions[funcName] = module[funcName]
+            }
+          }
+        } catch (error) {
+          // Skip modules that can't be imported (optional dependencies)
+        }
+      }
+
+      const baseApp = new Hono()
+      // Apply middleware from --use options
+      for (const use of options.use || []) {
+        // Create function with all available functions in scope
+        const functionNames = Object.keys(allFunctions)
+        const functionValues = Object.values(allFunctions)
+        const func = new Function('c', 'next', ...functionNames, `return (${use})`)
+        baseApp.use(async (c, next) => {
+          const middleware = func(c, next, ...functionValues)
+          return typeof middleware === 'function' ? middleware(c, next) : middleware
+        })
+      }
+
+      baseApp.route('/', app)
+
+      if (options.showRoutes) {
+        showRoutes(baseApp)
+      }
+
+      serve(
+        {
+          fetch: baseApp.fetch,
+          port: options.port ?? 7070,
+        },
+        (info) => {
+          console.log(`Listening on http://localhost:${info.port}`)
+        }
+      )
+    })
 }
