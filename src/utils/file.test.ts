@@ -24,6 +24,17 @@ describe('getFilenameFromPath', () => {
   it('should return "index" if the path is root', () => {
     expect(getFilenameFromPath('/')).toBe('index')
   })
+
+  it.each([
+    ['application/json', 'index.json'],
+    ['text/html', 'index.html'],
+    ['text/plain', 'index.txt'],
+    ['application/xml', 'index.xml'],
+    ['text/html; charset=utf-8', 'index.html'],
+    ['unknown/type', 'index'],
+  ])('given content-type "%s", should return "%s"', (contentType, expected) => {
+    expect(getFilenameFromPath('/', contentType)).toBe(expected)
+  })
 })
 
 describe('saveFile', () => {

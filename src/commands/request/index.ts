@@ -49,9 +49,10 @@ export function requestCommand(program: Command) {
       const buildIterator = getBuildIterator(file, watch)
       for await (const app of buildIterator) {
         const result = await executeRequest(app, path, options)
+        const contentType = result.headers['content-type']
         const outputBody = formatResponseBody(
           result.body,
-          result.headers['content-type'],
+          contentType,
           options.json && !options.include
         )
         const buffer = await result.response.clone().arrayBuffer()
@@ -74,7 +75,7 @@ export function requestCommand(program: Command) {
         }
 
         if (doSaveFile) {
-          await handleSaveOutput(outputData, path, options)
+          await handleSaveOutput(outputData, path, options, contentType)
         }
       }
     })
@@ -114,13 +115,14 @@ function getOutputData(
 async function handleSaveOutput(
   saveData: string | ArrayBuffer | object,
   requestPath: string,
-  options: RequestOptions
+  options: RequestOptions,
+  contentType?: string
 ): Promise<void> {
   let filepath: string
   if (options.output) {
     filepath = options.output
   } else {
-    filepath = getFilenameFromPath(requestPath)
+    filepath = getFilenameFromPath(requestPath, contentType)
   }
   try {
     await saveFile(

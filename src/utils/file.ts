@@ -1,13 +1,17 @@
 import { existsSync, createWriteStream } from 'node:fs'
 import { dirname, basename } from 'node:path'
 
-export const getFilenameFromPath = (path: string): string => {
+export const getFilenameFromPath = (path: string, contentType?: string): string => {
   // We use 'http://localhost' as a base because 'path' is often a relative path (e.g., '/users/123').
   // The URL constructor requires a base URL for relative paths to parse them correctly.
   // If 'path' is an absolute URL, the base argument is ignored.
   const url = new URL(path, 'http://localhost')
   const pathname = url.pathname
   if (pathname === '/') {
+    const extension = getMimeTypeToExtension(contentType)
+    if (extension) {
+      return `index.${extension}`
+    }
     return 'index'
   }
   const name = basename(pathname)
@@ -60,4 +64,23 @@ export const saveFile = async (buffer: ArrayBuffer, filepath: string): Promise<v
 
     writeChunk(0)
   })
+}
+
+const getMimeTypeToExtension = (contentType?: string) => {
+  if (!contentType) {
+    return ''
+  }
+  if (/^application\/(json|[^;\s]+\+json)($|;)/i.test(contentType)) {
+    return 'json'
+  }
+  if (/^text\/html($|;)/i.test(contentType)) {
+    return 'html'
+  }
+  if (/^text\/plain($|;)/i.test(contentType)) {
+    return 'txt'
+  }
+  if (/^(application|text)\/xml($|;)/i.test(contentType)) {
+    return 'xml'
+  }
+  return ''
 }

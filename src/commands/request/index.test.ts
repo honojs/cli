@@ -577,7 +577,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', '-P', '/index.html', '-O', 'test-app.js'])
 
-    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/index.html')
+    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/index.html', 'text/html; charset=UTF-8')
     expect(mockSaveFile).toHaveBeenCalledWith(
       new TextEncoder().encode(htmlContent).buffer,
       'index.html'
@@ -600,7 +600,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', '-P', '/image.png', '-O', 'test-app.js'])
 
-    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/image.png')
+    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/image.png', 'image/png')
     expect(mockSaveFile).toHaveBeenCalledWith(pngData, 'image.png')
     expect(consoleLogSpy).toHaveBeenCalledWith(`Saved response to image.png`)
   })
@@ -620,7 +620,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', '-P', '/', '-O', 'test-app.js'])
 
-    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/')
+    expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/', 'text/html; charset=UTF-8')
     expect(mockSaveFile).toHaveBeenCalledWith(new TextEncoder().encode(htmlContent).buffer, 'index')
     expect(consoleLogSpy).toHaveBeenCalledWith(`Saved response to index`)
   })
