@@ -21,7 +21,9 @@ import { requestCommand } from './index.js'
 describe('requestCommand', () => {
   let program: Command
   let consoleLogSpy: ReturnType<typeof vi.spyOn>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockModules: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockBuildAndImportApp: any
 
   const createBuildIterator = (app: Hono) => {

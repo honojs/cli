@@ -14,13 +14,17 @@ vi.mock('node:url', () => ({
 import { buildAndImportApp } from './build.js'
 
 describe('buildAndImportApp', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEsbuildDispose: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEsbuild: any
 
   const setupBundledCode = (code: string) => {
     mockEsbuild.mockImplementation((param: Parameters<typeof context>[0]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let onEnd: (result: any) => void
       param.plugins?.[0].setup({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onEnd: (cb: (result: any) => void) => {
           onEnd = cb
         },

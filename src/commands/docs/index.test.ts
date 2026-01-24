@@ -33,6 +33,7 @@ describe('docsCommand', () => {
     if (originalIsTTY !== undefined) {
       process.stdin.isTTY = originalIsTTY
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (process.stdin as any).isTTY
     }
   })

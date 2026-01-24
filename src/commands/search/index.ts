@@ -149,6 +149,7 @@ export function searchCommand(program: Command) {
           })
         } else {
           // Remove highlighted title from JSON output
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const jsonResults = results.map(({ highlightedTitle, ...result }) => result)
           console.log(
             JSON.stringify(
