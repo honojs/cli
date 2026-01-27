@@ -12,6 +12,7 @@ interface RequestOptions {
   header?: string[]
   path?: string
   watch: boolean
+  external?: string[]
 }
 
 export function requestCommand(program: Command) {
@@ -31,10 +32,19 @@ export function requestCommand(program: Command) {
       },
       [] as string[]
     )
+    .option(
+      '-e, --external <package>',
+      'Mark package as external (can be used multiple times)',
+      (value: string, previous: string[]) => {
+        return previous ? [...previous, value] : [value]
+      },
+      [] as string[]
+    )
     .action(async (file: string | undefined, options: RequestOptions) => {
       const path = options.path || '/'
       const watch = options.watch
-      const buildIterator = getBuildIterator(file, watch)
+      const external = options.external || []
+      const buildIterator = getBuildIterator(file, watch, external)
       for await (const app of buildIterator) {
         const result = await executeRequest(app, path, options)
         console.log(JSON.stringify(result, null, 2))
@@ -44,7 +54,8 @@ export function requestCommand(program: Command) {
 
 export function getBuildIterator(
   appPath: string | undefined,
-  watch: boolean
+  watch: boolean,
+  external: string[] = []
 ): AsyncGenerator<Hono> {
   // Determine entry file path
   let entry: string
@@ -68,7 +79,7 @@ export function getBuildIterator(
 
   const appFilePath = realpathSync(resolvedAppPath)
   return buildAndImportApp(appFilePath, {
-    external: ['@hono/node-server'],
+    external: ['@hono/node-server', ...external],
     watch,
     sourcemap: true,
   })
