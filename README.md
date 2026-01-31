@@ -162,6 +162,7 @@ hono request [file] [options]
 - `-O, --remote-name` - Write output to file named as remote file
 - `-i, --include` - Include protocol and headers in the output
 - `-I, --head` - Show only protocol and headers in the output
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
 
@@ -183,6 +184,9 @@ hono request -P /api/protected \
   -H 'Authorization: Bearer token' \
   -H 'User-Agent: MyApp' \
   src/your-app.ts
+
+# Request with external packages (useful for Node.js native modules)
+hono request -e pg -e dotenv src/your-app.ts
 ```
 
 **Response Format:**
@@ -217,6 +221,7 @@ hono serve [entry] [options]
 - `-p, --port <port>` - Port number (default: 7070)
 - `--show-routes` - Show registered routes
 - `--use <middleware>` - Use middleware (can be used multiple times)
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
 
@@ -243,11 +248,20 @@ hono serve --use 'cors()' --use 'logger()' src/app.ts
 hono serve \
   --use 'basicAuth({ username: "foo", password: "bar" })' \
   --use "serveStatic({ root: './' })"
+
+# Start server with external packages (useful for Node.js native modules)
+hono serve -e pg -e prisma src/app.ts
 ```
 
 ### `optimize`
 
 Generate an optimized Hono class and export bundled file.
+
+This command automatically applies the following optimizations to reduce bundle size:
+
+- **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when your application only uses GET, HEAD, or OPTIONS methods
+- **Context response API removal**: Removes unused response utility APIs (`c.body()`, `c.json()`, `c.text()`, `c.html()`, `c.redirect()`) from Context object
+- **Hono API removal**: Removes unused Hono methods (`route`, `mount`, `fire`) that are only used during application initialization
 
 ```bash
 hono optimize [entry] [options]
@@ -260,6 +274,11 @@ hono optimize [entry] [options]
 **Options:**
 
 - `-o, --outfile <outfile>` - Output file
+- `-m, --minify` - minify output file
+- `-t, --target [target]` - environment target
+- `--no-request-body-api-removal` - Disable request body API removal optimization
+- `--no-context-response-api-removal` - Disable response utility API removal from Context object
+- `--no-hono-api-removal` - Disable Hono API removal optimization
 
 **Examples:**
 
@@ -272,6 +291,14 @@ hono optimize -o dist/app.js src/app.ts
 
 # Export bundled file with minification
 hono optimize -m
+
+# Specify environment target
+hono optimize -t es2024
+
+# Disable specific optimizations
+hono optimize -m --no-request-body-api-removal
+hono optimize -m --no-context-response-api-removal
+hono optimize -m --no-hono-api-removal
 ```
 
 ## Tips

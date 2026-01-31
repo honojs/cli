@@ -1,6 +1,6 @@
 {
   "name": "@hono/cli",
-  "version": "0.1.2",
+  "version": "0.1.9",
   "type": "module",
   "bin": {
     "hono": "dist/cli.js"
@@ -9,13 +9,14 @@
     "build": "tsup",
     "watch": "tsup --watch",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest --run",
     "test:watch": "vitest watch",
     "lint": "eslint --ext js,ts src",
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
     "postbuild": "publint",
+    "prerelease": "bun run build",
     "release": "np"
   },
   "files": [
@@ -39,10 +40,14 @@
     "hono": "^4.9.12"
   },
   "devDependencies": {
+    "@babel/parser": "^7.28.5",
+    "@babel/types": "^7.28.5",
     "@hono/eslint-config": "^1.1.1",
     "@types/node": "^24.7.0",
     "eslint": "^9.37.0",
+    "magic-string": "^0.30.21",
     "np": "^10.2.0",
+    "pkg-pr-new": "^0.0.62",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",
     "tsup": "^8.5.0",

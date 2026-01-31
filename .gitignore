@@ -6,6 +6,7 @@ sandbox
 test-results
 playwright-report
 .hono
+.claude/settings.local.json
 
 # yarn
 .yarn/*
