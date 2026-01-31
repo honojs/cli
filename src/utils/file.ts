@@ -1,3 +1,4 @@
+import { getExtension } from 'hono/utils/mime'
 import { existsSync, createWriteStream } from 'node:fs'
 import { dirname, basename } from 'node:path'
 
@@ -8,9 +9,15 @@ export const getFilenameFromPath = (path: string, contentType?: string): string 
   const url = new URL(path, 'http://localhost')
   const pathname = url.pathname
   if (pathname === '/') {
-    const extension = getMimeTypeToExtension(contentType)
-    if (extension) {
-      return `index.${extension}`
+    if (contentType) {
+      const parts = contentType.split(';')
+      for (const part of parts) {
+        const mimeType = part.trim().toLowerCase()
+        const extension = getExtension(mimeType)
+        if (extension) {
+          return `index.${extension}`
+        }
+      }
     }
     return 'index'
   }
@@ -64,23 +71,4 @@ export const saveFile = async (buffer: ArrayBuffer, filepath: string): Promise<v
 
     writeChunk(0)
   })
-}
-
-const getMimeTypeToExtension = (contentType?: string) => {
-  if (!contentType) {
-    return ''
-  }
-  if (/^application\/(json|[^;\s]+\+json)($|;)/i.test(contentType)) {
-    return 'json'
-  }
-  if (/^text\/html($|;)/i.test(contentType)) {
-    return 'html'
-  }
-  if (/^text\/plain($|;)/i.test(contentType)) {
-    return 'txt'
-  }
-  if (/^(application|text)\/xml($|;)/i.test(contentType)) {
-    return 'xml'
-  }
-  return ''
 }
