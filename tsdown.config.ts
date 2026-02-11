@@ -15,5 +15,6 @@ export default defineConfig({
     return {
       js: format === 'es' ? '.js' : '.cjs',
     }
-  }
+  },
+  inlineOnly: ['@babel/parser', '@jridgewell/sourcemap-codec', 'magic-string'],
 })
