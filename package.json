@@ -6,8 +6,8 @@
     "hono": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsup",
-    "watch": "tsup --watch",
+    "build": "tsdown",
+    "watch": "tsdown --watch",
     "test": "vitest",
     "test:run": "vitest --run",
     "test:watch": "vitest watch",
@@ -50,7 +50,7 @@
     "pkg-pr-new": "^0.0.62",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
