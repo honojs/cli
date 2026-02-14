@@ -21,8 +21,12 @@ jobs:
           fetch-depth: 0
 
       - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
 
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .tool-versions
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile
