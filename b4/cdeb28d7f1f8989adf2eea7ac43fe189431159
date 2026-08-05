@@ -1,0 +1,31 @@
+src/commands/optimize/index.ts
+  s_7f408dd36510ee::t_43e8b083b00da3 10,20
+src/commands/optimize/remove-apis.test.ts
+  s_449966fc5983c0::t_784d90cd8d02ac 1-43
+src/commands/optimize/remove-apis.ts
+  s_449966fc5983c0::t_90e4695808eda5 1-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b4cdeb28d7f1f8989adf2eea7ac43fe189431159",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    },
+    "s_7f408dd36510ee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ad7774f-8d6b-49fd-b473-ae41ef27b013",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
