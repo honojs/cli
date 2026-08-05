@@ -1,21 +1,13 @@
-import { parse } from '@babel/parser'
-import type {
-  ClassMethod,
-  ClassProperty,
-  ClassPrivateProperty,
-  Identifier,
-  PrivateName,
-} from '@babel/types'
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
 import { METHOD_NAME_ALL } from 'hono/router'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
-import MagicString from 'magic-string'
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { buildAndImportApp } from '../../utils/build.js'
+import { removeApis } from './remove-apis.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
@@ -25,6 +17,7 @@ const REQUEST_BODY_METHODS = [
   'json',
   'text',
   'arrayBuffer',
+  'bytes',
   'blob',
   'formData',
   '#cachedBody',
@@ -370,77 +363,3 @@ export class Hono extends HonoBase {
       }
     )
 }
-
-type NodeWithRange = { start: number | null | undefined; end: number | null | undefined }
-type ClassElementNode = (ClassMethod | ClassProperty | ClassPrivateProperty) & NodeWithRange
-
-const removeApis = (contents: string, className: string, methods: string[]): string => {
-  const ast = parse(contents, {
-    sourceType: 'module',
-    plugins: [
-      'classPrivateProperties',
-      'classPrivateMethods',
-      'privateIn',
-      'importMeta',
-      'topLevelAwait',
-    ],
-  })
-
-  const magic = new MagicString(contents)
-  let modified = false
-
-  for (const statement of ast.program.body as ((typeof ast.program.body)[number] &
-    NodeWithRange)[]) {
-    if (statement.type !== 'VariableDeclaration') {
-      continue
-    }
-
-    for (const declaration of statement.declarations) {
-      if (
-        declaration.id.type !== 'Identifier' ||
-        declaration.id.name !== className ||
-        !declaration.init ||
-        declaration.init.type !== 'ClassExpression'
-      ) {
-        continue
-      }
-
-      for (const member of declaration.init.body.body as ClassElementNode[]) {
-        if (!shouldRemoveClassMember(member, methods)) {
-          continue
-        }
-        const start = member.start ?? 0
-        const end = member.end ?? start
-        magic.remove(start, end)
-        modified = true
-      }
-    }
-  }
-
-  return modified ? magic.toString() : contents
-}
-
-const shouldRemoveClassMember = (member: ClassElementNode, methods: string[]): boolean => {
-  if (
-    (member.type === 'ClassMethod' || member.type === 'ClassProperty') &&
-    isIdentifier(member.key) &&
-    methods.includes(member.key.name)
-  ) {
-    return true
-  }
-
-  if (
-    member.type === 'ClassPrivateProperty' &&
-    isPrivateIdentifier(member.key) &&
-    methods.includes(`#${member.key.id.name}`)
-  ) {
-    return true
-  }
-
-  return false
-}
-
-const isIdentifier = (key: ClassMethod['key']): key is Identifier => key.type === 'Identifier'
-
-const isPrivateIdentifier = (key: ClassPrivateProperty['key']): key is PrivateName =>
-  key.type === 'PrivateName'
