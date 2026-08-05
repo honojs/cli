@@ -1,0 +1,19 @@
+AGENTS.md
+  s_449966fc5983c0::t_dbae8a0ba41f56 3,8-9,14-15,17,23-25,29-34,38,40-41,49-50,59,61,63-64,66,70-82,86-87,91-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7836d8a7f14332d070154c75c855db8d4143f899",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
