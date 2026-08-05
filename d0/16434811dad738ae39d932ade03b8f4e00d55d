@@ -1,0 +1,21 @@
+.github/pull_request_template.md
+  s_449966fc5983c0::t_d680f64d7b2a90 1-6
+AGENTS.md
+  s_449966fc5983c0::t_46bb9d88a330b5 63-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d016434811dad738ae39d932ade03b8f4e00d55d",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
