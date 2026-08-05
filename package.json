@@ -16,7 +16,7 @@
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
     "postbuild": "publint",
-    "prerelease": "bun run build",
+    "prerelease": "pnpm run build",
     "release": "np"
   },
   "files": [
@@ -54,5 +54,8 @@
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
-  "packageManager": "bun@1.2.20"
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.13.0"
+  }
 }

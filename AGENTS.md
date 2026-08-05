@@ -10,13 +10,13 @@ made for coding agents, not humans.
 
 ## Commands
 
-- `bun install` — install dependencies
-- `bun run build` — build (tsdown)
-- `bun run watch` — build with auto-rebuild
-- `bun run test` — run tests (Vitest)
-- `bun run format:fix && bun run lint:fix` — fix format and lint
+- `pnpm install` — install dependencies
+- `pnpm run build` — build (tsdown)
+- `pnpm run watch` — build with auto-rebuild
+- `pnpm run test` — run tests (Vitest)
+- `pnpm run format:fix && pnpm run lint:fix` — fix format and lint
 
-Runtime: Node.js 20+. Package manager: Bun.
+Runtime: Node.js 22+. Package manager: pnpm.
 
 ## Architecture
 
@@ -41,9 +41,9 @@ Runtime: Node.js 20+. Package manager: Bun.
 3. Run the quality gates. All must pass:
 
    ```bash
-   bun run format:fix && bun run lint:fix
-   bun run test
-   bun run build
+   pnpm run format:fix && pnpm run lint:fix
+   pnpm run test
+   pnpm run build
    ```
 
 4. Commit with conventional commits: `<type>(<scope>): <description>`.
