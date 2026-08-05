@@ -88,10 +88,12 @@ Rank findings by severity: `blocker` / `bug` / `risk` / `nit`.
 
 ## Release
 
-1. On `main`: `npm version patch` (or `minor` / `major`)
-2. `git push origin main --follow-tags`
-3. The `release` workflow stages the package on npm with staged publishing
-4. A maintainer approves the staged package on npmjs.com (needs 2FA)
+1. On `main`: `pnpm run release` (`np --no-publish` — bumps the version,
+   tags, pushes, and creates a GitHub release). It is interactive, so a
+   human runs it in a terminal
+2. The tag push triggers the `release` workflow, which stages the
+   package on npm with staged publishing
+3. A maintainer approves the staged package on npmjs.com (needs 2FA)
 
 ## Hono Documentation
 

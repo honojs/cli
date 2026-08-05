@@ -15,7 +15,9 @@
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
-    "postbuild": "publint"
+    "postbuild": "publint",
+    "prerelease": "pnpm run build",
+    "release": "np --no-publish"
   },
   "files": [
     "dist"
@@ -49,7 +51,8 @@
     "publint": "^0.3.14",
     "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "np": "^10.2.0"
   },
   "packageManager": "pnpm@11.20.0",
   "engines": {
