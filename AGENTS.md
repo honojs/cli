@@ -52,11 +52,11 @@ Runtime: Node.js 20+. Package manager: Bun.
 
    ```markdown
    What and why, in a few sentences.
-
-   - short bullet points, only for things the checklist does not cover
    ```
 
    No fixed section labels. Write it like a human note.
+   Add notes the checklist does not cover as plain sentences.
+   Use bullets only when there are several items.
 
    Add `Closes #<n>` only if an issue exists.
 
