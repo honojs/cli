@@ -53,10 +53,10 @@ Runtime: Node.js 20+. Package manager: Bun.
    ```markdown
    What and why, in a few sentences.
 
-   Verified:
-
-   - short bullet points on how it was verified
+   - short bullet points, only when needed (e.g. test results, notes)
    ```
+
+   No fixed section labels. Write it like a human note.
 
    Add `Closes #<n>` only if an issue exists.
 
