@@ -17,7 +17,7 @@
     "format:fix": "prettier src --write",
     "postbuild": "publint",
     "prerelease": "pnpm run build",
-    "release": "np"
+    "release": "np --no-publish"
   },
   "files": [
     "dist"
