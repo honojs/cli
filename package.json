@@ -46,13 +46,13 @@
     "@types/node": "^24.7.0",
     "eslint": "^9.37.0",
     "magic-string": "^0.30.21",
+    "np": "^10.2.0",
     "pkg-pr-new": "^0.0.62",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",
     "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4",
-    "np": "^10.2.0"
+    "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@11.20.0",
   "engines": {
