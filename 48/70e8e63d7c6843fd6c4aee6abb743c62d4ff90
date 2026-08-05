@@ -1,0 +1,25 @@
+package.json
+  s_449966fc5983c0::t_1ca22216e0d909 18
+pnpm-lock.yaml
+  s_449966fc5983c0::t_f5db32fca7e7f5 1536-1537,1539-1541,2343-2352,2354,2356,2358,2360,2362,2364-2366,2368,2370,2372,3212,3214,3216,3218,3220-3223,3225,3227-3228,3230,3232-3233,3235,3237,3239,3241,3243-3245,3247,3249,3251,3253,3255,3257,3259,3261,3263-3264,3266,3268,3270-3272,3274,3276,3278,3632-3633
+.github/workflows/release.yml
+  s_449966fc5983c0::t_7414565c258218 1-39
+AGENTS.md
+  s_449966fc5983c0::t_01996f7642003f 89-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4870e8e63d7c6843fd6c4aee6abb743c62d4ff90",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
