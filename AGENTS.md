@@ -53,7 +53,9 @@ Runtime: Node.js 20+. Package manager: Bun.
    ```markdown
    What and why, in a few sentences.
 
-   - How it was verified
+   Verified:
+
+   - short bullet points on how it was verified
    ```
 
    Add `Closes #<n>` only if an issue exists.
