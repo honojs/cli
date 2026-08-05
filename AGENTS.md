@@ -16,7 +16,7 @@ made for coding agents, not humans.
 - `pnpm run test` — run tests (Vitest)
 - `pnpm run format:fix && pnpm run lint:fix` — fix format and lint
 
-Runtime: Node.js 20+. Package manager: pnpm.
+Runtime: Node.js 22+. Package manager: pnpm.
 
 ## Architecture
 
