@@ -60,6 +60,9 @@ Runtime: Node.js 20+. Package manager: Bun.
 
    Add `Closes #<n>` only if an issue exists.
 
+   End the body with the checklist from
+   `.github/pull_request_template.md`. Check the items you did.
+
 6. Self-review the diff with the checklist below
 
 **No AI attribution.** Do not add `Co-Authored-By`, session links, or
