@@ -86,6 +86,13 @@ Run the quality gates first. Then check:
 Verdict: **approve** / **request changes** / **needs human decision**.
 Rank findings by severity: `blocker` / `bug` / `risk` / `nit`.
 
+## Release
+
+1. On `main`: `npm version patch` (or `minor` / `major`)
+2. `git push origin main --follow-tags`
+3. The `release` workflow stages the package on npm with staged publishing
+4. A maintainer approves the staged package on npmjs.com (needs 2FA)
+
 ## Hono Documentation
 
 Need Hono details? Fetch <https://hono.dev/llms.txt> or a page under

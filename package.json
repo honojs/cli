@@ -15,9 +15,7 @@
     "lint:fix": "eslint --ext js,ts src --fix",
     "format": "prettier src --check",
     "format:fix": "prettier src --write",
-    "postbuild": "publint",
-    "prerelease": "pnpm run build",
-    "release": "np"
+    "postbuild": "publint"
   },
   "files": [
     "dist"
@@ -46,7 +44,6 @@
     "@types/node": "^24.7.0",
     "eslint": "^9.37.0",
     "magic-string": "^0.30.21",
-    "np": "^10.2.0",
     "pkg-pr-new": "^0.0.62",
     "prettier": "^3.6.2",
     "publint": "^0.3.14",
