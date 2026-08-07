@@ -34,7 +34,6 @@
   },
   "homepage": "https://hono.dev",
   "dependencies": {
-    "@hono/node-server": "^1.19.5",
     "commander": "^14.0.1",
     "esbuild": "^0.25.10",
     "hono": "^4.9.12"

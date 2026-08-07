@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@hono/node-server':
-        specifier: ^1.19.5
-        version: 1.19.17(hono@4.13.0)
       commander:
         specifier: ^14.0.1
         version: 14.0.3
@@ -498,12 +495,6 @@ packages:
     peerDependencies:
       eslint: ^9.0.0
       typescript: ^5.0.0
-
-  '@hono/node-server@1.19.17':
-    resolution: {integrity: sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==}
-    engines: {node: '>=18.14.1'}
-    peerDependencies:
-      hono: ^4
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3483,10 +3474,6 @@ snapshots:
       - eslint-import-resolver-node
       - eslint-plugin-import
       - supports-color
-
-  '@hono/node-server@1.19.17(hono@4.13.0)':
-    dependencies:
-      hono: 4.13.0
 
   '@humanfs/core@0.19.2':
     dependencies:
