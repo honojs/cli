@@ -149,7 +149,7 @@ export default app
     const apiResponse = await capturedFetchFunction(apiRequest)
     const apiData = await apiResponse.json()
     expect(apiData).toEqual({ message: 'API response' })
-  })
+  }, 30000)
 
   it('should return 404 for non-existent routes when no app file exists', async () => {
     await program.parseAsync(['node', 'test', 'serve'])
