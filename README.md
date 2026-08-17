@@ -49,11 +49,11 @@ hono request [file] [options]
 - `-d, --data <data>` - Request body data
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
-- `-J, --json` - Output response as JSON
-- `-o, --output <file>` - Write to file instead of stdout
-- `-O, --remote-name` - Write output to file named as remote file
-- `-i, --include` - Include protocol and headers in the output
-- `-I, --head` - Show only protocol and headers in the output
+- `-o, --output <file>` - Write response body to file instead of stdout
+- `-O, --remote-name` - Write response body to file named as remote file
+- `--plain` - human-readable output instead of JSON
+- `-i, --include` - Include status and headers in the output (with `--plain`)
+- `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
@@ -81,20 +81,24 @@ hono request -P /api/protected \
 hono request -e pg -e dotenv src/your-app.ts
 ```
 
-**Response Format:**
+**Output:**
 
-The command returns a JSON object with the following structure:
+The result is JSON with the shared envelope. A JSON response body is embedded as an object, not an escaped string:
 
 ```json
 {
-  "status": 200,
-  "body": "{\"message\":\"Hello World\"}",
-  "headers": {
-    "content-type": "application/json",
-    "x-custom-header": "value"
+  "ok": true,
+  "data": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": { "message": "Hello World" }
   }
 }
 ```
+
+A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl.
 
 ### `build`
 
