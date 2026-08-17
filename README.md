@@ -107,7 +107,7 @@ hono build [entry] [options]
 With the `--optimize` option, it also applies Hono-specific optimizations to reduce bundle size:
 
 - **Router optimization**: Replaces the router with a prebuilt router for your routes
-- **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when your application only uses GET, HEAD, or OPTIONS methods
+- **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when every route method is strictly GET, HEAD, or OPTIONS. A route or middleware registered with `all()` or `use()` keeps the APIs, because it may read the request body
 - **Context response API removal**: Removes unused response utility APIs (`c.body()`, `c.json()`, `c.text()`, `c.html()`, `c.redirect()`) from Context object
 - **Hono API removal**: Removes unused Hono methods (`route`, `mount`, `fire`) that are only used during application initialization
 
@@ -121,7 +121,7 @@ With the `--optimize` option, it also applies Hono-specific optimizations to red
 - `-m, --minify` - minify output file
 - `-t, --target [target]` - environment target
 - `--optimize` - apply Hono-specific optimizations
-- `--no-request-body-api-removal` - Disable request body API removal optimization
+- `--request-body-api-removal <mode>` - Request body API removal mode: `auto` (default), `force`, or `disable`
 - `--no-context-response-api-removal` - Disable response utility API removal from Context object
 - `--no-hono-api-removal` - Disable Hono API removal optimization
 - `--plain` - human-readable output instead of JSON
