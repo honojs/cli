@@ -1,7 +1,6 @@
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
-import { METHOD_NAME_ALL } from 'hono/router'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
@@ -30,7 +29,7 @@ interface BuildOptions {
   minify?: boolean
   target: string
   optimize?: boolean
-  requestBodyApiRemoval: boolean
+  requestBodyApiRemoval: 'auto' | 'force' | 'disable'
   honoApiRemoval: boolean
   contextResponseApiRemoval: boolean
   plain?: boolean
@@ -57,8 +56,9 @@ export function buildCommand(program: Command) {
     .option('-m, --minify', 'minify output file')
     .option('--optimize', 'apply Hono-specific optimizations')
     .option(
-      '--no-request-body-api-removal',
-      'do not remove request body APIs even if they are not needed'
+      '--request-body-api-removal <mode>',
+      'request body API removal mode (auto | force | disable)',
+      'auto'
     )
     .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
     .option(
@@ -69,6 +69,13 @@ export function buildCommand(program: Command) {
     .option('--plain', 'human-readable output instead of JSON')
     .action(
       handleErrors(async (entry: string, options: BuildOptions) => {
+        if (!['auto', 'force', 'disable'].includes(options.requestBodyApiRemoval)) {
+          throw new CliError(
+            'INVALID_OPTION',
+            `Invalid mode for --request-body-api-removal: ${options.requestBodyApiRemoval}`,
+            'Use one of: auto, force, disable'
+          )
+        }
         if (!entry) {
           entry =
             DEFAULT_ENTRY_CANDIDATES.find((entry) => existsSync(entry)) ??
@@ -269,11 +276,13 @@ export class Hono extends HonoBase {
     assignRouterStatement = 'this.router = new TrieRouter()'
   }
 
+  // "auto" removes the APIs only when every route method is strictly
+  // GET/HEAD/OPTIONS. A route or middleware registered with ALL may read
+  // the request body (#64), so its presence keeps the APIs.
   const removeRequestBodyApi =
-    options.requestBodyApiRemoval !== false &&
-    app.routes.every(({ method }) =>
-      [METHOD_NAME_ALL, 'GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
-    )
+    options.requestBodyApiRemoval === 'force' ||
+    (options.requestBodyApiRemoval === 'auto' &&
+      app.routes.every(({ method }) => ['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())))
   const unusedHonoMethods: Record<string, number> = (
     app as Hono & { unusedMethods: Record<string, number> }
   ).unusedMethods

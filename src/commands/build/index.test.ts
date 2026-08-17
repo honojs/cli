@@ -339,8 +339,55 @@ describe('buildCommand', () => {
       expect(content).toMatch(/parseBody/)
     })
 
+    it('should keep request body APIs when all method is used', { timeout: 0 }, async () => {
+      writePackageJSON(dir)
+      await npmInstall()
+      writeFileSync(
+        join(dir, './src/index.ts'),
+        `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.get('/', (c) => c.text('Hello'))
+          app.all('/data', async (c) => {
+            const body = await c.req.json()
+            return c.json(body)
+          })
+          export default app
+        `
+      )
+      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+
+      const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+      expect(content).toMatch(/parseBody/)
+    })
+
+    it('should keep request body APIs when middleware is used', { timeout: 0 }, async () => {
+      writePackageJSON(dir)
+      await npmInstall()
+      writeFileSync(
+        join(dir, './src/index.ts'),
+        `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.use(async (c, next) => {
+            if (c.req.method === 'POST') {
+              const body = await c.req.json()
+              c.set('body', body)
+            }
+            await next()
+          })
+          app.get('/', (c) => c.text('Hello'))
+          export default app
+        `
+      )
+      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+
+      const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+      expect(content).toMatch(/parseBody/)
+    })
+
     it(
-      'should keep request body APIs when --no-request-body-api-removal is specified',
+      'should keep request body APIs when --request-body-api-removal disable is specified',
       { timeout: 0 },
       async () => {
         writePackageJSON(dir)
@@ -359,13 +406,65 @@ describe('buildCommand', () => {
           'hono',
           'build',
           '--optimize',
-          '--no-request-body-api-removal',
+          '--request-body-api-removal',
+          'disable',
         ])
 
         const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
         expect(content).toMatch(/parseBody/)
       }
     )
+
+    it(
+      'should remove request body APIs when --request-body-api-removal force is specified',
+      { timeout: 0 },
+      async () => {
+        writePackageJSON(dir)
+        await npmInstall()
+        writeFileSync(
+          join(dir, './src/index.ts'),
+          `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.post('/data', async (c) => {
+            const body = await c.req.json()
+            return c.json(body)
+          })
+          export default app
+        `
+        )
+        await program.parseAsync([
+          'node',
+          'hono',
+          'build',
+          '--optimize',
+          '--request-body-api-removal',
+          'force',
+        ])
+
+        const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+        expect(content).not.toMatch(/parseBody/)
+        expect(content).not.toMatch(/#cachedBody/)
+      }
+    )
+
+    it('should print a JSON error with an invalid mode', async () => {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      await program.parseAsync([
+        'node',
+        'hono',
+        'build',
+        '--optimize',
+        '--request-body-api-removal',
+        'hoge',
+      ])
+      const parsed = JSON.parse(log.mock.calls[0][0] as string)
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+      log.mockRestore()
+    })
   })
 
   describe('Hono API removal', () => {
