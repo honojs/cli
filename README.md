@@ -21,14 +21,14 @@ hono --help
 # Send request to Hono app
 hono request
 
-# Generate an optimized Hono app
-hono optimize
+# Build your Hono app
+hono build
 ```
 
 ## Commands
 
 - `request [file]` - Send request to Hono app using `app.request()`
-- `optimize [entry]` - Generate an optimized Hono app
+- `build [entry]` - Build your Hono app
 
 ### `request`
 
@@ -96,19 +96,20 @@ The command returns a JSON object with the following structure:
 }
 ```
 
-### `optimize`
+### `build`
 
-Generate an optimized Hono class and export bundled file.
+Build your Hono app into a single bundled file.
 
-This command automatically applies the following optimizations to reduce bundle size:
+```bash
+hono build [entry] [options]
+```
 
+With the `--optimize` option, it also applies Hono-specific optimizations to reduce bundle size:
+
+- **Router optimization**: Replaces the router with a prebuilt router for your routes
 - **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when your application only uses GET, HEAD, or OPTIONS methods
 - **Context response API removal**: Removes unused response utility APIs (`c.body()`, `c.json()`, `c.text()`, `c.html()`, `c.redirect()`) from Context object
 - **Hono API removal**: Removes unused Hono methods (`route`, `mount`, `fire`) that are only used during application initialization
-
-```bash
-hono optimize [entry] [options]
-```
 
 **Arguments:**
 
@@ -119,30 +120,61 @@ hono optimize [entry] [options]
 - `-o, --outfile <outfile>` - Output file
 - `-m, --minify` - minify output file
 - `-t, --target [target]` - environment target
+- `--optimize` - apply Hono-specific optimizations
 - `--no-request-body-api-removal` - Disable request body API removal optimization
 - `--no-context-response-api-removal` - Disable response utility API removal from Context object
 - `--no-hono-api-removal` - Disable Hono API removal optimization
+- `--plain` - human-readable output instead of JSON
 
 **Examples:**
 
 ```bash
-# Generate an optimized Hono class and export bundled file to dist/index.js
-hono optimize
+# Build src/index.ts to dist/index.js
+hono build
+
+# Build with optimizations
+hono build --optimize
 
 # Specify entry file and output file
-hono optimize -o dist/app.js src/app.ts
+hono build -o dist/app.js src/app.ts
 
-# Export bundled file with minification
-hono optimize -m
-
-# Specify environment target
-hono optimize -t es2024
-
-# Disable specific optimizations
-hono optimize -m --no-request-body-api-removal
-hono optimize -m --no-context-response-api-removal
-hono optimize -m --no-hono-api-removal
+# Build with minification
+hono build -m --optimize
 ```
+
+**Output:**
+
+The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data` on success, `ok: false` and `error` (with `code`, `message`, and `hint`) on failure with exit code 1.
+
+```json
+{
+  "ok": true,
+  "data": {
+    "optimized": true,
+    "router": "PreparedRegExpRouter",
+    "removed": {
+      "requestBodyApis": true,
+      "contextResponseApis": ["body", "json", "html", "redirect"],
+      "honoApis": ["route", "mount", "fire"]
+    },
+    "output": "dist/index.js",
+    "size": 34124
+  }
+}
+```
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "ENTRY_NOT_FOUND",
+    "message": "Entry file missing.ts does not exist",
+    "hint": "Pass an existing entry file: hono build src/index.ts"
+  }
+}
+```
+
+Use `--plain` for a human-readable format.
 
 ## Tips
 
