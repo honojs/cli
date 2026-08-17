@@ -14,21 +14,34 @@ vi.mock('node:url', () => ({
 import { buildAndImportApp } from './build.js'
 
 describe('buildAndImportApp', () => {
-  let mockEsbuildDispose: any
-  let mockEsbuild: any
+  const getMockEsbuild = async () => vi.mocked((await import('esbuild')).context)
+
+  let mockEsbuildDispose: ReturnType<typeof vi.fn>
+  let mockEsbuild: Awaited<ReturnType<typeof getMockEsbuild>>
+
+  type OnEndCallback = Parameters<PluginBuild['onEnd']>[0]
 
   const setupBundledCode = (code: string) => {
-    mockEsbuild.mockImplementation((param: Parameters<typeof context>[0]) => {
-      let onEnd: (result: any) => void
+    mockEsbuild.mockImplementation(async (param: Parameters<typeof context>[0]) => {
+      let onEnd: OnEndCallback | undefined
       param.plugins?.[0].setup({
-        onEnd: (cb: (result: any) => void) => {
+        onEnd: (cb: OnEndCallback) => {
           onEnd = cb
         },
       } as PluginBuild)
-      onEnd!({ outputFiles: [{ text: code }] })
+      await onEnd!({
+        errors: [],
+        warnings: [],
+        outputFiles: [{ path: '', contents: new Uint8Array(), hash: '', text: code }],
+        metafile: undefined,
+        mangleCache: undefined,
+      })
 
       return {
+        rebuild: vi.fn(),
         watch: vi.fn(),
+        serve: vi.fn(),
+        cancel: vi.fn(),
         dispose: mockEsbuildDispose,
       }
     })
@@ -36,7 +49,7 @@ describe('buildAndImportApp', () => {
 
   beforeEach(async () => {
     mockEsbuildDispose = vi.fn()
-    mockEsbuild = vi.mocked((await import('esbuild')).context)
+    mockEsbuild = await getMockEsbuild()
 
     vi.clearAllMocks()
   })
