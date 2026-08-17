@@ -1,0 +1,29 @@
+README.md
+  s_449966fc5983c0::t_24c610bd15b2b2 24-25,31,99,101,103-107,109,123,127,132-136,139-145,147,149-164,166-174,177-178
+src/cli.ts
+  s_449966fc5983c0::t_ad3333115fc412 5,22
+src/commands/build/index.test.ts
+  s_449966fc5983c0::t_ec24f75a932e27 2,7,10,31,39-48,227,268,272,285-292,312,336,357-363,384,405,424,446-453,475,497,521-527,537-595
+src/commands/build/index.ts
+  s_449966fc5983c0::t_5463a6ab0aaff7 10,28-51,53-54,58,69,71,81-85,89-188,215-216,218-226,228-242,244-258,260-270,272-309,311-318,328-329,331-356,358-360,362-387,389-435
+src/utils/output.test.ts
+  s_449966fc5983c0::t_594f06f374ec48 1-64
+src/utils/output.ts
+  s_449966fc5983c0::t_35e9fc7fdd0b43 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c662ead23d4a317c06ca50929afe23180fa82ba2",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
