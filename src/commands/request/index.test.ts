@@ -25,24 +25,24 @@ vi.mock('../../utils/file.js', () => ({
 
 describe('requestCommand', () => {
   let program: Command
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-  let mockModules: any
-  let mockBuildAndImportApp: any
+  const spyOnConsole = (method: 'log' | 'warn' | 'error') =>
+    vi.spyOn(console, method).mockImplementation(() => {})
+  let consoleLogSpy: ReturnType<typeof spyOnConsole>
+  let consoleWarnSpy: ReturnType<typeof spyOnConsole>
+  let consoleErrorSpy: ReturnType<typeof spyOnConsole>
+  const getMockModules = async () => ({
+    existsSync: vi.mocked((await import('node:fs')).existsSync),
+    realpathSync: vi.mocked((await import('node:fs')).realpathSync),
+    resolve: vi.mocked((await import('node:path')).resolve),
+  })
+  const getMockBuildAndImportApp = async () =>
+    vi.mocked((await import('../../utils/build.js')).buildAndImportApp)
 
-  const createBuildIterator = (app: Hono) => {
-    const iterator = {
-      next: vi
-        .fn()
-        .mockResolvedValueOnce({ value: app, done: false })
-        .mockResolvedValueOnce({ value: undefined, done: true }),
-      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
-      [Symbol.asyncIterator]() {
-        return this
-      },
-    }
-    return iterator
+  let mockModules: Awaited<ReturnType<typeof getMockModules>>
+  let mockBuildAndImportApp: Awaited<ReturnType<typeof getMockBuildAndImportApp>>
+
+  async function* createBuildIterator(app: Hono): AsyncGenerator<Hono> {
+    yield app
   }
 
   const setupBasicMocks = (appPath: string, mockApp: Hono) => {
@@ -57,18 +57,13 @@ describe('requestCommand', () => {
   beforeEach(async () => {
     program = new Command()
     requestCommand(program)
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    consoleLogSpy = spyOnConsole('log')
+    consoleWarnSpy = spyOnConsole('warn')
+    consoleErrorSpy = spyOnConsole('error')
 
     // Get mocked modules
-    mockModules = {
-      existsSync: vi.mocked((await import('node:fs')).existsSync),
-      realpathSync: vi.mocked((await import('node:fs')).realpathSync),
-      resolve: vi.mocked((await import('node:path')).resolve),
-    }
-
-    mockBuildAndImportApp = vi.mocked((await import('../../utils/build.js')).buildAndImportApp)
+    mockModules = await getMockModules()
+    mockBuildAndImportApp = await getMockBuildAndImportApp()
 
     vi.clearAllMocks()
   })
@@ -86,7 +81,7 @@ describe('requestCommand', () => {
     mockApp.get('/data', (c) => c.json(jsonBody))
     setupBasicMocks('test-app.js', mockApp)
     await program.parseAsync(['node', 'test', 'request', '-P', '/data', 'test-app.js'])
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -102,7 +97,7 @@ describe('requestCommand', () => {
     mockApp.get('/data', (c) => c.text(text))
     setupBasicMocks('test-app.js', mockApp)
     await program.parseAsync(['node', 'test', 'request', '-P', '/data', 'test-app.js'])
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -130,7 +125,7 @@ describe('requestCommand', () => {
       sourcemap: true,
     })
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -158,7 +153,7 @@ describe('requestCommand', () => {
       sourcemap: true,
     })
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -180,7 +175,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', '-P', '/json-charset', 'test-app.js'])
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -200,7 +195,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', '-P', '/json-obj', 'test-app.js'])
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -236,7 +231,7 @@ describe('requestCommand', () => {
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 201,
@@ -253,7 +248,7 @@ describe('requestCommand', () => {
     const expectedPath = 'src/index.js'
 
     // Override existsSync to only return true for the resolved path of src/index.js
-    mockModules.existsSync.mockImplementation((path: string) => {
+    mockModules.existsSync.mockImplementation((path) => {
       const resolvedPath = `${process.cwd()}/${expectedPath}`
       return path === resolvedPath
     })
@@ -270,7 +265,7 @@ describe('requestCommand', () => {
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'src/index.tsx')
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'src/index.js')
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -304,7 +299,7 @@ describe('requestCommand', () => {
       'test-app.js',
     ])
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -341,7 +336,7 @@ describe('requestCommand', () => {
       'test-app.js',
     ])
 
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -364,7 +359,7 @@ describe('requestCommand', () => {
     await program.parseAsync(['node', 'test', 'request', '-P', '/api/noheader', 'test-app.js'])
 
     // Should not include any custom headers, only default ones
-    const output = consoleLogSpy.mock.calls[0][0] as string
+    const output = consoleLogSpy.mock.calls[0][0]
     const result = JSON.parse(output)
     expect(result.ok).toBe(true)
     expect(result.data.status).toBe(200)
@@ -394,7 +389,7 @@ describe('requestCommand', () => {
     ])
 
     // Should still work, malformed header is ignored
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -446,7 +441,7 @@ describe('requestCommand', () => {
     mockApp.get('/image.png', (c) => c.body(pngData.buffer, 200, { 'Content-Type': 'image/png' }))
     setupBasicMocks('test-app.js', mockApp)
     await program.parseAsync(['node', 'test', 'request', '-P', '/image.png', 'test-app.js'])
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string)).toEqual({
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
         status: 200,
@@ -487,18 +482,11 @@ describe('requestCommand', () => {
     const text = 'Hello, World!'
     mockApp2.get('/resource', (c) => c.text(text))
 
-    const iterator = {
-      next: vi
-        .fn()
-        .mockResolvedValueOnce({ value: mockApp1, done: false })
-        .mockResolvedValueOnce({ value: mockApp2, done: false })
-        .mockResolvedValueOnce({ value: undefined, done: true }),
-      return: vi.fn().mockResolvedValue({ value: undefined, done: true }),
-      [Symbol.asyncIterator]() {
-        return this
-      },
+    async function* iterator(): AsyncGenerator<Hono> {
+      yield mockApp1
+      yield mockApp2
     }
-    mockBuildAndImportApp.mockReturnValue(iterator)
+    mockBuildAndImportApp.mockReturnValue(iterator())
 
     mockModules.existsSync.mockReturnValue(true)
     mockModules.realpathSync.mockReturnValue('test-app.js')
@@ -543,10 +531,10 @@ describe('requestCommand', () => {
     ])
 
     const saved = mockSaveFile.mock.calls[0]
-    expect(new TextDecoder().decode(saved[0] as ArrayBuffer)).toBe(JSON.stringify(jsonBody))
+    expect(new TextDecoder().decode(saved[0])).toBe(JSON.stringify(jsonBody))
     expect(saved[1]).toBe(outputPath)
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to ${outputPath}`)
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0] as string).data.savedTo).toBe(outputPath)
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).data.savedTo).toBe(outputPath)
   })
 
   it('should save binary response to specified file with -o option', async () => {
@@ -573,7 +561,7 @@ describe('requestCommand', () => {
     ])
 
     const saved = mockSaveFile.mock.calls[0]
-    expect(new Uint8Array(saved[0] as ArrayBuffer)).toEqual(new Uint8Array(binaryData))
+    expect(new Uint8Array(saved[0])).toEqual(new Uint8Array(binaryData))
     expect(saved[1]).toBe(outputPath)
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to ${outputPath}`)
   })
@@ -595,7 +583,7 @@ describe('requestCommand', () => {
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/index.html', 'text/html; charset=UTF-8')
     const saved = mockSaveFile.mock.calls[0]
-    expect(new TextDecoder().decode(saved[0] as ArrayBuffer)).toBe(htmlContent)
+    expect(new TextDecoder().decode(saved[0])).toBe(htmlContent)
     expect(saved[1]).toBe('index.html')
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to index.html`)
   })
@@ -617,7 +605,7 @@ describe('requestCommand', () => {
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/image.png', 'image/png')
     const saved = mockSaveFile.mock.calls[0]
-    expect(new Uint8Array(saved[0] as ArrayBuffer)).toEqual(new Uint8Array(pngData))
+    expect(new Uint8Array(saved[0])).toEqual(new Uint8Array(pngData))
     expect(saved[1]).toBe('image.png')
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to image.png`)
   })
@@ -639,7 +627,7 @@ describe('requestCommand', () => {
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/', 'text/html; charset=UTF-8')
     const saved = mockSaveFile.mock.calls[0]
-    expect(new TextDecoder().decode(saved[0] as ArrayBuffer)).toBe(htmlContent)
+    expect(new TextDecoder().decode(saved[0])).toBe(htmlContent)
     expect(saved[1]).toBe('index')
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to index`)
   })
@@ -672,7 +660,7 @@ describe('requestCommand', () => {
 
     expect(mockGetFilenameFromPath).not.toHaveBeenCalled()
     const saved = mockSaveFile.mock.calls[0]
-    expect(new TextDecoder().decode(saved[0] as ArrayBuffer)).toBe(textContent)
+    expect(new TextDecoder().decode(saved[0])).toBe(textContent)
     expect(saved[1]).toBe(outputPath)
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to ${outputPath}`)
   })
@@ -699,7 +687,7 @@ describe('requestCommand', () => {
     ])
 
     const saved = mockSaveFile.mock.calls[0]
-    expect(new TextDecoder().decode(saved[0] as ArrayBuffer)).toBe(JSON.stringify(jsonBody))
+    expect(new TextDecoder().decode(saved[0])).toBe(JSON.stringify(jsonBody))
     expect(saved[1]).toBe(outputPath)
     expect(consoleErrorSpy).toHaveBeenCalledWith(`Saved response to ${outputPath}`)
   })
@@ -957,7 +945,7 @@ describe('requestCommand', () => {
 
     await program.parseAsync(['node', 'test', 'request', 'missing.ts'])
 
-    const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
     expect(parsed.ok).toBe(false)
     expect(parsed.error.code).toBe('ENTRY_NOT_FOUND')
     expect(parsed.error.hint).toBeDefined()
