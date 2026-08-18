@@ -1,0 +1,23 @@
+src/commands/agent-context/document.ts
+  s_449966fc5983c0::t_ba41c9a92465ad 3,14,27-41,46-80
+src/utils/markdown.test.ts
+  s_449966fc5983c0::t_9aecf13472a40e 1-20
+src/utils/markdown.ts
+  s_449966fc5983c0::t_1952313dde8b6c 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7a9402dfb568f2b915dd5cdd6f291d3de556db86",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
