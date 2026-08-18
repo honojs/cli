@@ -12,7 +12,9 @@ const contexts: Record<string, CommandAgentContext> = {
   build: buildContext,
 }
 
-// Markdown primitives. They emit raw text, so JSX never escapes it.
+// Markdown primitives. hono/jsx is an HTML renderer, but these components
+// borrow only its composition. raw() keeps the text as-is, so Markdown
+// characters are never HTML-escaped.
 
 const asArray = (children: unknown): unknown[] =>
   (Array.isArray(children) ? children : [children]).flat()
