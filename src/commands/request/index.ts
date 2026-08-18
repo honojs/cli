@@ -1,8 +1,24 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
+import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { handleErrors, printResult } from '../../utils/output.js'
+
+export const agentContext: CommandAgentContext = {
+  output:
+    '{ "status": 200, "headers": { "content-type": "application/json" }, "body": { "message": "Hello" } }',
+  errors: ['ENTRY_NOT_FOUND'],
+  examples: [
+    'hono request -P /api/users',
+    `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
+    'hono request -P /image.png -o image.png',
+  ],
+  notes: [
+    'No server needed. The request goes directly to app.request().',
+    'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
+  ],
+}
 
 interface RequestOptions {
   method?: string

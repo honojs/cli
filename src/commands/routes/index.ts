@@ -1,7 +1,19 @@
 import type { Command } from 'commander'
 import { getRouterName, inspectRoutes } from 'hono/dev'
+import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+
+export const agentContext: CommandAgentContext = {
+  output:
+    '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }] }',
+  errors: ['ENTRY_NOT_FOUND', 'INVALID_APP'],
+  examples: ['hono routes', 'hono routes --verbose src/app.ts'],
+  notes: [
+    'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',
+    'Run it first to get the full picture of an app without reading the source.',
+  ],
+}
 
 interface RoutesOptions {
   verbose: boolean

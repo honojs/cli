@@ -5,9 +5,21 @@ import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { buildAndImportApp } from '../../utils/build.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { removeApis } from './remove-apis.js'
+
+export const agentContext: CommandAgentContext = {
+  output:
+    '{ "optimized": true, "router": "PreparedRegExpRouter", "removed": { "requestBodyApis": true, "contextResponseApis": ["html"], "honoApis": ["route"] }, "output": "dist/index.js", "size": 34124 }',
+  errors: ['ENTRY_NOT_FOUND', 'INVALID_OPTION'],
+  examples: ['hono build', 'hono build --optimize', 'hono build --optimize -m -o dist/app.js'],
+  notes: [
+    'Without --optimize it just bundles the app.',
+    'With --optimize, request body APIs are removed only when every route method is strictly GET/HEAD/OPTIONS. If you have checked the app never reads request bodies, pass --request-body-api-removal force.',
+  ],
+}
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 

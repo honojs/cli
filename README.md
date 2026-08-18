@@ -26,6 +26,9 @@ hono build
 
 # Show routes of your Hono app
 hono routes
+
+# Show how to use Hono CLI, for coding agents
+hono agent-context
 ```
 
 ## Commands
@@ -33,6 +36,7 @@ hono routes
 - `request [file]` - Send request to Hono app using `app.request()`
 - `build [entry]` - Build your Hono app
 - `routes [file]` - Show routes of your Hono app
+- `agent-context` - Show how to use Hono CLI, for coding agents
 
 ### `request`
 
@@ -217,23 +221,25 @@ hono routes [file] [options]
 }
 ```
 
+### `agent-context`
+
+Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.
+
+```bash
+hono agent-context
+```
+
 ## Tips
 
 ### Using Hono CLI with AI Code Agents
 
-When working with AI code agents like Claude Code, you can configure them to use the `hono` CLI for testing. Add the following to your project's `CLAUDE.md` or similar configuration:
+Add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 
-````markdown
-## Hono Development
-
-Use the `hono` CLI for efficient development. View all commands with `hono --help`.
-
-```bash
-# Test your app without starting a server
-hono request -P /api/users src/index.ts
-hono request -P /api/users -X POST -d '{"name":"Alice"}' src/index.ts
+```markdown
+Working on this Hono app? Run `hono agent-context` first and follow it.
 ```
-````
+
+The agent reads the output and learns the whole workflow: `routes` to see the app, `request` to test it, and `build` to bundle it.
 
 ## Authors
 
