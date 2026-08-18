@@ -1,12 +1,8 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
-import { existsSync, realpathSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { buildAndImportApp } from '../../utils/build.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { CliError, handleErrors, printResult } from '../../utils/output.js'
-
-const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
+import { getBuildIterator } from '../../utils/load-app.js'
+import { handleErrors, printResult } from '../../utils/output.js'
 
 interface RequestOptions {
   method?: string
@@ -135,43 +131,6 @@ const handleSaveOutput = async (
     console.error(`Error saving file: ${error instanceof Error ? error.message : String(error)}`)
     return undefined
   }
-}
-
-export function getBuildIterator(
-  appPath: string | undefined,
-  watch: boolean,
-  external: string[] = []
-): AsyncGenerator<Hono> {
-  // Determine entry file path
-  let entry: string
-  let resolvedAppPath: string
-
-  if (appPath) {
-    // If appPath is provided, use it as-is (could be relative or absolute)
-    entry = appPath
-    resolvedAppPath = resolve(process.cwd(), entry)
-  } else {
-    // Use default candidates
-    entry =
-      DEFAULT_ENTRY_CANDIDATES.find((candidate) => existsSync(resolve(process.cwd(), candidate))) ??
-      DEFAULT_ENTRY_CANDIDATES[0]
-    resolvedAppPath = resolve(process.cwd(), entry)
-  }
-
-  if (!existsSync(resolvedAppPath)) {
-    throw new CliError(
-      'ENTRY_NOT_FOUND',
-      `Entry file ${entry} does not exist`,
-      'Pass an existing app file: hono request src/index.ts'
-    )
-  }
-
-  const appFilePath = realpathSync(resolvedAppPath)
-  return buildAndImportApp(appFilePath, {
-    external: ['@hono/node-server', ...external],
-    watch,
-    sourcemap: true,
-  })
 }
 
 export async function executeRequest(
