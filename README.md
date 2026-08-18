@@ -23,12 +23,16 @@ hono request
 
 # Build your Hono app
 hono build
+
+# Show routes of your Hono app
+hono routes
 ```
 
 ## Commands
 
 - `request [file]` - Send request to Hono app using `app.request()`
 - `build [entry]` - Build your Hono app
+- `routes [file]` - Show routes of your Hono app
 
 ### `request`
 
@@ -179,6 +183,39 @@ The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data`
 ```
 
 Use `--plain` for a human-readable format.
+
+### `routes`
+
+Show all routes of your Hono app, like [`showRoutes()`](https://hono.dev/docs/helpers/dev#showroutes).
+
+```bash
+hono routes [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `--verbose` - include middleware
+- `--plain` - human-readable output instead of JSON
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "router": "SmartRouter + RegExpRouter",
+    "routes": [
+      { "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false },
+      { "method": "POST", "path": "/posts", "name": "[handler]", "isMiddleware": false }
+    ]
+  }
+}
+```
 
 ## Tips
 
