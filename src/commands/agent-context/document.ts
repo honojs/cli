@@ -1,7 +1,7 @@
 import type { Command } from 'commander'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { bullets, codeBlock, section, steps } from '../../utils/markdown.js'
-import { agentContext as buildContext } from '../build/index.js'
+import { agentContext as optimizeContext } from '../optimize/index.js'
 import { agentContext as requestContext } from '../request/index.js'
 import { agentContext as routesContext } from '../routes/index.js'
 import { agentContext as ssgContext } from '../ssg/index.js'
@@ -9,7 +9,7 @@ import { agentContext as ssgContext } from '../ssg/index.js'
 const contexts: Record<string, CommandAgentContext> = {
   routes: routesContext,
   request: requestContext,
-  build: buildContext,
+  optimize: optimizeContext,
   ssg: ssgContext,
 }
 
@@ -70,7 +70,7 @@ export const renderAgentContext = (program: Command): string =>
         '`hono routes` — get all routes of the app without reading the source',
         '`hono request -P <path>` — send a request to the app without a server',
         'After you change the app, run them again to verify',
-        '`hono build` — bundle the app (`--optimize` to reduce size)',
+        '`hono optimize` — build an optimized bundle of the app',
       ])
     ),
     section(

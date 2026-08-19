@@ -12,12 +12,12 @@ import { removeApis } from './remove-apis.js'
 
 export const agentContext: CommandAgentContext = {
   output:
-    '{ "optimized": true, "router": "PreparedRegExpRouter", "removed": { "requestBodyApis": true, "contextResponseApis": ["html"], "honoApis": ["route"] }, "output": "dist/index.js", "size": 34124 }',
+    '{ "router": "PreparedRegExpRouter", "removed": { "requestBodyApis": true, "contextResponseApis": ["html"], "honoApis": ["route"] }, "output": "dist/index.js", "size": 34124 }',
   errors: ['ENTRY_NOT_FOUND', 'INVALID_OPTION'],
-  examples: ['hono build', 'hono build --optimize', 'hono build --optimize -m -o dist/app.js'],
+  examples: ['hono optimize', 'hono optimize -m -o dist/app.js'],
   notes: [
-    'Without --optimize it just bundles the app.',
-    'With --optimize, request body APIs are removed only when every route method is strictly GET/HEAD/OPTIONS. If you have checked the app never reads request bodies, pass --request-body-api-removal force.',
+    'For a plain bundle, use your normal build tool. This command exists for the Hono-specific optimizations.',
+    'Request body APIs are removed only when every route method is strictly GET/HEAD/OPTIONS. If you have checked the app never reads request bodies, pass --request-body-api-removal force.',
   ],
 }
 
@@ -36,21 +36,19 @@ const REQUEST_BODY_METHODS = [
 ]
 const CONTEXT_RESPONSE_METHODS = ['body', 'json', 'text', 'html', 'redirect']
 
-interface BuildOptions {
+interface OptimizeOptions {
   outfile: string
   minify?: boolean
   target: string
-  optimize?: boolean
   requestBodyApiRemoval: 'auto' | 'force' | 'disable'
   honoApiRemoval: boolean
   contextResponseApiRemoval: boolean
   plain?: boolean
 }
 
-interface BuildResult {
-  optimized: boolean
-  router?: string
-  removed?: {
+interface OptimizeResult {
+  router: string
+  removed: {
     requestBodyApis: boolean
     contextResponseApis: string[]
     honoApis: string[]
@@ -59,14 +57,13 @@ interface BuildResult {
   size: number
 }
 
-export function buildCommand(program: Command) {
+export function optimizeCommand(program: Command) {
   program
-    .command('build')
-    .description('Build your Hono app')
+    .command('optimize')
+    .description('Build an optimized Hono app')
     .argument('[entry]', 'entry file')
     .option('-o, --outfile [outfile]', 'output file', 'dist/index.js')
     .option('-m, --minify', 'minify output file')
-    .option('--optimize', 'apply Hono-specific optimizations')
     .option(
       '--request-body-api-removal <mode>',
       'request body API removal mode (auto | force | disable)',
@@ -80,7 +77,7 @@ export function buildCommand(program: Command) {
     .option('-t, --target [target]', 'environment target (e.g., node24, deno2, es2024)', 'node20')
     .option('--plain', 'human-readable output instead of JSON')
     .action(
-      handleErrors(async (entry: string, options: BuildOptions) => {
+      handleErrors(async (entry: string, options: OptimizeOptions) => {
         if (!['auto', 'force', 'disable'].includes(options.requestBodyApiRemoval)) {
           throw new CliError(
             'INVALID_OPTION',
@@ -99,7 +96,7 @@ export function buildCommand(program: Command) {
         if (!existsSync(appPath)) {
           throw new CliError('ENTRY_NOT_FOUND', `Entry file ${entry} does not exist`, {
             suggestions: [
-              'Pass the entry file: hono build src/app.ts',
+              'Pass the entry file: hono optimize src/app.ts',
               'Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx',
             ],
           })
@@ -108,9 +105,7 @@ export function buildCommand(program: Command) {
         const appFilePath = realpathSync(appPath)
         const outfile = resolve(process.cwd(), options.outfile)
 
-        const result = options.optimize
-          ? await buildOptimized(appFilePath, outfile, options)
-          : await buildPlain(appFilePath, outfile, options)
+        const result = await buildOptimized(appFilePath, outfile, options)
         result.size = statSync(outfile).size
 
         if (options.plain) {
@@ -122,54 +117,31 @@ export function buildCommand(program: Command) {
     )
 }
 
-const formatPlainResult = (result: BuildResult): string => {
-  const lines = ['[Build]']
-  if (result.router) {
-    lines.push(`  Router: ${result.router}`)
+const formatPlainResult = (result: OptimizeResult): string => {
+  const lines = ['[Optimized]']
+  lines.push(`  Router: ${result.router}`)
+  const removed = []
+  if (result.removed.requestBodyApis) {
+    removed.push('Request body APIs')
   }
-  if (result.removed) {
-    const removed = []
-    if (result.removed.requestBodyApis) {
-      removed.push('Request body APIs')
-    }
-    if (result.removed.contextResponseApis.length > 0) {
-      removed.push(`Context response APIs (${result.removed.contextResponseApis.join(', ')})`)
-    }
-    if (result.removed.honoApis.length > 0) {
-      removed.push(`Hono APIs (${result.removed.honoApis.join(', ')})`)
-    }
-    if (removed.length > 0) {
-      lines.push(`  Removed:\n${removed.map((r) => `    ${r}`).join('\n')}`)
-    }
+  if (result.removed.contextResponseApis.length > 0) {
+    removed.push(`Context response APIs (${result.removed.contextResponseApis.join(', ')})`)
+  }
+  if (result.removed.honoApis.length > 0) {
+    removed.push(`Hono APIs (${result.removed.honoApis.join(', ')})`)
+  }
+  if (removed.length > 0) {
+    lines.push(`  Removed:\n${removed.map((r) => `    ${r}`).join('\n')}`)
   }
   lines.push(`  Output: ${result.output} (${(result.size / 1024).toFixed(2)} KB)`)
   return lines.join('\n')
 }
 
-const buildPlain = async (
-  appFilePath: string,
-  outfile: string,
-  options: BuildOptions
-): Promise<BuildResult> => {
-  await esbuild.build({
-    entryPoints: [appFilePath],
-    outfile,
-    bundle: true,
-    minify: options.minify,
-    format: 'esm',
-    target: options.target,
-    platform: 'node',
-    jsx: 'automatic',
-    jsxImportSource: 'hono/jsx',
-  })
-  return { optimized: false, output: options.outfile, size: 0 }
-}
-
 const buildOptimized = async (
   appFilePath: string,
   outfile: string,
-  options: BuildOptions
-): Promise<BuildResult> => {
+  options: OptimizeOptions
+): Promise<OptimizeResult> => {
   const unusedContextResponseMethods = new Set(
     options.contextResponseApiRemoval ? CONTEXT_RESPONSE_METHODS : []
   )
@@ -445,7 +417,6 @@ export class Hono extends HonoBase {
   })
 
   return {
-    optimized: true,
     router: routerName,
     removed: {
       requestBodyApis: removeRequestBodyApi,

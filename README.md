@@ -27,8 +27,8 @@ hono --help
 # Send request to Hono app
 hono request
 
-# Build your Hono app
-hono build
+# Build an optimized Hono app
+hono optimize
 
 # Show routes of your Hono app
 hono routes
@@ -43,7 +43,7 @@ hono agent-context
 ## Commands
 
 - `request [file]` - Send request to Hono app using `app.request()`
-- `build [entry]` - Build your Hono app
+- `optimize [entry]` - Build an optimized Hono app
 - `routes [file]` - Show routes of your Hono app
 - `ssg [file]` - Generate static files from your Hono app
 - `agent-context` - Show how to use Hono CLI, for coding agents
@@ -118,15 +118,15 @@ The result is JSON with the shared envelope. A JSON response body is embedded as
 
 A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl.
 
-### `build`
+### `optimize`
 
-Build your Hono app into a single bundled file.
+Build your Hono app into a single optimized bundle. For a plain bundle, use your normal build tool — this command exists for the Hono-specific optimizations:
 
 ```bash
-hono build [entry] [options]
+hono optimize [entry] [options]
 ```
 
-With the `--optimize` option, it also applies Hono-specific optimizations to reduce bundle size:
+It applies the following optimizations to reduce bundle size:
 
 - **Router optimization**: Replaces the router with a prebuilt router for your routes
 - **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when every route method is strictly GET, HEAD, or OPTIONS. A route or middleware registered with `all()` or `use()` keeps the APIs, because it may read the request body
@@ -142,7 +142,6 @@ With the `--optimize` option, it also applies Hono-specific optimizations to red
 - `-o, --outfile <outfile>` - Output file
 - `-m, --minify` - minify output file
 - `-t, --target [target]` - environment target
-- `--optimize` - apply Hono-specific optimizations
 - `--request-body-api-removal <mode>` - Request body API removal mode: `auto` (default), `force`, or `disable`
 - `--no-context-response-api-removal` - Disable response utility API removal from Context object
 - `--no-hono-api-removal` - Disable Hono API removal optimization
@@ -151,17 +150,17 @@ With the `--optimize` option, it also applies Hono-specific optimizations to red
 **Examples:**
 
 ```bash
-# Build src/index.ts to dist/index.js
-hono build
-
-# Build with optimizations
-hono build --optimize
+# Build an optimized bundle to dist/index.js
+hono optimize
 
 # Specify entry file and output file
-hono build -o dist/app.js src/app.ts
+hono optimize -o dist/app.js src/app.ts
 
-# Build with minification
-hono build -m --optimize
+# With minification
+hono optimize -m
+
+# Control request body API removal
+hono optimize --request-body-api-removal force
 ```
 
 **Output:**
@@ -172,7 +171,6 @@ The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data`
 {
   "ok": true,
   "data": {
-    "optimized": true,
     "router": "PreparedRegExpRouter",
     "removed": {
       "requestBodyApis": true,
@@ -192,7 +190,7 @@ The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data`
     "code": "ENTRY_NOT_FOUND",
     "message": "Entry file missing.ts does not exist",
     "suggestions": [
-      "Pass the entry file: hono build src/app.ts",
+      "Pass the entry file: hono optimize src/app.ts",
       "Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx"
     ]
   }

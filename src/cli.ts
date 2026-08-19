@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { agentContextCommand } from './commands/agent-context/index.js'
-import { buildCommand } from './commands/build/index.js'
+import { optimizeCommand } from './commands/optimize/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
 import { ssgCommand } from './commands/ssg/index.js'
@@ -23,7 +23,7 @@ program
   .addHelpText('after', "\nFor coding agents: run 'hono agent-context' and follow it.")
 
 // Register commands
-buildCommand(program)
+optimizeCommand(program)
 requestCommand(program)
 routesCommand(program)
 ssgCommand(program)
