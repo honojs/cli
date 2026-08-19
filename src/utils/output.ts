@@ -1,11 +1,18 @@
+interface CliErrorOptions {
+  suggestions?: string[]
+  docs?: string
+}
+
 export class CliError extends Error {
   code: string
-  hint?: string
+  suggestions?: string[]
+  docs?: string
 
-  constructor(code: string, message: string, hint?: string) {
+  constructor(code: string, message: string, options: CliErrorOptions = {}) {
     super(message)
     this.code = code
-    this.hint = hint
+    this.suggestions = options.suggestions
+    this.docs = options.docs
   }
 }
 
@@ -18,7 +25,8 @@ export const formatError = (error: CliError): string =>
       error: {
         code: error.code,
         message: error.message,
-        ...(error.hint ? { hint: error.hint } : {}),
+        ...(error.suggestions?.length ? { suggestions: error.suggestions } : {}),
+        ...(error.docs ? { docs: error.docs } : {}),
       },
     },
     null,

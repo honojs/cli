@@ -42,7 +42,7 @@ describe('buildCommand', () => {
     const parsed = JSON.parse(log.mock.calls[0][0] as string)
     expect(parsed.ok).toBe(false)
     expect(parsed.error.code).toBe('ENTRY_NOT_FOUND')
-    expect(parsed.error.hint).toBeDefined()
+    expect(parsed.error.suggestions.length).toBeGreaterThan(0)
     expect(process.exitCode).toBe(1)
     process.exitCode = undefined
     log.mockRestore()

@@ -30,11 +30,12 @@ export function getBuildIterator(
   }
 
   if (!existsSync(resolvedAppPath)) {
-    throw new CliError(
-      'ENTRY_NOT_FOUND',
-      `Entry file ${entry} does not exist`,
-      'Pass an existing app file: hono request src/index.ts'
-    )
+    throw new CliError('ENTRY_NOT_FOUND', `Entry file ${entry} does not exist`, {
+      suggestions: [
+        'Pass the app file: hono routes src/app.ts',
+        'Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx',
+      ],
+    })
   }
 
   const appFilePath = realpathSync(resolvedAppPath)
