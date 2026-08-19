@@ -25,6 +25,9 @@ hono build
 # Show routes of your Hono app
 hono routes
 
+# Generate static files from your Hono app
+hono ssg
+
 # Show how to use Hono CLI, for coding agents
 hono agent-context
 ```
@@ -34,6 +37,7 @@ hono agent-context
 - `request [file]` - Send request to Hono app using `app.request()`
 - `build [entry]` - Build your Hono app
 - `routes [file]` - Show routes of your Hono app
+- `ssg [file]` - Generate static files from your Hono app
 - `agent-context` - Show how to use Hono CLI, for coding agents
 
 ### `request`
@@ -218,6 +222,38 @@ hono routes [file] [options]
   }
 }
 ```
+
+### `ssg`
+
+Generate static files from your Hono app with the [SSG Helper](https://hono.dev/docs/helpers/ssg).
+
+```bash
+hono ssg [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `-o, --outdir <dir>` - output directory (default: `static`)
+- `--plain` - human-readable output instead of JSON
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "output": "static",
+    "files": ["static/index.html", "static/about.html"]
+  }
+}
+```
+
+Only GET routes are generated. Use `ssgParams()` for dynamic routes and `disableSSG()` to skip a route.
 
 ### `agent-context`
 

@@ -6,6 +6,7 @@ import { agentContextCommand } from './commands/agent-context/index.js'
 import { buildCommand } from './commands/build/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
+import { ssgCommand } from './commands/ssg/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -24,6 +25,7 @@ program
 buildCommand(program)
 requestCommand(program)
 routesCommand(program)
+ssgCommand(program)
 agentContextCommand(program)
 
 program.parse()
