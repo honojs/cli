@@ -5,6 +5,7 @@ import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { getBuildIterator, readStdin } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { withTracer } from './trace.js'
 
 export const agentContext: CommandAgentContext = {
   output:
@@ -14,12 +15,14 @@ export const agentContext: CommandAgentContext = {
     'hono request -P /api/users',
     `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
     'cat payload.json | hono request -P /api/users -X POST -d @-',
+    'hono request -P /api/users/123 --trace',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
+    '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
   ],
 }
@@ -31,6 +34,7 @@ interface RequestOptions {
   path?: string
   watch: boolean
   plain: boolean
+  trace: boolean
   output?: string
   remoteName: boolean
   include: boolean
@@ -58,6 +62,7 @@ export function requestCommand(program: Command) {
     .option('-o, --output <file>', 'Write response body to file instead of stdout')
     .option('-O, --remote-name', 'Write response body to file named as remote file', false)
     .option('--plain', 'human-readable output instead of JSON', false)
+    .option('--trace', 'include matched routes in the output', false)
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -74,6 +79,11 @@ export function requestCommand(program: Command) {
         const path = options.path || '/'
         const watch = options.watch
         const external = options.external || []
+        if (options.trace && options.plain) {
+          throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
+            suggestions: ['Drop --plain. The trace is part of the JSON output'],
+          })
+        }
         if (file === '-' && options.data === '@-') {
           throw new CliError('INVALID_OPTION', 'Cannot read both the app and the body from stdin', {
             suggestions: ['Pass the app as a file, or the body with -d @file'],
@@ -82,7 +92,8 @@ export function requestCommand(program: Command) {
         options.data = resolveData(options.data)
         const buildIterator = getBuildIterator(file, watch, external)
         for await (const app of buildIterator) {
-          const result = await executeRequest(app, path, options)
+          const traced = options.trace ? withTracer(app) : undefined
+          const result = await executeRequest(traced?.app ?? app, path, options)
           const contentType = result.headers['content-type']
           const buffer = await result.response.clone().arrayBuffer()
           const isBinaryData = isBinaryResponse(buffer)
@@ -103,6 +114,7 @@ export function requestCommand(program: Command) {
             body: isBinaryData ? null : parseBody(result.body, contentType),
             ...(isBinaryData ? { binary: true } : {}),
             ...(savedTo ? { savedTo } : {}),
+            ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
           })
         }
       })
