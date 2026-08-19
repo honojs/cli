@@ -6,6 +6,14 @@ It's not a `create-*` command and not a Vite wrapper. It loads your Hono app dir
 
 ## Installation
 
+Install it in your project. Coding agents find it in `package.json`:
+
+```bash
+npm install -D @hono/cli
+```
+
+Or globally:
+
 ```bash
 npm install -g @hono/cli
 ```
