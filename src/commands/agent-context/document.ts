@@ -57,10 +57,11 @@ export const renderAgentContext = (program: Command): string =>
       'Every command prints JSON to stdout:',
       bullets([
         'Success: `{ "ok": true, "data": ... }` with exit code 0',
-        'Failure: `{ "ok": false, "error": { "code", "message", "hint" } }` with exit code 1',
+        'Failure: `{ "ok": false, "error": { "code", "message", "suggestions", "docs" } }` with exit code 1',
       ]),
-      'Follow `error.hint` when a command fails. Logs go to stderr. Add `--plain` ' +
-        'when a human wants to read the output.'
+      'On failure, try `error.suggestions` in order. `error.docs` is a hono.dev page ' +
+        'for the error — fetch it with the `Accept: text/markdown` header. Logs go to ' +
+        'stderr. Add `--plain` when a human wants to read the output.'
     ),
     section(
       2,

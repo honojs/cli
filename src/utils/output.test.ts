@@ -9,19 +9,23 @@ describe('formatResult', () => {
 })
 
 describe('formatError', () => {
-  it('should include code, message, and hint', () => {
-    const error = new CliError('ENTRY_NOT_FOUND', 'src/index.ts does not exist', 'Pass a file')
+  it('should include code, message, suggestions, and docs', () => {
+    const error = new CliError('ENTRY_NOT_FOUND', 'src/index.ts does not exist', {
+      suggestions: ['Pass a file', 'Check the candidates'],
+      docs: 'https://hono.dev/docs',
+    })
     expect(JSON.parse(formatError(error))).toEqual({
       ok: false,
       error: {
         code: 'ENTRY_NOT_FOUND',
         message: 'src/index.ts does not exist',
-        hint: 'Pass a file',
+        suggestions: ['Pass a file', 'Check the candidates'],
+        docs: 'https://hono.dev/docs',
       },
     })
   })
 
-  it('should omit hint when not set', () => {
+  it('should omit suggestions and docs when not set', () => {
     const error = new CliError('UNEXPECTED_ERROR', 'boom')
     expect(JSON.parse(formatError(error))).toEqual({
       ok: false,

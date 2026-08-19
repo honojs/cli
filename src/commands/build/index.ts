@@ -85,7 +85,7 @@ export function buildCommand(program: Command) {
           throw new CliError(
             'INVALID_OPTION',
             `Invalid mode for --request-body-api-removal: ${options.requestBodyApiRemoval}`,
-            'Use one of: auto, force, disable'
+            { suggestions: ['Use one of: auto, force, disable'] }
           )
         }
         if (!entry) {
@@ -97,11 +97,12 @@ export function buildCommand(program: Command) {
         const appPath = resolve(process.cwd(), entry)
 
         if (!existsSync(appPath)) {
-          throw new CliError(
-            'ENTRY_NOT_FOUND',
-            `Entry file ${entry} does not exist`,
-            'Pass an existing entry file: hono build src/index.ts'
-          )
+          throw new CliError('ENTRY_NOT_FOUND', `Entry file ${entry} does not exist`, {
+            suggestions: [
+              'Pass the entry file: hono build src/app.ts',
+              'Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx',
+            ],
+          })
         }
 
         const appFilePath = realpathSync(appPath)

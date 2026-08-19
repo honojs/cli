@@ -158,7 +158,7 @@ hono build -m --optimize
 
 **Output:**
 
-The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data` on success, `ok: false` and `error` (with `code`, `message`, and `hint`) on failure with exit code 1.
+The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data` on success, `ok: false` and `error` on failure with exit code 1. The error has a machine-readable `code`, a `message`, `suggestions` to try in order, and sometimes a `docs` link.
 
 ```json
 {
@@ -183,7 +183,10 @@ The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data`
   "error": {
     "code": "ENTRY_NOT_FOUND",
     "message": "Entry file missing.ts does not exist",
-    "hint": "Pass an existing entry file: hono build src/index.ts"
+    "suggestions": [
+      "Pass the entry file: hono build src/app.ts",
+      "Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx"
+    ]
   }
 }
 ```

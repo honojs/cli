@@ -42,11 +42,10 @@ export function routesCommand(program: Command) {
         const app = (await buildIterator.next()).value
 
         if (!app || !Array.isArray(app.routes)) {
-          throw new CliError(
-            'INVALID_APP',
-            'The app does not expose routes',
-            'Export the Hono instance as the default export'
-          )
+          throw new CliError('INVALID_APP', 'The app does not expose routes', {
+            suggestions: ['Export the Hono instance as the default export'],
+            docs: 'https://hono.dev/docs/api/hono',
+          })
         }
 
         const routes = inspectRoutes(app).filter(

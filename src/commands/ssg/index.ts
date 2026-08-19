@@ -64,7 +64,10 @@ export function ssgCommand(program: Command) {
           throw new CliError(
             'SSG_FAILED',
             result.error?.message ?? 'Failed to generate static files',
-            'Check the routes with: hono routes'
+            {
+              suggestions: ['Check the routes with: hono routes'],
+              docs: 'https://hono.dev/docs/helpers/ssg',
+            }
           )
         }
 
