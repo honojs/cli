@@ -253,8 +253,6 @@ hono ssg [file] [options]
 }
 ```
 
-Only GET routes are generated. Use `ssgParams()` for dynamic routes and `disableSSG()` to skip a route.
-
 ### `agent-context`
 
 Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.

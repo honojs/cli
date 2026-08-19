@@ -9,9 +9,6 @@ export const agentContext: CommandAgentContext = {
   output: '{ "output": "static", "files": ["static/index.html", "static/about.html"] }',
   errors: ['ENTRY_NOT_FOUND', 'SSG_FAILED'],
   examples: ['hono ssg', 'hono ssg -o dist/static src/app.ts'],
-  notes: [
-    'Only GET routes are generated. Use `ssgParams()` for dynamic routes and `disableSSG()` to skip a route.',
-  ],
 }
 
 interface SsgOptions {
