@@ -1063,4 +1063,50 @@ describe('requestCommand', () => {
       process.exitCode = undefined
     })
   })
+
+  describe('trace', () => {
+    it('should include matchedRoutes with --trace', async () => {
+      const mockApp = new Hono()
+      mockApp.use(async function auth(_c, next) {
+        await next()
+      })
+      mockApp.get('/api/users/:id', function getUser(c) {
+        return c.json({ id: c.req.param('id') })
+      })
+      setupBasicMocks('test-app.js', mockApp)
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '-P',
+        '/api/users/123',
+        '--trace',
+        'test-app.js',
+      ])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.body).toEqual({ id: '123' })
+      expect(parsed.data.matchedRoutes).toEqual([
+        { method: 'ALL', path: '/*', name: 'auth', isMiddleware: true },
+        {
+          method: 'GET',
+          path: '/api/users/:id',
+          name: 'getUser',
+          isMiddleware: false,
+          responded: true,
+        },
+      ])
+    })
+
+    it('should reject --trace with --plain', async () => {
+      await program.parseAsync(['node', 'test', 'request', '--trace', '--plain', 'test-app.js'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+  })
 })

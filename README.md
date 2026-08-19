@@ -70,6 +70,7 @@ hono request [file] [options]
 - `-o, --output <file>` - Write response body to file instead of stdout
 - `-O, --remote-name` - Write response body to file named as remote file
 - `--plain` - human-readable output instead of JSON
+- `--trace` - include matched routes in the output
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
@@ -103,6 +104,32 @@ cat payload.json | hono request -P /api/users -X POST -d @-
 
 # Read the app code from stdin: `app` is predefined and exported for you
 echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello
+
+# Debug an unexpected response: which middleware and handler matched?
+hono request -P /api/users/123 --trace
+```
+
+With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "status": 200,
+    "headers": { "content-type": "application/json" },
+    "body": { "id": "123" },
+    "matchedRoutes": [
+      { "method": "ALL", "path": "/*", "name": "auth", "isMiddleware": true },
+      {
+        "method": "GET",
+        "path": "/api/users/:id",
+        "name": "getUser",
+        "isMiddleware": false,
+        "responded": true
+      }
+    ]
+  }
+}
 ```
 
 **Output:**
