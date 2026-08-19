@@ -72,6 +72,13 @@ export const renderAgentContext = (program: Command): string =>
     ),
     section(
       2,
+      'Hono documentation',
+      'This document covers the CLI only. For Hono framework details, fetch a page ' +
+        'under `https://hono.dev/docs/...` with the `Accept: text/markdown` header:',
+      codeBlock('bash', ["curl -H 'Accept: text/markdown' https://hono.dev/docs/routing"])
+    ),
+    section(
+      2,
       'Commands',
       ...program.commands
         .filter((command) => command.name() !== 'agent-context')
