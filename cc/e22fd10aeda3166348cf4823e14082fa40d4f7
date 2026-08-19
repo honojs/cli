@@ -1,0 +1,29 @@
+README.md
+  s_449966fc5983c0::t_c94481f8cca635 67,100-105
+src/commands/request/index.test.ts
+  s_449966fc5983c0::t_238bc8248c0447 9,37,957-1065
+src/commands/request/index.ts
+  s_449966fc5983c0::t_eea891825f8efe 3,6-7,16-17,21-22,48,77-82,162-171
+src/utils/build.test.ts
+  s_449966fc5983c0::t_41b4d95914808e 271-295
+src/utils/build.ts
+  s_449966fc5983c0::t_04d00366655dfc 12-14,16,19,32-43,45
+src/utils/load-app.ts
+  s_449966fc5983c0::t_2aaf6ca792521e 2,17-28,60-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "cce22fd10aeda3166348cf4823e14082fa40d4f7",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
