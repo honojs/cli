@@ -37,6 +37,12 @@ describe('agentContextCommand', () => {
     expect(output).toContain('## Recommended workflow')
   })
 
+  it('should delegate framework details to hono.dev', async () => {
+    const output = await getOutput()
+    expect(output).toContain('## Hono documentation')
+    expect(output).toContain('Accept: text/markdown')
+  })
+
   it('should document every command except itself', async () => {
     const output = await getOutput()
     expect(output).toContain('### hono build [entry]')

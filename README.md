@@ -231,13 +231,13 @@ hono agent-context
 
 ### Using Hono CLI with AI Code Agents
 
-Add one line to your project's `AGENTS.md` or `CLAUDE.md`:
+Use the [Hono skill](https://github.com/yusukebe/hono-skill). It teaches the agent when and how to use Hono CLI, together with Hono best practices.
+
+Without the skill, add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 
 ```markdown
 Working on this Hono app? Run `hono agent-context` first and follow it.
 ```
-
-The agent reads the output and learns the whole workflow: `routes` to see the app, `request` to test it, and `build` to bundle it.
 
 ## Authors
 

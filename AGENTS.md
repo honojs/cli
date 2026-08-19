@@ -97,8 +97,13 @@ Rank findings by severity: `blocker` / `bug` / `risk` / `nit`.
 
 ## Hono Documentation
 
-Need Hono details? Fetch <https://hono.dev/llms.txt> or a page under
-`https://hono.dev/docs/...`.
+Need Hono details? Fetch <https://hono.dev/llms.txt> to find the right
+page, then fetch the page with the `Accept: text/markdown` header to
+get Markdown.
+
+```bash
+curl -H 'Accept: text/markdown' https://hono.dev/docs/routing
+```
 
 ## Maintaining This File
 
