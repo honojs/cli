@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { buildCommand } from '../build/index.js'
+import { optimizeCommand } from '../optimize/index.js'
 import { requestCommand } from '../request/index.js'
 import { routesCommand } from '../routes/index.js'
 import { agentContextCommand } from './index.js'
@@ -12,7 +12,7 @@ describe('agentContextCommand', () => {
 
   beforeEach(() => {
     program = new Command()
-    buildCommand(program)
+    optimizeCommand(program)
     requestCommand(program)
     routesCommand(program)
     agentContextCommand(program)
@@ -45,7 +45,7 @@ describe('agentContextCommand', () => {
 
   it('should document every command except itself', async () => {
     const output = await getOutput()
-    expect(output).toContain('### hono build [entry]')
+    expect(output).toContain('### hono optimize [entry]')
     expect(output).toContain('### hono request [file]')
     expect(output).toContain('### hono routes [file]')
     expect(output).not.toContain('### hono agent-context')
@@ -53,7 +53,7 @@ describe('agentContextCommand', () => {
 
   it('should include options from the command definitions', async () => {
     const output = await getOutput()
-    expect(output).toContain('`--optimize`')
+    expect(output).toContain('`--request-body-api-removal <mode>`')
     expect(output).toContain('`-P, --path <path>`')
     expect(output).toContain('`--verbose`')
   })
@@ -63,6 +63,6 @@ describe('agentContextCommand', () => {
     expect(output).toContain('`ENTRY_NOT_FOUND`')
     expect(output).toContain('`INVALID_APP`')
     expect(output).toContain('"router": "SmartRouter + RegExpRouter"')
-    expect(output).toContain('hono build --optimize')
+    expect(output).toContain('hono optimize -m')
   })
 })

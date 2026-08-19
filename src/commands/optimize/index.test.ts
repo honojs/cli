@@ -4,10 +4,10 @@ import { execFile } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildCommand } from './index'
+import { optimizeCommand } from './index'
 
 const program = new Command()
-buildCommand(program)
+optimizeCommand(program)
 
 const writePackageJSON = (dir: string, honoVersion: string = 'latest') => {
   writeFileSync(
@@ -28,7 +28,7 @@ const npmInstall = async () =>
     })
   })
 
-describe('buildCommand', () => {
+describe('optimizeCommand', () => {
   let dir: string
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'hono-cli-optimize-test'))
@@ -38,7 +38,7 @@ describe('buildCommand', () => {
 
   it('should print a JSON error if entry file not found', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-    await program.parseAsync(['node', 'hono', 'build', '--optimize', './non-existent-file.ts'])
+    await program.parseAsync(['node', 'hono', 'optimize', './non-existent-file.ts'])
     const parsed = JSON.parse(log.mock.calls[0][0] as string)
     expect(parsed.ok).toBe(false)
     expect(parsed.error.code).toBe('ENTRY_NOT_FOUND')
@@ -224,7 +224,7 @@ describe('buildCommand', () => {
       for (const file of files) {
         writeFileSync(join(dir, file.path), file.content)
       }
-      await program.parseAsync(['node', 'hono', 'build', '--optimize', ...(args ?? [])])
+      await program.parseAsync(['node', 'hono', 'optimize', ...(args ?? [])])
 
       const content = readFileSync(join(dir, result.path), 'utf-8')
       if (result.lineCount) {
@@ -265,7 +265,7 @@ describe('buildCommand', () => {
             `
     )
 
-    const promise = program.parseAsync(['node', 'hono', 'build', '--optimize', '-t', target])
+    const promise = program.parseAsync(['node', 'hono', 'optimize', '-t', target])
     await expect(promise).resolves.not.toThrow()
   })
 
@@ -283,7 +283,7 @@ describe('buildCommand', () => {
     )
 
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-    await program.parseAsync(['node', 'hono', 'build', '--optimize', '-t', 'hoge'])
+    await program.parseAsync(['node', 'hono', 'optimize', '-t', 'hoge'])
     const parsed = JSON.parse(log.mock.calls[0][0] as string)
     expect(parsed.ok).toBe(false)
     expect(parsed.error.code).toBe('UNEXPECTED_ERROR')
@@ -309,7 +309,7 @@ describe('buildCommand', () => {
           export default app
         `
         )
-        await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+        await program.parseAsync(['node', 'hono', 'optimize'])
 
         const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
         expect(content).not.toMatch(/parseBody/)
@@ -333,7 +333,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       expect(content).toMatch(/parseBody/)
@@ -355,7 +355,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       expect(content).toMatch(/parseBody/)
@@ -380,7 +380,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       expect(content).toMatch(/parseBody/)
@@ -404,8 +404,7 @@ describe('buildCommand', () => {
         await program.parseAsync([
           'node',
           'hono',
-          'build',
-          '--optimize',
+          'optimize',
           '--request-body-api-removal',
           'disable',
         ])
@@ -436,8 +435,7 @@ describe('buildCommand', () => {
         await program.parseAsync([
           'node',
           'hono',
-          'build',
-          '--optimize',
+          'optimize',
           '--request-body-api-removal',
           'force',
         ])
@@ -450,14 +448,7 @@ describe('buildCommand', () => {
 
     it('should print a JSON error with an invalid mode', async () => {
       const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-      await program.parseAsync([
-        'node',
-        'hono',
-        'build',
-        '--optimize',
-        '--request-body-api-removal',
-        'hoge',
-      ])
+      await program.parseAsync(['node', 'hono', 'optimize', '--request-body-api-removal', 'hoge'])
       const parsed = JSON.parse(log.mock.calls[0][0] as string)
       expect(parsed.ok).toBe(false)
       expect(parsed.error.code).toBe('INVALID_OPTION')
@@ -480,7 +471,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize', '-m'])
+      await program.parseAsync(['node', 'hono', 'optimize', '-m'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       // These methods should be removed when unused
@@ -501,7 +492,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize', '-m'])
+      await program.parseAsync(['node', 'hono', 'optimize', '-m'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       // route method should be kept when used
@@ -520,7 +511,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize', '-m'])
+      await program.parseAsync(['node', 'hono', 'optimize', '-m'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       // mount method should be kept when used
@@ -542,14 +533,7 @@ describe('buildCommand', () => {
           export default app
         `
         )
-        await program.parseAsync([
-          'node',
-          'hono',
-          'build',
-          '--optimize',
-          '-m',
-          '--no-hono-api-removal',
-        ])
+        await program.parseAsync(['node', 'hono', 'optimize', '-m', '--no-hono-api-removal'])
 
         const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
         // fire method should be kept when --no-hono-api-removal is specified
@@ -571,7 +555,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       // Unused response methods should be removed (json, html, redirect)
@@ -593,7 +577,7 @@ describe('buildCommand', () => {
           export default app
         `
       )
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
 
       const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
       // Used response methods should be kept
@@ -617,13 +601,7 @@ describe('buildCommand', () => {
           export default app
         `
         )
-        await program.parseAsync([
-          'node',
-          'hono',
-          'build',
-          '--optimize',
-          '--no-context-response-api-removal',
-        ])
+        await program.parseAsync(['node', 'hono', 'optimize', '--no-context-response-api-removal'])
 
         const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
         // All response methods should be kept when --no-context-response-api-removal is specified
@@ -647,32 +625,14 @@ describe('buildCommand', () => {
       )
     }
 
-    it('should build without optimizations and print JSON', { timeout: 0 }, async () => {
+    it('should print optimization details as JSON', { timeout: 0 }, async () => {
       writePackageJSON(dir)
       await npmInstall()
       writeApp()
       const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-      await program.parseAsync(['node', 'hono', 'build'])
+      await program.parseAsync(['node', 'hono', 'optimize'])
       const parsed = JSON.parse(log.mock.calls[0][0] as string)
       expect(parsed.ok).toBe(true)
-      expect(parsed.data.optimized).toBe(false)
-      expect(parsed.data.router).toBeUndefined()
-      expect(parsed.data.output).toBe('dist/index.js')
-      expect(parsed.data.size).toBeGreaterThan(0)
-      const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
-      expect(content).not.toContain('PreparedRegExpRouter')
-      log.mockRestore()
-    })
-
-    it('should print optimization details as JSON with --optimize', { timeout: 0 }, async () => {
-      writePackageJSON(dir)
-      await npmInstall()
-      writeApp()
-      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-      await program.parseAsync(['node', 'hono', 'build', '--optimize'])
-      const parsed = JSON.parse(log.mock.calls[0][0] as string)
-      expect(parsed.ok).toBe(true)
-      expect(parsed.data.optimized).toBe(true)
       expect(parsed.data.router).toBeDefined()
       expect(parsed.data.removed.requestBodyApis).toBe(true)
       expect(parsed.data.size).toBeGreaterThan(0)
@@ -684,9 +644,9 @@ describe('buildCommand', () => {
       await npmInstall()
       writeApp()
       const log = vi.spyOn(console, 'log').mockImplementation(() => {})
-      await program.parseAsync(['node', 'hono', 'build', '--optimize', '--plain'])
+      await program.parseAsync(['node', 'hono', 'optimize', '--plain'])
       const output = log.mock.calls[0][0] as string
-      expect(output).toContain('[Build]')
+      expect(output).toContain('[Optimized]')
       expect(output).toContain('Router:')
       expect(output).toContain('Output: dist/index.js')
       log.mockRestore()
