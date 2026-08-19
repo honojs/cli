@@ -82,7 +82,11 @@ describe('ssgCommand', () => {
     await program.parseAsync(['node', 'test', 'ssg', 'test-app.js'])
 
     const fsPromises = (await import('node:fs/promises')).default
-    expect(mockToSSG).toHaveBeenCalledWith(app, fsPromises, { dir: 'static' })
+    expect(mockToSSG).toHaveBeenCalledWith(
+      app,
+      fsPromises,
+      expect.objectContaining({ dir: 'static' })
+    )
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
@@ -99,7 +103,28 @@ describe('ssgCommand', () => {
     await program.parseAsync(['node', 'test', 'ssg', '-o', 'dist/static', 'test-app.js'])
 
     const fsPromises = (await import('node:fs/promises')).default
-    expect(mockToSSG).toHaveBeenCalledWith(app, fsPromises, { dir: 'dist/static' })
+    expect(mockToSSG).toHaveBeenCalledWith(
+      app,
+      fsPromises,
+      expect.objectContaining({ dir: 'dist/static' })
+    )
+  })
+
+  it('should skip excluded paths via beforeRequestHook', async () => {
+    setupBasicMocks()
+    mockToSSG.mockResolvedValue({ success: true, files: [] })
+
+    await program.parseAsync(['node', 'test', 'ssg', '--exclude', '/api/*', 'test-app.js'])
+
+    const options = mockToSSG.mock.calls[0][2]
+    const hook = options?.beforeRequestHook
+    if (typeof hook !== 'function') {
+      throw new Error('beforeRequestHook must be a function')
+    }
+    const kept = new Request('http://localhost/about')
+    const skipped = new Request('http://localhost/api/data')
+    expect(await hook(kept)).toBe(kept)
+    expect(await hook(skipped)).toBe(false)
   })
 
   it('should print file names with --plain', async () => {

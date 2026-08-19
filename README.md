@@ -238,8 +238,20 @@ hono ssg [file] [options]
 **Options:**
 
 - `-o, --outdir <dir>` - output directory (default: `static`)
+- `--include <path>` - generate only matching paths, `*` matches anything (can be used multiple times)
+- `--exclude <path>` - skip matching paths, `*` matches anything (can be used multiple times)
 - `--plain` - human-readable output instead of JSON
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Examples:**
+
+```bash
+# Generate everything to static/
+hono ssg
+
+# Skip API routes
+hono ssg --exclude '/api/*'
+```
 
 **Output:**
 
