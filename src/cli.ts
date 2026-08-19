@@ -20,6 +20,7 @@ program
   .name('hono')
   .description('CLI for Hono')
   .version(packageJson.version, '-v, --version', 'display version number')
+  .addHelpText('after', "\nFor coding agents: run 'hono agent-context' and follow it.")
 
 // Register commands
 buildCommand(program)
