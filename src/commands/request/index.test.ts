@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
   realpathSync: vi.fn(),
+  readFileSync: vi.fn(),
 }))
 
 vi.mock('node:path', () => ({
@@ -33,6 +34,7 @@ describe('requestCommand', () => {
   const getMockModules = async () => ({
     existsSync: vi.mocked((await import('node:fs')).existsSync),
     realpathSync: vi.mocked((await import('node:fs')).realpathSync),
+    readFileSync: vi.mocked((await import('node:fs')).readFileSync),
     resolve: vi.mocked((await import('node:path')).resolve),
   })
   const getMockBuildAndImportApp = async () =>
@@ -951,5 +953,114 @@ describe('requestCommand', () => {
     expect(parsed.error.suggestions.length).toBeGreaterThan(0)
     expect(process.exitCode).toBe(1)
     process.exitCode = undefined
+  })
+
+  describe('stdin', () => {
+    it('should read the body from a file with -d @file', async () => {
+      const mockApp = new Hono()
+      mockApp.post('/echo', async (c) => c.json({ received: await c.req.text() }))
+      setupBasicMocks('test-app.js', mockApp)
+      mockModules.readFileSync.mockReturnValue('{"name":"Alice"}')
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '-P',
+        '/echo',
+        '-X',
+        'POST',
+        '-d',
+        '@body.json',
+        'test-app.js',
+      ])
+
+      expect(mockModules.readFileSync).toHaveBeenCalledWith('body.json', 'utf-8')
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.body).toEqual({ received: '{"name":"Alice"}' })
+    })
+
+    it('should read the body from stdin with -d @-', async () => {
+      const mockApp = new Hono()
+      mockApp.post('/echo', async (c) => c.json({ received: await c.req.text() }))
+      setupBasicMocks('test-app.js', mockApp)
+      mockModules.readFileSync.mockReturnValue('from stdin')
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '-P',
+        '/echo',
+        '-X',
+        'POST',
+        '-d',
+        '@-',
+        'test-app.js',
+      ])
+
+      expect(mockModules.readFileSync).toHaveBeenCalledWith(0, 'utf-8')
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.body).toEqual({ received: 'from stdin' })
+    })
+
+    it('should read the app code from stdin with -', async () => {
+      const mockApp = new Hono()
+      mockApp.get('/', (c) => c.text('from code'))
+      mockModules.readFileSync.mockReturnValue('export default app')
+      mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
+
+      await program.parseAsync(['node', 'test', 'request', '-', '-P', '/'])
+
+      expect(mockModules.readFileSync).toHaveBeenCalledWith(0, 'utf-8')
+      expect(mockBuildAndImportApp).toHaveBeenCalledWith(
+        { code: 'export default app' },
+        { external: ['@hono/node-server'] }
+      )
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.body).toBe('from code')
+    })
+
+    it('should wrap stdin code without a default export', async () => {
+      const mockApp = new Hono()
+      mockApp.get('/', (c) => c.text('wrapped'))
+      mockModules.readFileSync.mockReturnValue('app.get("/", (c) => c.text("wrapped"))')
+      mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
+
+      await program.parseAsync(['node', 'test', 'request', '-', '-P', '/'])
+
+      expect(mockBuildAndImportApp).toHaveBeenCalledWith(
+        {
+          code:
+            "import { Hono } from 'hono'\n" +
+            'const app = new Hono()\n' +
+            'app.get("/", (c) => c.text("wrapped"))\n' +
+            'export default app\n',
+        },
+        { external: ['@hono/node-server'] }
+      )
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.body).toBe('wrapped')
+    })
+
+    it('should reject - together with -d @-', async () => {
+      await program.parseAsync(['node', 'test', 'request', '-', '-d', '@-'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+
+    it('should reject - together with --watch', async () => {
+      await program.parseAsync(['node', 'test', 'request', '-', '-w'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
   })
 })

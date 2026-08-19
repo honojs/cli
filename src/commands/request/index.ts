@@ -1,9 +1,10 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
+import { readFileSync } from 'node:fs'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { getBuildIterator } from '../../utils/load-app.js'
-import { handleErrors, printResult } from '../../utils/output.js'
+import { getBuildIterator, readStdin } from '../../utils/load-app.js'
+import { CliError, handleErrors, printResult } from '../../utils/output.js'
 
 export const agentContext: CommandAgentContext = {
   output:
@@ -12,10 +13,13 @@ export const agentContext: CommandAgentContext = {
   examples: [
     'hono request -P /api/users',
     `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
-    'hono request -P /image.png -o image.png',
+    'cat payload.json | hono request -P /api/users -X POST -d @-',
+    `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
+    'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
+    '-d @file reads the body from a file, -d @- reads it from stdin.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
   ],
 }
@@ -41,7 +45,7 @@ export function requestCommand(program: Command) {
     .argument('[file]', 'Path to the Hono app file')
     .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
-    .option('-d, --data <data>', 'Request body data')
+    .option('-d, --data <data>', 'Request body data (@file reads a file, @- reads stdin)')
     .option('-w, --watch', 'Watch for changes and resend request', false)
     .option(
       '-H, --header <header>',
@@ -70,6 +74,12 @@ export function requestCommand(program: Command) {
         const path = options.path || '/'
         const watch = options.watch
         const external = options.external || []
+        if (file === '-' && options.data === '@-') {
+          throw new CliError('INVALID_OPTION', 'Cannot read both the app and the body from stdin', {
+            suggestions: ['Pass the app as a file, or the body with -d @file'],
+          })
+        }
+        options.data = resolveData(options.data)
         const buildIterator = getBuildIterator(file, watch, external)
         for await (const app of buildIterator) {
           const result = await executeRequest(app, path, options)
@@ -147,6 +157,16 @@ const handleSaveOutput = async (
     console.error(`Error saving file: ${error instanceof Error ? error.message : String(error)}`)
     return undefined
   }
+}
+
+const resolveData = (data: string | undefined): string | undefined => {
+  if (data === undefined || !data.startsWith('@')) {
+    return data
+  }
+  if (data === '@-') {
+    return readStdin()
+  }
+  return readFileSync(data.slice(1), 'utf-8')
 }
 
 export async function executeRequest(
