@@ -9,11 +9,14 @@ export interface BuildOptions {
   plugins?: Plugin[]
 }
 
+/** App source: a file path, or code read from stdin */
+export type AppEntry = string | { code: string }
+
 /**
- * Build and import a TypeScript/JSX/JS file as an app
+ * Build and import a TypeScript/JSX/JS app from a file or from code
  */
 export async function* buildAndImportApp(
-  filePath: string,
+  entry: AppEntry,
   options: BuildOptions = {}
 ): AsyncGenerator<Hono> {
   let resolveApp: (app: Hono) => void
@@ -26,8 +29,20 @@ export async function* buildAndImportApp(
   }
   preparePromise()
 
+  const entryConfig =
+    typeof entry === 'string'
+      ? { entryPoints: [entry] }
+      : {
+          stdin: {
+            contents: entry.code,
+            resolveDir: process.cwd(),
+            loader: 'tsx' as const,
+            sourcefile: '__stdin__.tsx',
+          },
+        }
+
   const context = await esbuild.context({
-    entryPoints: [filePath],
+    ...entryConfig,
     sourcemap: options.sourcemap ?? false,
     sourcesContent: false,
     sourceRoot: process.cwd(),

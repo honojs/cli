@@ -268,4 +268,29 @@ describe('buildAndImportApp', () => {
       ],
     })
   })
+
+  it('should build code from stdin', async () => {
+    const mockApp = new Hono()
+    const bundledCode = 'export default app;'
+
+    setupBundledCode(bundledCode)
+    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
+    vi.doMock(dataUrl, () => ({ default: mockApp }))
+
+    const buildIterator = buildAndImportApp({ code: 'export default app' })
+    const result = (await buildIterator.next()).value
+
+    expect(mockEsbuild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stdin: {
+          contents: 'export default app',
+          resolveDir: process.cwd(),
+          loader: 'tsx',
+          sourcefile: '__stdin__.tsx',
+        },
+      })
+    )
+    expect(mockEsbuild.mock.calls[0][0]).not.toHaveProperty('entryPoints')
+    expect(result).toBe(mockApp)
+  })
 })

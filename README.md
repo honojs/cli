@@ -64,7 +64,7 @@ hono request [file] [options]
 
 - `-P, --path <path>` - Request path (default: "/")
 - `-X, --method <method>` - HTTP method (default: GET)
-- `-d, --data <data>` - Request body data
+- `-d, --data <data>` - Request body data (`@file` reads a file, `@-` reads stdin)
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
 - `-o, --output <file>` - Write response body to file instead of stdout
@@ -97,6 +97,12 @@ hono request -P /api/protected \
 
 # Request with external packages (useful for Node.js native modules)
 hono request -e pg -e dotenv src/your-app.ts
+
+# Read the request body from stdin
+cat payload.json | hono request -P /api/users -X POST -d @-
+
+# Read the app code from stdin: `app` is predefined and exported for you
+echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello
 ```
 
 **Output:**

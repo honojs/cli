@@ -1,5 +1,5 @@
 import type { Hono } from 'hono'
-import { existsSync, realpathSync } from 'node:fs'
+import { existsSync, realpathSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildAndImportApp } from './build.js'
 import { CliError } from './output.js'
@@ -14,6 +14,18 @@ export function getBuildIterator(
   watch: boolean,
   external: string[] = []
 ): AsyncGenerator<Hono> {
+  if (appPath === '-') {
+    if (watch) {
+      throw new CliError('INVALID_OPTION', 'Cannot watch the app read from stdin', {
+        suggestions: ['Pass a file path instead of - when using --watch'],
+      })
+    }
+    return buildAndImportApp(
+      { code: wrapCode(readStdin()) },
+      { external: ['@hono/node-server', ...external] }
+    )
+  }
+
   let entry: string
   let resolvedAppPath: string
 
@@ -44,4 +56,24 @@ export function getBuildIterator(
     watch,
     sourcemap: true,
   })
+}
+
+export const readStdin = (): string => {
+  if (process.stdin.isTTY) {
+    throw new CliError('MISSING_STDIN', 'No input on stdin', {
+      suggestions: ['Pipe the app code: cat app.ts | hono request - -P /'],
+    })
+  }
+  return readFileSync(0, 'utf-8')
+}
+
+/**
+ * Code from stdin does not need boilerplate. If it has no default
+ * export, wrap it: `app` is predefined and exported.
+ */
+export const wrapCode = (code: string): string => {
+  if (/export\s+default/.test(code)) {
+    return code
+  }
+  return `import { Hono } from 'hono'\nconst app = new Hono()\n${code}\nexport default app\n`
 }
