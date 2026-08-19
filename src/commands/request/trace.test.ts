@@ -30,8 +30,11 @@ describe('withTracer', () => {
 
   it('should mark a middleware that responded', async () => {
     const app = new Hono()
-    app.use(async function guard(c) {
-      return c.text('blocked', 403)
+    app.use(async function guard(c, next) {
+      if (!c.req.header('authorization')) {
+        return c.text('blocked', 403)
+      }
+      await next()
     })
     app.get('/y', (c) => c.text('y'))
 
