@@ -4,11 +4,13 @@ import { bullets, codeBlock, section, steps } from '../../utils/markdown.js'
 import { agentContext as buildContext } from '../build/index.js'
 import { agentContext as requestContext } from '../request/index.js'
 import { agentContext as routesContext } from '../routes/index.js'
+import { agentContext as ssgContext } from '../ssg/index.js'
 
 const contexts: Record<string, CommandAgentContext> = {
   routes: routesContext,
   request: requestContext,
   build: buildContext,
+  ssg: ssgContext,
 }
 
 const commandDoc = (command: Command, context?: CommandAgentContext): string => {

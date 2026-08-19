@@ -25,6 +25,9 @@ hono build
 # Show routes of your Hono app
 hono routes
 
+# Generate static files from your Hono app
+hono ssg
+
 # Show how to use Hono CLI, for coding agents
 hono agent-context
 ```
@@ -34,6 +37,7 @@ hono agent-context
 - `request [file]` - Send request to Hono app using `app.request()`
 - `build [entry]` - Build your Hono app
 - `routes [file]` - Show routes of your Hono app
+- `ssg [file]` - Generate static files from your Hono app
 - `agent-context` - Show how to use Hono CLI, for coding agents
 
 ### `request`
@@ -215,6 +219,48 @@ hono routes [file] [options]
       { "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false },
       { "method": "POST", "path": "/posts", "name": "[handler]", "isMiddleware": false }
     ]
+  }
+}
+```
+
+### `ssg`
+
+Generate static files from your Hono app with the [SSG Helper](https://hono.dev/docs/helpers/ssg).
+
+```bash
+hono ssg [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `-o, --outdir <dir>` - output directory (default: `static`)
+- `--include <path>` - generate only matching paths, `*` matches anything (can be used multiple times)
+- `--exclude <path>` - skip matching paths, `*` matches anything (can be used multiple times)
+- `--plain` - human-readable output instead of JSON
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Examples:**
+
+```bash
+# Generate everything to static/
+hono ssg
+
+# Skip API routes
+hono ssg --exclude '/api/*'
+```
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "output": "static",
+    "files": ["static/index.html", "static/about.html"]
   }
 }
 ```
