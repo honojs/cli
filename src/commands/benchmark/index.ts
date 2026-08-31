@@ -25,6 +25,7 @@ export const agentContext: CommandAgentContext = {
     'Each run happens in a fresh process, so results are comparable.',
     '--hono benchmarks the same app with another Hono: an npm version, or a path to a local checkout. Use it to compare Hono versions without touching the project.',
     '-X, -d, and -H set the method, body, and headers for -P paths. The route sweep stays GET only.',
+    'A few percent of difference is noise. To compare, run it more than once and check the difference repeats.',
     'Latency is in milliseconds.',
   ],
 }
