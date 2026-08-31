@@ -7,8 +7,8 @@ import { getBuildIterator, readStdin, resolveEntry } from '../../utils/load-app.
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
-import { runOnWorkerd } from './workerd.js'
 import { withTracer } from './trace.js'
+import { runOnWorkerd } from './workerd.js'
 
 export const agentContext: CommandAgentContext = {
   output:
