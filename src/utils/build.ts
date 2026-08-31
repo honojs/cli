@@ -25,25 +25,6 @@ const entryConfigOf = (entry: AppEntry) =>
       }
 
 /**
- * Bundle the app into a single ESM string, without importing it.
- * Used to run the app in another runtime.
- */
-export async function buildAppBundle(entry: AppEntry, external: string[] = []): Promise<string> {
-  const result = await esbuild.build({
-    ...entryConfigOf(entry),
-    bundle: true,
-    write: false,
-    format: 'esm',
-    target: 'esnext',
-    jsx: 'automatic',
-    jsxImportSource: 'hono/jsx',
-    platform: 'node',
-    external,
-  })
-  return result.outputFiles[0].text
-}
-
-/**
  * Build and import a TypeScript/JSX/JS app from a file or from code
  */
 export async function* buildAndImportApp(

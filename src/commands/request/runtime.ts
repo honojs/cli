@@ -1,7 +1,7 @@
+import * as esbuild from 'esbuild'
 import { execFile } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { randomUUID } from 'node:crypto'
+import type { AppEntry } from '../../utils/build.js'
 import { CliError } from '../../utils/output.js'
 
 export const RUNTIMES = ['node', 'bun', 'deno'] as const
@@ -21,16 +21,11 @@ export interface RunnerResponse {
 }
 
 /**
- * The script imports the bundled app, sends the request, and writes the
- * response to a file. stdout stays free for the app's own logs.
+ * The runner runs after the app import. It sends the request and prints
+ * the response as one marker line, so the app's own logs cannot break
+ * the protocol.
  */
-export const buildRunnerScript = (
-  bundleUrl: string,
-  resultPath: string,
-  request: RunnerRequest
-): string => `import { writeFileSync } from 'node:fs'
-import app from ${JSON.stringify(bundleUrl)}
-
+export const buildRunnerBody = (request: RunnerRequest, marker: string): string => `
 const req = ${JSON.stringify(request)}
 const target = new Request(new URL(req.path, 'http://localhost'), {
   method: req.method,
@@ -48,82 +43,127 @@ const headers = {}
 response.headers.forEach((value, key) => {
   headers[key] = value
 })
-writeFileSync(
-  ${JSON.stringify(resultPath)},
-  JSON.stringify({ status: response.status, headers, bodyBase64: btoa(binary) })
+console.log(
+  ${JSON.stringify(marker)} + JSON.stringify({ status: response.status, headers, bodyBase64: btoa(binary) })
 )
 `
 
+const virtualAppPlugin = (code: string): esbuild.Plugin => ({
+  name: 'virtual-app',
+  setup(build) {
+    build.onResolve({ filter: /^virtual:app$/ }, () => ({
+      path: 'virtual:app',
+      namespace: 'virtual',
+    }))
+    build.onLoad({ filter: /^virtual:app$/, namespace: 'virtual' }, () => ({
+      contents: code,
+      loader: 'tsx',
+      resolveDir: process.cwd(),
+    }))
+  },
+})
+
 interface RunnerCommand {
   bin: string
-  args: (dir: string) => string[]
+  args: string[]
   install: string
 }
 
 const RUNNER_COMMANDS: Record<Exclude<Runtime, 'node'>, RunnerCommand> = {
-  bun: { bin: 'bun', args: () => [], install: 'Install Bun: https://bun.sh' },
-  deno: {
-    bin: 'deno',
-    args: (dir) => ['run', '--quiet', `--allow-write=${dir}`],
-    install: 'Install Deno: https://deno.com',
-  },
+  bun: { bin: 'bun', args: ['run', '-'], install: 'Install Bun: https://bun.sh' },
+  deno: { bin: 'deno', args: ['run', '--quiet', '-'], install: 'Install Deno: https://deno.com' },
 }
 
+/**
+ * Bundle the app together with the runner and pipe it to the runtime.
+ * No files are written. Packages marked as external resolve from the
+ * working directory.
+ */
 export const runInRuntime = async (
   runtime: Exclude<Runtime, 'node'>,
-  bundleCode: string,
+  entry: AppEntry,
+  external: string[],
   request: RunnerRequest
 ): Promise<RunnerResponse> => {
-  // Under node_modules so that packages marked as external still resolve
-  const base = join(process.cwd(), 'node_modules', '.hono-cli')
-  mkdirSync(base, { recursive: true })
-  const dir = mkdtempSync(join(base, 'run-'))
+  const marker = `__HONO_CLI_RESULT_${randomUUID()}__`
+  const body = buildRunnerBody(request, marker)
+  const [importSource, plugins] =
+    typeof entry === 'string' ? [entry, []] : ['virtual:app', [virtualAppPlugin(entry.code)]]
 
-  try {
-    const bundlePath = join(dir, 'app.mjs')
-    const runnerPath = join(dir, 'runner.mjs')
-    const resultPath = join(dir, 'result.json')
-    writeFileSync(bundlePath, bundleCode)
-    writeFileSync(
-      runnerPath,
-      buildRunnerScript(pathToFileURL(bundlePath).href, resultPath, request)
-    )
+  const built = await esbuild.build({
+    stdin: {
+      contents: `import app from ${JSON.stringify(importSource)}\n${body}`,
+      resolveDir: process.cwd(),
+      loader: 'tsx',
+      sourcefile: '__runner__.tsx',
+    },
+    bundle: true,
+    write: false,
+    format: 'esm',
+    target: 'esnext',
+    platform: 'node',
+    jsx: 'automatic',
+    jsxImportSource: 'hono/jsx',
+    external: ['@hono/node-server', ...external],
+    plugins,
+  })
 
-    const command = RUNNER_COMMANDS[runtime]
-    await execRunner(runtime, command.bin, [...command.args(dir), runnerPath], command.install)
-
-    return JSON.parse(readFileSync(resultPath, 'utf-8'))
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
+  const command = RUNNER_COMMANDS[runtime]
+  const stdout = await execRunner(runtime, command, built.outputFiles[0].text)
+  return parseRunnerOutput(stdout, marker, runtime)
 }
 
-const execRunner = (runtime: string, bin: string, args: string[], install: string): Promise<void> =>
+const execRunner = (runtime: string, command: RunnerCommand, code: string): Promise<string> =>
   new Promise((resolvePromise, reject) => {
-    execFile(bin, args, { maxBuffer: 64 * 1024 * 1024 }, (error, stdout, stderr) => {
-      // The app's own logs go to stderr
-      if (stdout) {
-        process.stderr.write(stdout)
-      }
-      if (stderr) {
-        process.stderr.write(stderr)
-      }
-      if (!error) {
-        resolvePromise()
-        return
-      }
-      if ('code' in error && error.code === 'ENOENT') {
+    const child = execFile(
+      command.bin,
+      command.args,
+      { maxBuffer: 64 * 1024 * 1024 },
+      (error, stdout, stderr) => {
+        // The app's own logs go to stderr
+        if (stderr) {
+          process.stderr.write(stderr)
+        }
+        if (!error) {
+          resolvePromise(stdout)
+          return
+        }
+        if (stdout) {
+          process.stderr.write(stdout)
+        }
+        if ('code' in error && error.code === 'ENOENT') {
+          reject(
+            new CliError('RUNTIME_NOT_FOUND', `${command.bin} is not installed`, {
+              suggestions: [command.install, 'Or drop --runtime to run on Node.js'],
+            })
+          )
+          return
+        }
         reject(
-          new CliError('RUNTIME_NOT_FOUND', `${bin} is not installed`, {
-            suggestions: [install, 'Or drop --runtime to run on Node.js'],
+          new CliError('RUNTIME_FAILED', `The app failed on ${runtime}`, {
+            suggestions: ['Check the error output above'],
           })
         )
-        return
       }
-      reject(
-        new CliError('RUNTIME_FAILED', `The app failed on ${runtime}`, {
-          suggestions: ['Check the error output above'],
-        })
-      )
-    })
+    )
+    child.stdin?.end(code)
   })
+
+export const parseRunnerOutput = (
+  stdout: string,
+  marker: string,
+  runtime: string
+): RunnerResponse => {
+  const lines = stdout.split('\n')
+  const resultLine = lines.find((line) => line.includes(marker))
+  const logs = lines.filter((line) => line !== resultLine && line.length > 0)
+  if (logs.length > 0) {
+    process.stderr.write(logs.join('\n') + '\n')
+  }
+  if (resultLine === undefined) {
+    throw new CliError('RUNTIME_FAILED', `No result from ${runtime}`, {
+      suggestions: ['Check the error output above'],
+    })
+  }
+  return JSON.parse(resultLine.slice(resultLine.indexOf(marker) + marker.length))
+}

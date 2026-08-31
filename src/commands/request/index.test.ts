@@ -16,7 +16,6 @@ vi.mock('node:path', () => ({
 
 vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
-  buildAppBundle: vi.fn(),
 }))
 
 vi.mock('./runtime.js', async (importOriginal) => {
@@ -1119,16 +1118,14 @@ describe('requestCommand', () => {
 
   describe('runtime', () => {
     const getMocks = async () => ({
-      buildAppBundle: vi.mocked((await import('../../utils/build.js')).buildAppBundle),
       runInRuntime: vi.mocked((await import('./runtime.js')).runInRuntime),
     })
 
     it('should run the app on the selected runtime', async () => {
-      const { buildAppBundle, runInRuntime } = await getMocks()
+      const { runInRuntime } = await getMocks()
       mockModules.existsSync.mockReturnValue(true)
       mockModules.realpathSync.mockReturnValue('test-app.js')
       mockModules.resolve.mockImplementation((cwd: string, path: string) => `${cwd}/${path}`)
-      buildAppBundle.mockResolvedValue('bundled code')
       runInRuntime.mockResolvedValue({
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -1148,8 +1145,7 @@ describe('requestCommand', () => {
         'test-app.js',
       ])
 
-      expect(buildAppBundle).toHaveBeenCalledWith('test-app.js', [])
-      expect(runInRuntime).toHaveBeenCalledWith('bun', 'bundled code', {
+      expect(runInRuntime).toHaveBeenCalledWith('bun', 'test-app.js', [], {
         path: '/api',
         method: 'GET',
         headers: { 'X-Key': 'abc' },

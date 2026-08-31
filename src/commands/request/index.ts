@@ -2,7 +2,6 @@ import type { Command } from 'commander'
 import type { Hono } from 'hono'
 import { readFileSync } from 'node:fs'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
-import { buildAppBundle } from '../../utils/build.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { getBuildIterator, readStdin, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
@@ -114,8 +113,7 @@ export function requestCommand(program: Command) {
         options.data = resolveData(options.data)
 
         if (runtime !== 'node') {
-          const bundle = await buildAppBundle(resolveEntry(file), external)
-          const runnerResponse = await runInRuntime(runtime, bundle, {
+          const runnerResponse = await runInRuntime(runtime, resolveEntry(file), external, {
             path,
             method: options.method || 'GET',
             headers: parseHeaders(options.header),
