@@ -24,29 +24,70 @@ npm install -g @hono/cli
 # Show help
 hono --help
 
+# Show how to use Hono CLI, for coding agents
+hono agent-context
+
+# Show routes of your Hono app
+hono routes
+
 # Send request to Hono app
 hono request
 
 # Build an optimized Hono app
 hono optimize
 
-# Show routes of your Hono app
-hono routes
-
 # Generate static files from your Hono app
 hono ssg
-
-# Show how to use Hono CLI, for coding agents
-hono agent-context
 ```
 
 ## Commands
 
-- `request [file]` - Send request to Hono app using `app.request()`
-- `optimize [entry]` - Build an optimized Hono app
-- `routes [file]` - Show routes of your Hono app
-- `ssg [file]` - Generate static files from your Hono app
+Start here:
+
 - `agent-context` - Show how to use Hono CLI, for coding agents
+
+Inspect and test:
+
+- `routes [file]` - Show routes of your Hono app
+- `request [file]` - Send request to Hono app using `app.request()`
+
+Build:
+
+- `optimize [entry]` - Build an optimized Hono app
+- `ssg [file]` - Generate static files from your Hono app
+
+### `routes`
+
+Show all routes of your Hono app, like [`showRoutes()`](https://hono.dev/docs/helpers/dev#showroutes).
+
+```bash
+hono routes [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `--verbose` - include middleware
+- `--plain` - human-readable output instead of JSON
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "router": "SmartRouter + RegExpRouter",
+    "routes": [
+      { "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false },
+      { "method": "POST", "path": "/posts", "name": "[handler]", "isMiddleware": false }
+    ]
+  }
+}
+```
 
 ### `request`
 
@@ -236,39 +277,6 @@ The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data`
 ```
 
 Use `--plain` for a human-readable format.
-
-### `routes`
-
-Show all routes of your Hono app, like [`showRoutes()`](https://hono.dev/docs/helpers/dev#showroutes).
-
-```bash
-hono routes [file] [options]
-```
-
-**Arguments:**
-
-- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
-
-**Options:**
-
-- `--verbose` - include middleware
-- `--plain` - human-readable output instead of JSON
-- `-e, --external <package>` - Mark package as external (can be used multiple times)
-
-**Output:**
-
-```json
-{
-  "ok": true,
-  "data": {
-    "router": "SmartRouter + RegExpRouter",
-    "routes": [
-      { "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false },
-      { "method": "POST", "path": "/posts", "name": "[handler]", "isMiddleware": false }
-    ]
-  }
-}
-```
 
 ### `ssg`
 
