@@ -231,6 +231,9 @@ hono benchmark [file] [options]
 **Options:**
 
 - `-P, --path <path>` - benchmark only this path (can be used multiple times)
+- `-X, --method <method>` - HTTP method for `-P` paths (default: `GET`)
+- `-d, --data <data>` - request body for `-P` paths (`@file` reads a file, `@-` reads stdin)
+- `-H, --header <header>` - custom headers for `-P` paths (can be used multiple times)
 - `--duration <ms>` - how long to measure each route (default: `500`)
 - `--warmup <count>` - requests before measuring (default: `30`)
 - `--hono <version-or-path>` - benchmark with this Hono instead (can be used multiple times)
@@ -245,6 +248,9 @@ hono benchmark
 
 # Benchmark one path
 hono benchmark -P /users
+
+# Benchmark a POST endpoint
+hono benchmark -P /users -X POST -d '{"name":"Alice"}' -H 'Content-Type: application/json'
 
 # Compare two Hono versions with the same app
 hono benchmark --hono 4.12.3 --hono 4.13.0

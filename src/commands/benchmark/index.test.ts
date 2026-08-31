@@ -120,6 +120,46 @@ describe('benchmarkCommand', () => {
     ])
   })
 
+  it('should benchmark a POST path with a body and headers', async () => {
+    setupBasicMocks(new Hono())
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'benchmark',
+      '-P',
+      '/users',
+      '-X',
+      'POST',
+      '-d',
+      '{"name":"Alice"}',
+      '-H',
+      'Content-Type: application/json',
+      'test-app.js',
+    ])
+
+    const [, , , targets] = mockRunBench.mock.calls[0]
+    expect(targets).toEqual([
+      {
+        method: 'POST',
+        path: '/users',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"name":"Alice"}',
+      },
+    ])
+  })
+
+  it('should reject -X without -P', async () => {
+    setupBasicMocks(new Hono())
+
+    await program.parseAsync(['node', 'test', 'benchmark', '-X', 'POST', 'test-app.js'])
+
+    const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(parsed.ok).toBe(false)
+    expect(parsed.error.code).toBe('INVALID_OPTION')
+    process.exitCode = undefined
+  })
+
   it('should fail with NO_ROUTES when the app has no GET routes', async () => {
     const app = new Hono()
     app.post('/users', (c) => c.json({}))

@@ -2,7 +2,7 @@ import type { Command } from 'commander'
 import { inspectRoutes } from 'hono/dev'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { buildAndImportApp } from '../../utils/build.js'
-import { getBuildIterator, resolveEntry } from '../../utils/load-app.js'
+import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import type { BenchTarget, RouteResult } from './engine.js'
 import { runBench } from './engine.js'
@@ -16,6 +16,7 @@ export const agentContext: CommandAgentContext = {
   examples: [
     'hono benchmark',
     'hono benchmark -P /users',
+    `hono benchmark -P /users -X POST -d '{"name":"Alice"}'`,
     'hono benchmark --hono 4.12.3 --hono 4.13.0',
     'hono benchmark --hono ../hono',
   ],
@@ -23,6 +24,7 @@ export const agentContext: CommandAgentContext = {
     'This is a micro benchmark of routing and handlers. It calls app.request() directly — no HTTP stack, no network.',
     'Each run happens in a fresh process, so results are comparable.',
     '--hono benchmarks the same app with another Hono: an npm version, or a path to a local checkout. Use it to compare Hono versions without touching the project.',
+    '-X, -d, and -H set the method, body, and headers for -P paths. The route sweep stays GET only.',
     'Latency is in milliseconds.',
   ],
 }
@@ -32,6 +34,9 @@ const collect = (value: string, previous: string[]): string[] =>
 
 interface BenchmarkOptions {
   path: string[]
+  method: string
+  data?: string
+  header: string[]
   duration: string
   warmup: string
   hono: string[]
@@ -49,6 +54,14 @@ export function benchmarkCommand(program: Command) {
       'benchmark only this path (can be used multiple times)',
       collect,
       []
+    )
+    .option('-X, --method <method>', 'HTTP method for -P paths', 'GET')
+    .option('-d, --data <data>', 'request body for -P paths (@file reads a file, @- reads stdin)')
+    .option(
+      '-H, --header <header>',
+      'custom headers for -P paths (can be used multiple times)',
+      collect,
+      [] as string[]
     )
     .option('--duration <ms>', 'how long to measure each route', '500')
     .option('--warmup <count>', 'requests before measuring', '30')
@@ -75,9 +88,21 @@ export function benchmarkCommand(program: Command) {
           })
         }
 
+        const method = (options.method || 'GET').toUpperCase()
+        if (
+          options.path.length === 0 &&
+          (method !== 'GET' || options.data || options.header.length > 0)
+        ) {
+          throw new CliError('INVALID_OPTION', '-X, -d, and -H work only with -P paths', {
+            suggestions: [
+              'Pass the path too: hono benchmark -P /users -X POST -d \'{"name":"Alice"}\'',
+            ],
+          })
+        }
+
         const external = options.external || []
         const entry = resolveEntry(file)
-        const targets = await collectTargets(file, entry, options.path, external)
+        const targets = await collectTargets(file, entry, options, method, external)
 
         const sources: HonoSource[] = []
         try {
@@ -113,11 +138,25 @@ export function benchmarkCommand(program: Command) {
 const collectTargets = async (
   file: string | undefined,
   entry: ReturnType<typeof resolveEntry>,
-  paths: string[],
+  options: BenchmarkOptions,
+  method: string,
   external: string[]
 ): Promise<BenchTarget[]> => {
-  if (paths.length > 0) {
-    return paths.map((path) => ({ method: 'GET', path }))
+  if (options.path.length > 0) {
+    const headers: Record<string, string> = {}
+    for (const header of options.header) {
+      const [key, value] = header.split(':', 2)
+      if (key && value) {
+        headers[key.trim()] = value.trim()
+      }
+    }
+    const body = resolveData(options.data)
+    return options.path.map((path) => ({
+      method,
+      path,
+      ...(Object.keys(headers).length > 0 ? { headers } : {}),
+      ...(body === undefined ? {} : { body }),
+    }))
   }
 
   // Enumerate the GET routes of the app, like `hono routes`

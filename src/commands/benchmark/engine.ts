@@ -9,6 +9,8 @@ import type { HonoSource } from './hono-source.js'
 export interface BenchTarget {
   method: string
   path: string
+  headers?: Record<string, string>
+  body?: string
 }
 
 export interface BenchOptions {
@@ -40,7 +42,11 @@ const routes = []
 for (const target of targets) {
   const send = async () => {
     const response = await handler(
-      new Request('http://localhost' + target.path, { method: target.method })
+      new Request('http://localhost' + target.path, {
+        method: target.method,
+        headers: target.headers ?? {},
+        ...(target.body === undefined ? {} : { body: target.body }),
+      })
     )
     await response.arrayBuffer()
   }
