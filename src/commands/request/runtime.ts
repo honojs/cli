@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import type { AppEntry } from '../../utils/build.js'
 import { CliError } from '../../utils/output.js'
 
-export const RUNTIMES = ['node', 'bun', 'deno'] as const
+export const RUNTIMES = ['node', 'bun', 'deno', 'workerd'] as const
 export type Runtime = (typeof RUNTIMES)[number]
 
 export interface RunnerRequest {
@@ -69,7 +69,7 @@ interface RunnerCommand {
   install: string
 }
 
-const RUNNER_COMMANDS: Record<Exclude<Runtime, 'node'>, RunnerCommand> = {
+const RUNNER_COMMANDS: Record<'bun' | 'deno', RunnerCommand> = {
   bun: { bin: 'bun', args: ['run', '-'], install: 'Install Bun: https://bun.sh' },
   deno: { bin: 'deno', args: ['run', '--quiet', '-'], install: 'Install Deno: https://deno.com' },
 }
@@ -80,7 +80,7 @@ const RUNNER_COMMANDS: Record<Exclude<Runtime, 'node'>, RunnerCommand> = {
  * working directory.
  */
 export const runInRuntime = async (
-  runtime: Exclude<Runtime, 'node'>,
+  runtime: 'bun' | 'deno',
   entry: AppEntry,
   external: string[],
   request: RunnerRequest

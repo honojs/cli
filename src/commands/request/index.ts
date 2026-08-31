@@ -8,24 +8,32 @@ import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
 import { withTracer } from './trace.js'
+import { runOnWorkerd } from './workerd.js'
 
 export const agentContext: CommandAgentContext = {
   output:
     '{ "status": 200, "headers": { "content-type": "application/json" }, "body": { "message": "Hello" } }',
-  errors: ['ENTRY_NOT_FOUND', 'RUNTIME_NOT_FOUND', 'RUNTIME_FAILED'],
+  errors: [
+    'ENTRY_NOT_FOUND',
+    'RUNTIME_NOT_FOUND',
+    'RUNTIME_FAILED',
+    'WRANGLER_NOT_FOUND',
+    'WRANGLER_CONFIG_NOT_FOUND',
+  ],
   examples: [
     'hono request -P /api/users',
     `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
     'cat payload.json | hono request -P /api/users -X POST -d @-',
     'hono request -P /api/users/123 --trace',
     'hono request -P / --runtime bun',
+    'hono request -P /api --runtime workerd',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
-    '--runtime runs the app on bun or deno instead of Node.js. The runtime must be installed.',
+    '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
   ],
@@ -68,7 +76,11 @@ export function requestCommand(program: Command) {
     .option('-O, --remote-name', 'Write response body to file named as remote file', false)
     .option('--plain', 'human-readable output instead of JSON', false)
     .option('--trace', 'include matched routes in the output', false)
-    .option('--runtime <runtime>', 'runtime to execute the app (node | bun | deno)', 'node')
+    .option(
+      '--runtime <runtime>',
+      'runtime to execute the app (node | bun | deno | workerd)',
+      'node'
+    )
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -87,7 +99,7 @@ export function requestCommand(program: Command) {
         const external = options.external || []
         if (!RUNTIMES.includes(options.runtime as Runtime)) {
           throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
-            suggestions: ['Use one of: node, bun, deno'],
+            suggestions: ['Use one of: node, bun, deno, workerd'],
           })
         }
         const runtime = options.runtime as Runtime
@@ -111,6 +123,22 @@ export function requestCommand(program: Command) {
           })
         }
         options.data = resolveData(options.data)
+
+        if (runtime === 'workerd') {
+          if (file !== undefined) {
+            throw new CliError('INVALID_OPTION', 'workerd runs the app from your wrangler config', {
+              suggestions: ['Drop the file argument. The entry is `main` in the wrangler config'],
+            })
+          }
+          const result = await runOnWorkerd({
+            path,
+            method: options.method || 'GET',
+            headers: parseHeaders(options.header),
+            ...(options.data === undefined ? {} : { body: options.data }),
+          })
+          await printResponse(result, path, options, doSaveFile, { runtime })
+          return
+        }
 
         if (runtime !== 'node') {
           const runnerResponse = await runInRuntime(runtime, resolveEntry(file), external, {

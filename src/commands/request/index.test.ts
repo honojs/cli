@@ -23,6 +23,10 @@ vi.mock('./runtime.js', async (importOriginal) => {
   return { ...original, runInRuntime: vi.fn() }
 })
 
+vi.mock('./workerd.js', () => ({
+  runOnWorkerd: vi.fn(),
+}))
+
 import { requestCommand } from './index.js'
 
 vi.mock('../../utils/file.js', () => ({
@@ -1169,6 +1173,43 @@ describe('requestCommand', () => {
       expect(parsed.ok).toBe(false)
       expect(parsed.error.code).toBe('INVALID_OPTION')
       expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+
+    it('should run the app on workerd with the wrangler config', async () => {
+      const runOnWorkerd = vi.mocked((await import('./workerd.js')).runOnWorkerd)
+      const body = JSON.stringify({ who: 'workerd' })
+      runOnWorkerd.mockResolvedValue({
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body,
+        response: new Response(body, {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      })
+
+      await program.parseAsync(['node', 'test', 'request', '-P', '/api', '--runtime', 'workerd'])
+
+      expect(runOnWorkerd).toHaveBeenCalledWith({ path: '/api', method: 'GET', headers: {} })
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed).toEqual({
+        ok: true,
+        data: {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: { who: 'workerd' },
+          runtime: 'workerd',
+        },
+      })
+    })
+
+    it('should reject a file argument with workerd', async () => {
+      await program.parseAsync(['node', 'test', 'request', '--runtime', 'workerd', 'src/index.ts'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
       process.exitCode = undefined
     })
 
