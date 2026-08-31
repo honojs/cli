@@ -56,6 +56,16 @@ Build:
 - `optimize [entry]` - Build an optimized Hono app
 - `ssg [file]` - Generate static files from your Hono app
 
+---
+
+### `agent-context`
+
+Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.
+
+```bash
+hono agent-context
+```
+
 ### `routes`
 
 Show all routes of your Hono app, like [`showRoutes()`](https://hono.dev/docs/helpers/dev#showroutes).
@@ -318,14 +328,6 @@ hono ssg --exclude '/api/*'
     "files": ["static/index.html", "static/about.html"]
   }
 }
-```
-
-### `agent-context`
-
-Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.
-
-```bash
-hono agent-context
 ```
 
 ## Tips
