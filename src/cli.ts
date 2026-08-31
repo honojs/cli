@@ -24,11 +24,11 @@ program
   .addHelpText('after', "\nFor coding agents: run 'hono agent-context' and follow it.")
 
 // Register commands
-optimizeCommand(program)
-requestCommand(program)
-routesCommand(program)
-ssgCommand(program)
-benchmarkCommand(program)
 agentContextCommand(program)
+routesCommand(program)
+requestCommand(program)
+benchmarkCommand(program)
+optimizeCommand(program)
+ssgCommand(program)
 
 program.parse()
