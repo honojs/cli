@@ -6,6 +6,9 @@ It's not a `create-*` command and not a Vite wrapper. It loads your Hono app dir
 
 ## Installation
 
+> [!NOTE]
+> This is the 0.2 prerelease. Try it with `npm install -g @hono/cli@next`. The stable 0.1 is on `latest`.
+
 Install it in your project. Coding agents find it in `package.json`:
 
 ```bash
