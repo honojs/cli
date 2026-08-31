@@ -112,7 +112,7 @@ hono request [file] [options]
 - `-O, --remote-name` - Write response body to file named as remote file
 - `--plain` - human-readable output instead of JSON
 - `--trace` - include matched routes in the output
-- `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, or `deno`
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, or `workerd`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
@@ -153,7 +153,12 @@ hono request -P /api/users/123 --trace
 # Run the app on another runtime (it must be installed)
 hono request -P / --runtime bun
 hono request -P / --runtime deno
+
+# Run the app on workerd with your wrangler config: bindings (c.env) are the local ones
+hono request -P /api --runtime workerd
 ```
+
+`workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
