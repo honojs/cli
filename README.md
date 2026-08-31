@@ -71,6 +71,7 @@ hono request [file] [options]
 - `-O, --remote-name` - Write response body to file named as remote file
 - `--plain` - human-readable output instead of JSON
 - `--trace` - include matched routes in the output
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, or `deno`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
@@ -107,6 +108,10 @@ echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello
 
 # Debug an unexpected response: which middleware and handler matched?
 hono request -P /api/users/123 --trace
+
+# Run the app on another runtime (it must be installed)
+hono request -P / --runtime bun
+hono request -P / --runtime deno
 ```
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:

@@ -12,6 +12,18 @@ export interface BuildOptions {
 /** App source: a file path, or code read from stdin */
 export type AppEntry = string | { code: string }
 
+const entryConfigOf = (entry: AppEntry) =>
+  typeof entry === 'string'
+    ? { entryPoints: [entry] }
+    : {
+        stdin: {
+          contents: entry.code,
+          resolveDir: process.cwd(),
+          loader: 'tsx' as const,
+          sourcefile: '__stdin__.tsx',
+        },
+      }
+
 /**
  * Build and import a TypeScript/JSX/JS app from a file or from code
  */
@@ -29,17 +41,7 @@ export async function* buildAndImportApp(
   }
   preparePromise()
 
-  const entryConfig =
-    typeof entry === 'string'
-      ? { entryPoints: [entry] }
-      : {
-          stdin: {
-            contents: entry.code,
-            resolveDir: process.cwd(),
-            loader: 'tsx' as const,
-            sourcefile: '__stdin__.tsx',
-          },
-        }
+  const entryConfig = entryConfigOf(entry)
 
   const context = await esbuild.context({
     ...entryConfig,

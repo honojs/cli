@@ -1,6 +1,7 @@
 import type { Hono } from 'hono'
 import { existsSync, realpathSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import type { AppEntry } from './build.js'
 import { buildAndImportApp } from './build.js'
 import { CliError } from './output.js'
 
@@ -20,10 +21,25 @@ export function getBuildIterator(
         suggestions: ['Pass a file path instead of - when using --watch'],
       })
     }
-    return buildAndImportApp(
-      { code: wrapCode(readStdin()) },
-      { external: ['@hono/node-server', ...external] }
-    )
+    return buildAndImportApp(resolveEntry(appPath), {
+      external: ['@hono/node-server', ...external],
+    })
+  }
+
+  return buildAndImportApp(resolveEntry(appPath), {
+    external: ['@hono/node-server', ...external],
+    watch,
+    sourcemap: true,
+  })
+}
+
+/**
+ * Resolve the app source: `-` reads code from stdin, a path is used
+ * as-is, and without a path the default candidates are tried.
+ */
+export function resolveEntry(appPath: string | undefined): AppEntry {
+  if (appPath === '-') {
+    return { code: wrapCode(readStdin()) }
   }
 
   let entry: string
@@ -50,12 +66,7 @@ export function getBuildIterator(
     })
   }
 
-  const appFilePath = realpathSync(resolvedAppPath)
-  return buildAndImportApp(appFilePath, {
-    external: ['@hono/node-server', ...external],
-    watch,
-    sourcemap: true,
-  })
+  return realpathSync(resolvedAppPath)
 }
 
 export const readStdin = (): string => {
