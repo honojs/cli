@@ -1,0 +1,21 @@
+.github/workflows/release.yml
+  s_449966fc5983c0::t_4e337d9a29a5a5 39-45
+AGENTS.md
+  s_449966fc5983c0::t_e8cb8266055c38 98-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f85ec1084b623abe627590ebfd7a2043771f4859",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
