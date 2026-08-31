@@ -33,14 +33,14 @@ hono routes
 # Send request to Hono app
 hono request
 
+# Measure the performance of your Hono app
+hono benchmark
+
 # Build an optimized Hono app
 hono optimize
 
 # Generate static files from your Hono app
 hono ssg
-
-# Measure the performance of your Hono app
-hono benchmark
 ```
 
 ## Commands
