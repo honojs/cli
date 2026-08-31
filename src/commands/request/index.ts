@@ -2,26 +2,31 @@ import type { Command } from 'commander'
 import type { Hono } from 'hono'
 import { readFileSync } from 'node:fs'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
+import { buildAppBundle } from '../../utils/build.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { getBuildIterator, readStdin } from '../../utils/load-app.js'
+import { getBuildIterator, readStdin, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import type { Runtime } from './runtime.js'
+import { RUNTIMES, runInRuntime } from './runtime.js'
 import { withTracer } from './trace.js'
 
 export const agentContext: CommandAgentContext = {
   output:
     '{ "status": 200, "headers": { "content-type": "application/json" }, "body": { "message": "Hello" } }',
-  errors: ['ENTRY_NOT_FOUND'],
+  errors: ['ENTRY_NOT_FOUND', 'RUNTIME_NOT_FOUND', 'RUNTIME_FAILED'],
   examples: [
     'hono request -P /api/users',
     `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
     'cat payload.json | hono request -P /api/users -X POST -d @-',
     'hono request -P /api/users/123 --trace',
+    'hono request -P / --runtime bun',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
+    '--runtime runs the app on bun or deno instead of Node.js. The runtime must be installed.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
   ],
@@ -35,6 +40,7 @@ interface RequestOptions {
   watch: boolean
   plain: boolean
   trace: boolean
+  runtime: string
   output?: string
   remoteName: boolean
   include: boolean
@@ -63,6 +69,7 @@ export function requestCommand(program: Command) {
     .option('-O, --remote-name', 'Write response body to file named as remote file', false)
     .option('--plain', 'human-readable output instead of JSON', false)
     .option('--trace', 'include matched routes in the output', false)
+    .option('--runtime <runtime>', 'runtime to execute the app (node | bun | deno)', 'node')
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -79,6 +86,21 @@ export function requestCommand(program: Command) {
         const path = options.path || '/'
         const watch = options.watch
         const external = options.external || []
+        if (!RUNTIMES.includes(options.runtime as Runtime)) {
+          throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
+            suggestions: ['Use one of: node, bun, deno'],
+          })
+        }
+        const runtime = options.runtime as Runtime
+        if (runtime !== 'node' && (options.watch || options.trace)) {
+          throw new CliError(
+            'INVALID_OPTION',
+            `Cannot use --watch or --trace with --runtime ${runtime}`,
+            {
+              suggestions: ['Drop --watch and --trace, or use --runtime node'],
+            }
+          )
+        }
         if (options.trace && options.plain) {
           throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
             suggestions: ['Drop --plain. The trace is part of the JSON output'],
@@ -90,35 +112,70 @@ export function requestCommand(program: Command) {
           })
         }
         options.data = resolveData(options.data)
+
+        if (runtime !== 'node') {
+          const bundle = await buildAppBundle(resolveEntry(file), external)
+          const runnerResponse = await runInRuntime(runtime, bundle, {
+            path,
+            method: options.method || 'GET',
+            headers: parseHeaders(options.header),
+            ...(options.data === undefined ? {} : { body: options.data }),
+          })
+          const bytes = Buffer.from(runnerResponse.bodyBase64, 'base64')
+          const result = {
+            status: runnerResponse.status,
+            headers: runnerResponse.headers,
+            body: new TextDecoder().decode(bytes),
+            response: new Response(bytes, {
+              status: runnerResponse.status,
+              headers: runnerResponse.headers,
+            }),
+          }
+          await printResponse(result, path, options, doSaveFile, { runtime })
+          return
+        }
+
         const buildIterator = getBuildIterator(file, watch, external)
         for await (const app of buildIterator) {
           const traced = options.trace ? withTracer(app) : undefined
           const result = await executeRequest(traced?.app ?? app, path, options)
-          const contentType = result.headers['content-type']
-          const buffer = await result.response.clone().arrayBuffer()
-          const isBinaryData = isBinaryResponse(buffer)
-
-          let savedTo: string | undefined
-          if (doSaveFile) {
-            savedTo = await handleSaveOutput(buffer, path, options, contentType)
-          }
-
-          if (options.plain) {
-            printPlain(result, contentType, isBinaryData, savedTo, options)
-            continue
-          }
-
-          printResult({
-            status: result.status,
-            headers: result.headers,
-            body: isBinaryData ? null : parseBody(result.body, contentType),
-            ...(isBinaryData ? { binary: true } : {}),
-            ...(savedTo ? { savedTo } : {}),
+          await printResponse(result, path, options, doSaveFile, {
             ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
           })
         }
       })
     )
+}
+
+const printResponse = async (
+  result: { status: number; body: string; headers: Record<string, string>; response: Response },
+  path: string,
+  options: RequestOptions,
+  doSaveFile: string | boolean | undefined,
+  extra: Record<string, unknown>
+): Promise<void> => {
+  const contentType = result.headers['content-type']
+  const buffer = await result.response.clone().arrayBuffer()
+  const isBinaryData = isBinaryResponse(buffer)
+
+  let savedTo: string | undefined
+  if (doSaveFile) {
+    savedTo = await handleSaveOutput(buffer, path, options, contentType)
+  }
+
+  if (options.plain) {
+    printPlain(result, contentType, isBinaryData, savedTo, options)
+    return
+  }
+
+  printResult({
+    status: result.status,
+    headers: result.headers,
+    body: isBinaryData ? null : parseBody(result.body, contentType),
+    ...(isBinaryData ? { binary: true } : {}),
+    ...(savedTo ? { savedTo } : {}),
+    ...extra,
+  })
 }
 
 const printPlain = (
@@ -171,6 +228,17 @@ const handleSaveOutput = async (
   }
 }
 
+const parseHeaders = (header: string[] | undefined): Record<string, string> => {
+  const headers: Record<string, string> = {}
+  for (const entry of header ?? []) {
+    const [key, value] = entry.split(':', 2)
+    if (key && value) {
+      headers[key.trim()] = value.trim()
+    }
+  }
+  return headers
+}
+
 const resolveData = (data: string | undefined): string | undefined => {
   if (data === undefined || !data.startsWith('@')) {
     return data
@@ -199,14 +267,7 @@ export async function executeRequest(
 
   // Add headers if provided
   if (options.header && options.header.length > 0) {
-    const headers = new Headers()
-    for (const header of options.header) {
-      const [key, value] = header.split(':', 2)
-      if (key && value) {
-        headers.set(key.trim(), value.trim())
-      }
-    }
-    requestInit.headers = headers
+    requestInit.headers = parseHeaders(options.header)
   }
 
   // Execute request

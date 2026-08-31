@@ -12,6 +12,37 @@ export interface BuildOptions {
 /** App source: a file path, or code read from stdin */
 export type AppEntry = string | { code: string }
 
+const entryConfigOf = (entry: AppEntry) =>
+  typeof entry === 'string'
+    ? { entryPoints: [entry] }
+    : {
+        stdin: {
+          contents: entry.code,
+          resolveDir: process.cwd(),
+          loader: 'tsx' as const,
+          sourcefile: '__stdin__.tsx',
+        },
+      }
+
+/**
+ * Bundle the app into a single ESM string, without importing it.
+ * Used to run the app in another runtime.
+ */
+export async function buildAppBundle(entry: AppEntry, external: string[] = []): Promise<string> {
+  const result = await esbuild.build({
+    ...entryConfigOf(entry),
+    bundle: true,
+    write: false,
+    format: 'esm',
+    target: 'esnext',
+    jsx: 'automatic',
+    jsxImportSource: 'hono/jsx',
+    platform: 'node',
+    external,
+  })
+  return result.outputFiles[0].text
+}
+
 /**
  * Build and import a TypeScript/JSX/JS app from a file or from code
  */
@@ -29,17 +60,7 @@ export async function* buildAndImportApp(
   }
   preparePromise()
 
-  const entryConfig =
-    typeof entry === 'string'
-      ? { entryPoints: [entry] }
-      : {
-          stdin: {
-            contents: entry.code,
-            resolveDir: process.cwd(),
-            loader: 'tsx' as const,
-            sourcefile: '__stdin__.tsx',
-          },
-        }
+  const entryConfig = entryConfigOf(entry)
 
   const context = await esbuild.context({
     ...entryConfig,

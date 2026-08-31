@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type * as RuntimeModule from './runtime.js'
 
 // Mock dependencies
 vi.mock('node:fs', () => ({
@@ -15,7 +16,13 @@ vi.mock('node:path', () => ({
 
 vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
+  buildAppBundle: vi.fn(),
 }))
+
+vi.mock('./runtime.js', async (importOriginal) => {
+  const original = await importOriginal<typeof RuntimeModule>()
+  return { ...original, runInRuntime: vi.fn() }
+})
 
 import { requestCommand } from './index.js'
 
@@ -1106,6 +1113,75 @@ describe('requestCommand', () => {
       expect(parsed.ok).toBe(false)
       expect(parsed.error.code).toBe('INVALID_OPTION')
       expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+  })
+
+  describe('runtime', () => {
+    const getMocks = async () => ({
+      buildAppBundle: vi.mocked((await import('../../utils/build.js')).buildAppBundle),
+      runInRuntime: vi.mocked((await import('./runtime.js')).runInRuntime),
+    })
+
+    it('should run the app on the selected runtime', async () => {
+      const { buildAppBundle, runInRuntime } = await getMocks()
+      mockModules.existsSync.mockReturnValue(true)
+      mockModules.realpathSync.mockReturnValue('test-app.js')
+      mockModules.resolve.mockImplementation((cwd: string, path: string) => `${cwd}/${path}`)
+      buildAppBundle.mockResolvedValue('bundled code')
+      runInRuntime.mockResolvedValue({
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        bodyBase64: Buffer.from('{"hi":true}').toString('base64'),
+      })
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '-P',
+        '/api',
+        '-H',
+        'X-Key: abc',
+        '--runtime',
+        'bun',
+        'test-app.js',
+      ])
+
+      expect(buildAppBundle).toHaveBeenCalledWith('test-app.js', [])
+      expect(runInRuntime).toHaveBeenCalledWith('bun', 'bundled code', {
+        path: '/api',
+        method: 'GET',
+        headers: { 'X-Key': 'abc' },
+      })
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed).toEqual({
+        ok: true,
+        data: {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: { hi: true },
+          runtime: 'bun',
+        },
+      })
+    })
+
+    it('should reject an unknown runtime', async () => {
+      await program.parseAsync(['node', 'test', 'request', '--runtime', 'php', 'test-app.js'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.ok).toBe(false)
+      expect(parsed.error.code).toBe('INVALID_OPTION')
+      expect(process.exitCode).toBe(1)
+      process.exitCode = undefined
+    })
+
+    it('should reject --runtime bun with --watch or --trace', async () => {
+      await program.parseAsync(['node', 'test', 'request', '--runtime', 'bun', '-w', 'a.ts'])
+      expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).error.code).toBe('INVALID_OPTION')
+
+      await program.parseAsync(['node', 'test', 'request', '--runtime', 'deno', '--trace', 'a.ts'])
+      expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).error.code).toBe('INVALID_OPTION')
       process.exitCode = undefined
     })
   })
