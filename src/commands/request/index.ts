@@ -1,9 +1,8 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
-import { readFileSync } from 'node:fs'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { getBuildIterator, readStdin, resolveEntry } from '../../utils/load-app.js'
+import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
@@ -263,16 +262,6 @@ const parseHeaders = (header: string[] | undefined): Record<string, string> => {
     }
   }
   return headers
-}
-
-const resolveData = (data: string | undefined): string | undefined => {
-  if (data === undefined || !data.startsWith('@')) {
-    return data
-  }
-  if (data === '@-') {
-    return readStdin()
-  }
-  return readFileSync(data.slice(1), 'utf-8')
 }
 
 export async function executeRequest(

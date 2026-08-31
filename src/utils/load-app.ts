@@ -88,3 +88,17 @@ export const wrapCode = (code: string): string => {
   }
   return `import { Hono } from 'hono'\nconst app = new Hono()\n${code}\nexport default app\n`
 }
+
+/**
+ * Resolve a request body option: `@file` reads a file, `@-` reads
+ * stdin, anything else is the body itself.
+ */
+export const resolveData = (data: string | undefined): string | undefined => {
+  if (data === undefined || !data.startsWith('@')) {
+    return data
+  }
+  if (data === '@-') {
+    return readStdin()
+  }
+  return readFileSync(data.slice(1), 'utf-8')
+}

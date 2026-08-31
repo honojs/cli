@@ -149,11 +149,11 @@ const execRunner = (runtime: string, command: RunnerCommand, code: string): Prom
     child.stdin?.end(code)
   })
 
-export const parseRunnerOutput = (
+export const parseRunnerOutput = <T = RunnerResponse>(
   stdout: string,
   marker: string,
   runtime: string
-): RunnerResponse => {
+): T => {
   const lines = stdout.split('\n')
   const resultLine = lines.find((line) => line.includes(marker))
   const logs = lines.filter((line) => line !== resultLine && line.length > 0)
