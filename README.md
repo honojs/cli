@@ -38,6 +38,9 @@ hono optimize
 
 # Generate static files from your Hono app
 hono ssg
+
+# Measure the performance of your Hono app
+hono benchmark
 ```
 
 ## Commands
@@ -50,6 +53,7 @@ Inspect and test:
 
 - `routes [file]` - Show routes of your Hono app
 - `request [file]` - Send request to Hono app using `app.request()`
+- `benchmark [file]` - Measure the performance of your Hono app
 
 Build:
 
@@ -211,6 +215,69 @@ The result is JSON with the shared envelope. A JSON response body is embedded as
 ```
 
 A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl.
+
+### `benchmark`
+
+Measure the performance of your Hono app. It is a micro benchmark of routing and handlers: `app.request()` is called directly, with no HTTP stack and no network. Each run happens in a fresh process, so results are comparable.
+
+```bash
+hono benchmark [file] [options]
+```
+
+**Arguments:**
+
+- `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+
+**Options:**
+
+- `-P, --path <path>` - benchmark only this path (can be used multiple times)
+- `--duration <ms>` - how long to measure each route (default: `500`)
+- `--warmup <count>` - requests before measuring (default: `30`)
+- `--hono <version-or-path>` - benchmark with this Hono instead (can be used multiple times)
+- `--plain` - human-readable output instead of JSON
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+**Examples:**
+
+```bash
+# Benchmark all GET routes
+hono benchmark
+
+# Benchmark one path
+hono benchmark -P /users
+
+# Compare two Hono versions with the same app
+hono benchmark --hono 4.12.3 --hono 4.13.0
+
+# Compare with a local Hono checkout
+hono benchmark --hono ../hono
+```
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "results": [
+      {
+        "hono": "4.13.0",
+        "routes": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "requests": 48210,
+            "rps": 96420,
+            "latency": { "avg": 0.01, "p50": 0.009, "p75": 0.011, "p99": 0.021 }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`--hono` runs the same app with another Hono: an npm version, or a path to a local package. Use it to compare Hono versions without setting up a benchmark environment. Latency is in milliseconds.
 
 ### `optimize`
 

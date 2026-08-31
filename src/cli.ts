@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { agentContextCommand } from './commands/agent-context/index.js'
+import { benchmarkCommand } from './commands/benchmark/index.js'
 import { optimizeCommand } from './commands/optimize/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
@@ -27,6 +28,7 @@ optimizeCommand(program)
 requestCommand(program)
 routesCommand(program)
 ssgCommand(program)
+benchmarkCommand(program)
 agentContextCommand(program)
 
 program.parse()

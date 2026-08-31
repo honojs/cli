@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { bullets, codeBlock, section, steps } from '../../utils/markdown.js'
+import { agentContext as benchmarkContext } from '../benchmark/index.js'
 import { agentContext as optimizeContext } from '../optimize/index.js'
 import { agentContext as requestContext } from '../request/index.js'
 import { agentContext as routesContext } from '../routes/index.js'
@@ -11,6 +12,7 @@ const contexts: Record<string, CommandAgentContext> = {
   request: requestContext,
   optimize: optimizeContext,
   ssg: ssgContext,
+  benchmark: benchmarkContext,
 }
 
 const commandDoc = (command: Command, context?: CommandAgentContext): string => {
