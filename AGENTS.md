@@ -95,6 +95,11 @@ Rank findings by severity: `blocker` / `bug` / `risk` / `nit`.
    package on npm with staged publishing
 3. A maintainer approves the staged package on npmjs.com (needs 2FA)
 
+A prerelease (a version like `0.2.0-next.0`) publishes to the `next`
+dist-tag, so `latest` does not move. Users opt in with
+`npm install @hono/cli@next`. Release it from the `next` branch with
+`pnpm run release --any-branch`.
+
 ## Hono Documentation
 
 Need Hono details? Fetch <https://hono.dev/llms.txt> to find the right

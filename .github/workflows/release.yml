@@ -36,4 +36,10 @@ jobs:
       - run: pnpm run build
 
       - name: Publish to npm
-        run: npm stage publish --provenance --access public
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [[ "$version" == *-* ]]; then
+            npm stage publish --provenance --access public --tag next
+          else
+            npm stage publish --provenance --access public
+          fi
