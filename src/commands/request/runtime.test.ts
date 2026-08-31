@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { execFile } from 'node:child_process'
+import { execFile, execFileSync } from 'node:child_process'
 import { CliError } from '../../utils/output'
-import { buildRunnerBody, parseRunnerOutput } from './runtime'
+import { buildRunnerBody, parseRunnerOutput, runInRuntime } from './runtime'
 
 const MARKER = '__TEST_MARKER__'
 
@@ -65,6 +65,38 @@ describe('buildRunnerBody', () => {
     expect([...Buffer.from(result.bodyBase64, 'base64')]).toEqual([0, 1, 254, 255])
   })
 })
+
+// Run only where the runtime is installed. CI does not have them.
+const hasRuntime = (bin: string): boolean => {
+  try {
+    execFileSync('which', [bin], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+for (const runtime of ['bun', 'deno'] as const) {
+  describe.runIf(hasRuntime(runtime))(`runInRuntime on ${runtime}`, () => {
+    it('should run the app and return the response', async () => {
+      const result = await runInRuntime(
+        runtime,
+        {
+          code: [
+            'const app = { fetch: () => new Response(JSON.stringify({ ua: navigator.userAgent })) }',
+            'export default app',
+          ].join('\n'),
+        },
+        [],
+        { path: '/', method: 'GET', headers: {} }
+      )
+
+      expect(result.status).toBe(200)
+      const body = JSON.parse(Buffer.from(result.bodyBase64, 'base64').toString('utf-8'))
+      expect(body.ua).toContain(runtime === 'bun' ? 'Bun/' : 'Deno/')
+    })
+  })
+}
 
 describe('parseRunnerOutput', () => {
   afterEach(() => {
