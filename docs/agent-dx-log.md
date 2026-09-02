@@ -39,10 +39,12 @@ next to the `.ts`. The three runs that used the CLI left nothing.
 
 **Changes**:
 
-- honojs/skills#2: the skill now says directly — do not write a
-  throwaway `app.request()` test script; `hono request` is the same
-  check with no file, and works where plain Node cannot (JSX, enums,
-  path aliases). It also shows the stdin form.
+- honojs/skills#2: the skill now mentions that `hono request` does the
+  same check as a hand-written `app.request()` script, with no file and
+  working where plain Node cannot (JSX, enums, path aliases). Worded as
+  information, not a prescription: our own numbers say the script
+  approach is often cheaper, and the skill serves the agent's outcome,
+  not CLI adoption.
 - The remaining differentiators of the CLI, after three experiments:
   workerd bindings, `--trace` / `routes` (runtime route resolution),
   JSX-heavy apps, and `benchmark`. A JSX variant of this task can
