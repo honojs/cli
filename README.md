@@ -217,7 +217,7 @@ The result is JSON with the shared envelope. A JSON response body is embedded as
 }
 ```
 
-A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl.
+A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl. A 404 result includes a suggestion to run `--trace`.
 
 ### `benchmark`
 
