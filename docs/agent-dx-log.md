@@ -32,10 +32,21 @@ changed Hono CLI. Newest first.
   logs are now recorded on the agent-dx side, so the next run can tell
   what blocked.
 
-**Changes**: none yet. The remaining differentiators of the CLI, after
-three experiments: workerd bindings, `--trace` / `routes` (runtime route
-resolution), JSX-heavy apps, and `benchmark`. A JSX variant of this task
-can measure the third one — noted, behind the shadowing experiment.
+**Workspace hygiene recount** (same runs): 2 of 10 runs left files
+behind — a baseline run left `test-api.js`, and a CLI-arm run that did
+not use the CLI left `test-users-api.js` plus a stray `src/index.js`
+next to the `.ts`. The three runs that used the CLI left nothing.
+
+**Changes**:
+
+- honojs/skills#2: the skill now says directly — do not write a
+  throwaway `app.request()` test script; `hono request` is the same
+  check with no file, and works where plain Node cannot (JSX, enums,
+  path aliases). It also shows the stdin form.
+- The remaining differentiators of the CLI, after three experiments:
+  workerd bindings, `--trace` / `routes` (runtime route resolution),
+  JSX-heavy apps, and `benchmark`. A JSX variant of this task can
+  measure the third one — noted, behind the shadowing experiment.
 
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
