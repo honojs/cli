@@ -3,6 +3,27 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: Verification is the home ground — and the competitor is `app.request()` itself (no change yet)
+
+**Experiment**: `build-endpoints` — add a users CRUD to an empty Hono app,
+"make sure they work", no tool named. haiku, baseline vs CLI
+(`0.2.0-next.0`) + skill, 5 runs each.
+
+**Findings**:
+
+- CLI usage jumped from 0% to 60% (3/5 runs, all `request`). Creation
+  plus verification pressure is the natural home of the CLI.
+- Efficiency got worse (+220% tokens, one timeout not caused by the
+  CLI). n=5, direction only.
+- The baseline verified cheaply with hand-written test scripts calling
+  `app.request()`. The competitor of `hono request` is not a dev server
+  — it is Hono's own testability. The CLI's value concentrates where a
+  hand-written script does not reach: workerd bindings, `--trace`,
+  zero-setup TS execution, and `benchmark`.
+
+**Changes**: none yet. Waiting for per-run bash logs (timeout
+diagnosis) and answers on how the baseline executed TS scripts.
+
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
 **Experiment**: `fix-404-large` — the same double-prefix mount bug in a
