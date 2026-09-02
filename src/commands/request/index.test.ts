@@ -1246,6 +1246,7 @@ describe('requestCommand', () => {
       await program.parseAsync(['node', 'test', 'request', '-P', '/exists', 'test-app.js'])
       expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).data.suggestions).toBeUndefined()
 
+      setupBasicMocks('test-app.js', mockApp)
       await program.parseAsync([
         'node',
         'test',
