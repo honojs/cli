@@ -1,0 +1,25 @@
+src/utils/output.test.ts
+  s_449966fc5983c0::t_f914678fc2125e 2,37-49
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_96bf40db28aa0b 6-30
+src/cli.ts
+  s_449966fc5983c0::t_cdb8b663167706 1,11,26-27,37-52
+src/utils/output.ts
+  s_449966fc5983c0::t_c7f37bfd085327 36-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a08acb4f2bb097ade6969512b3e75b47e1470d39",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
