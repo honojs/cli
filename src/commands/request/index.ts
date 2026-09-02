@@ -33,7 +33,7 @@ export const agentContext: CommandAgentContext = {
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
     '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
-    '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response.',
+    '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
   ],
 }
@@ -193,12 +193,19 @@ const printResponse = async (
     return
   }
 
+  // Agents rarely discover --trace on their own. A 404 is the moment
+  // it helps, so point at it right there.
+  const suggestTrace = result.status === 404 && !options.trace && options.runtime === 'node'
+
   printResult({
     status: result.status,
     headers: result.headers,
     body: isBinaryData ? null : parseBody(result.body, contentType),
     ...(isBinaryData ? { binary: true } : {}),
     ...(savedTo ? { savedTo } : {}),
+    ...(suggestTrace
+      ? { suggestions: [`See which routes matched: hono request -P ${path} --trace`] }
+      : {}),
     ...extra,
   })
 }

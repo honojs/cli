@@ -1222,4 +1222,41 @@ describe('requestCommand', () => {
       process.exitCode = undefined
     })
   })
+
+  describe('404 trace suggestion', () => {
+    it('should suggest --trace on a 404 response', async () => {
+      const mockApp = new Hono()
+      mockApp.get('/exists', (c) => c.text('ok'))
+      setupBasicMocks('test-app.js', mockApp)
+
+      await program.parseAsync(['node', 'test', 'request', '-P', '/missing', 'test-app.js'])
+
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed.data.status).toBe(404)
+      expect(parsed.data.suggestions).toEqual([
+        'See which routes matched: hono request -P /missing --trace',
+      ])
+    })
+
+    it('should not suggest --trace on a success or when tracing already', async () => {
+      const mockApp = new Hono()
+      mockApp.get('/exists', (c) => c.text('ok'))
+      setupBasicMocks('test-app.js', mockApp)
+
+      await program.parseAsync(['node', 'test', 'request', '-P', '/exists', 'test-app.js'])
+      expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).data.suggestions).toBeUndefined()
+
+      setupBasicMocks('test-app.js', mockApp)
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '-P',
+        '/missing',
+        '--trace',
+        'test-app.js',
+      ])
+      expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).data.suggestions).toBeUndefined()
+    })
+  })
 })
