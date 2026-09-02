@@ -100,6 +100,12 @@ dist-tag, so `latest` does not move. Users opt in with
 `npm install @hono/cli@next`. Release it from the `next` branch with
 `pnpm run release --any-branch`.
 
+## Agent DX Log
+
+When a measurement from honojs/agent-dx changes the CLI, record it in
+`docs/agent-dx-log.md` in the same PR: the experiment, the findings,
+and the change.
+
 ## Hono Documentation
 
 Need Hono details? Fetch <https://hono.dev/llms.txt> to find the right
