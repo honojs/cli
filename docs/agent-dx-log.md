@@ -3,6 +3,31 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: Agents type curl syntax, hit a dead end, and leave
+
+**Experiment**: `fix-404-shadow` — haiku, baseline vs CLI
+(`0.2.0-next.0`) + skill, 5 runs each. The first experiment with full
+command recording.
+
+**Findings**:
+
+- A recorded run shows an agent trying to use `request` three times and
+  failing on syntax every time: `hono request GET /api/orders`, then
+  `hono request "/api/orders"`, then with a guessed `--app` option. It
+  gave up and wrote a throwaway test script instead.
+- The errors it got were commander's plain text (`error: too many
+  arguments`) — outside the JSON envelope, with no suggestion of the
+  correct syntax. The moment of highest intent to use the CLI was a
+  dead end.
+
+**Changes**:
+
+- `request` accepts curl-style positionals: `hono request GET
+  /api/orders` and `hono request /api/orders` now work.
+- Argument parse errors (unknown option, bad argument) return the JSON
+  envelope with an `INVALID_ARGUMENTS` code and a help suggestion,
+  like every other error.
+
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
 **Experiment**: `fix-404-large` — the same double-prefix mount bug in a

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { CliError, formatResult, formatError, handleErrors } from './output'
+import { CliError, formatArgumentsError, formatResult, formatError, handleErrors } from './output'
 
 describe('formatResult', () => {
   it('should wrap data in the envelope', () => {
@@ -30,6 +30,19 @@ describe('formatError', () => {
     expect(JSON.parse(formatError(error))).toEqual({
       ok: false,
       error: { code: 'UNEXPECTED_ERROR', message: 'boom' },
+    })
+  })
+})
+
+describe('formatArgumentsError', () => {
+  it('should turn a commander message into the envelope', () => {
+    expect(JSON.parse(formatArgumentsError("error: unknown option '--app'"))).toEqual({
+      ok: false,
+      error: {
+        code: 'INVALID_ARGUMENTS',
+        message: "unknown option '--app'",
+        suggestions: ['Check the usage: hono <command> --help'],
+      },
     })
   })
 })
