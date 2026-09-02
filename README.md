@@ -111,12 +111,15 @@ hono routes [file] [options]
 Send HTTP requests to your Hono application using the built-in `app.request()` method. This is particularly useful for testing and development.
 
 ```bash
-hono request [file] [options]
+hono request [file] [method] [path] [options]
 ```
 
 **Arguments:**
 
 - `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
+- `method`, `path` - curl style: `hono request GET /api/users` works.
+  An upper-case HTTP method sets the method, a `/`-leading argument
+  sets the path. Same as `-X` and `-P`
 
 **Options:**
 
@@ -142,6 +145,9 @@ hono request
 
 # GET request to specific path
 hono request -P /users/123
+
+# The same, curl style
+hono request GET /users/123
 
 # POST request with data
 hono request -P /api/users -X POST -d '{"name":"Alice"}'

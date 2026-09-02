@@ -46,7 +46,7 @@ describe('agentContextCommand', () => {
   it('should document every command except itself', async () => {
     const output = await getOutput()
     expect(output).toContain('### hono optimize [entry]')
-    expect(output).toContain('### hono request [file]')
+    expect(output).toContain('### hono request [file|method|path...]')
     expect(output).toContain('### hono routes [file]')
     expect(output).not.toContain('### hono agent-context')
   })

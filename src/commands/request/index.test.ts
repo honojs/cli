@@ -103,6 +103,32 @@ describe('requestCommand', () => {
     })
   })
 
+  it('should accept curl-style method and path positionals', async () => {
+    const mockApp = new Hono()
+    mockApp.post('/data', (c) => c.json({ created: true }))
+    setupBasicMocks('test-app.js', mockApp)
+    mockModules.existsSync.mockImplementation((p) => String(p).endsWith('test-app.js'))
+    await program.parseAsync(['node', 'test', 'request', 'POST', '/data', 'test-app.js'])
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
+      ok: true,
+      data: {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: { created: true },
+      },
+    })
+  })
+
+  it('should error when a positional path conflicts with -P', async () => {
+    const mockApp = new Hono()
+    setupBasicMocks('test-app.js', mockApp)
+    mockModules.existsSync.mockReturnValue(false)
+    await program.parseAsync(['node', 'test', 'request', '/a', '-P', '/b'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_ARGUMENTS')
+  })
+
   it('should output a text body as a string in the envelope', async () => {
     const mockApp = new Hono()
     const text = 'Hello, World!'
