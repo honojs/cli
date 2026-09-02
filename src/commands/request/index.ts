@@ -1,9 +1,12 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
+import { getBuildIterator, readStdin, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { parseBatch, runBatch } from './batch.js'
 import { classifyPositionals } from './positionals.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
@@ -19,6 +22,8 @@ export const agentContext: CommandAgentContext = {
     'RUNTIME_FAILED',
     'WRANGLER_NOT_FOUND',
     'WRANGLER_CONFIG_NOT_FOUND',
+    'BATCH_INVALID',
+    'BATCH_NOT_FOUND',
   ],
   examples: [
     'hono request -P /api/users',
@@ -29,6 +34,11 @@ export const agentContext: CommandAgentContext = {
     'hono request -P / --runtime bun',
     'hono request -P /api --runtime workerd',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
+    `hono request --batch - <<'EOF'
+{"path":"/users","expect":200}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}
+{"path":"/users/\${id}","expect":200}
+EOF`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
@@ -37,6 +47,8 @@ export const agentContext: CommandAgentContext = {
     '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
+    '--batch runs many requests in one call, in order, against one app instance — in-memory state carries between steps. One JSON object per line: {"method","path","body","headers","expect","save"}. "save" stores a value from the response body by dot path (e.g. {"id":".id"}), and later steps use it as ${id}. Prefer --batch over writing a test script: no file to clean up, and every step is checked for you.',
+    'The --batch output has per-step results and a summary. A failed "expect" sets "pass": false on the step — the exit code stays 0 when the batch itself ran.',
   ],
 }
 
@@ -54,6 +66,7 @@ interface RequestOptions {
   include: boolean
   head: boolean
   external?: string[]
+  batch?: string
 }
 
 export function requestCommand(program: Command) {
@@ -82,6 +95,7 @@ export function requestCommand(program: Command) {
       'runtime to execute the app (node | bun | deno | workerd)',
       'node'
     )
+    .option('--batch <source>', 'Run multiple requests from JSONL (- reads stdin)')
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -136,6 +150,45 @@ export function requestCommand(program: Command) {
             }
           )
         }
+        if (options.batch) {
+          if (runtime !== 'node') {
+            throw new CliError('INVALID_OPTION', 'Cannot use --batch with --runtime yet', {
+              suggestions: ['Drop --runtime. The batch runs on Node.js for now'],
+            })
+          }
+          const perRequest =
+            options.trace ||
+            options.watch ||
+            options.plain ||
+            options.data !== undefined ||
+            options.output !== undefined ||
+            options.remoteName ||
+            options.include ||
+            options.head ||
+            options.method !== 'GET' ||
+            options.path !== '/'
+          if (perRequest) {
+            throw new CliError('INVALID_OPTION', 'Cannot use --batch with per-request options', {
+              suggestions: ['Put method, path, body, and expect in the batch lines'],
+            })
+          }
+          if (file === '-' && options.batch === '-') {
+            throw new CliError(
+              'INVALID_OPTION',
+              'Cannot read both the app and the batch from stdin',
+              {
+                suggestions: ['Pass the app as a file, or the batch with --batch <file>'],
+              }
+            )
+          }
+          const source = options.batch === '-' ? await readStdin() : readBatchFile(options.batch)
+          const steps = parseBatch(source)
+          for await (const app of getBuildIterator(file, false, external)) {
+            printResult(await runBatch(app, steps, parseHeaders(options.header)))
+          }
+          return
+        }
+
         if (options.trace && options.plain) {
           throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
             suggestions: ['Drop --plain. The trace is part of the JSON output'],
@@ -283,6 +336,16 @@ const handleSaveOutput = async (
     console.error(`Error saving file: ${error instanceof Error ? error.message : String(error)}`)
     return undefined
   }
+}
+
+const readBatchFile = (source: string): string => {
+  const filepath = resolve(process.cwd(), source)
+  if (!existsSync(filepath)) {
+    throw new CliError('BATCH_NOT_FOUND', `Batch file ${source} does not exist`, {
+      suggestions: ['Pass a JSONL file, or - to read stdin'],
+    })
+  }
+  return readFileSync(filepath, 'utf-8')
 }
 
 const parseHeaders = (header: string[] | undefined): Record<string, string> => {

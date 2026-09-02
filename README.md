@@ -135,6 +135,7 @@ hono request [file] [method] [path] [options]
 - `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, or `workerd`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
+- `--batch <source>` - Run multiple requests from JSONL (`-` reads stdin)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
@@ -179,7 +180,19 @@ hono request -P / --runtime deno
 
 # Run the app on workerd with your wrangler config: bindings (c.env) are the local ones
 hono request -P /api --runtime workerd
+
+# Run many requests in one call. One JSON object per line.
+# `save` stores a value from the response body, later steps use it as ${name}.
+hono request --batch - <<'EOF'
+{"path":"/users","expect":200}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}
+{"path":"/users/${id}","expect":200}
+{"method":"DELETE","path":"/users/${id}","expect":204}
+{"path":"/users/${id}","expect":404}
+EOF
 ```
+
+A batch runs in order against one app instance, so in-memory state carries between steps. The output has per-step results (`pass` per `expect`) and a summary. A shared header from `-H` goes to every step.
 
 `workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
 
