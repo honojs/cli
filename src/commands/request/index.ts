@@ -30,6 +30,7 @@ export const agentContext: CommandAgentContext = {
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
+    'Do not pass credentials in CLI arguments. Use environment variables for sensitive values.',
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
     '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
