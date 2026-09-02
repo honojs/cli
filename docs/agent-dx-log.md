@@ -21,8 +21,21 @@ changed Hono CLI. Newest first.
   hand-written script does not reach: workerd bindings, `--trace`,
   zero-setup TS execution, and `benchmark`.
 
-**Changes**: none yet. Waiting for per-run bash logs (timeout
-diagnosis) and answers on how the baseline executed TS scripts.
+**Follow-up answers**:
+
+- The baseline ran its TS scripts with plain Node — type stripping is on
+  by default since Node 22.18, so zero-setup TS execution is no longer a
+  CLI differentiator. It still is for JSX (type stripping does not
+  handle it, and real Hono apps use `c.html(<... />)` a lot), enums,
+  path aliases, and Node below 22.18.
+- The timeout run had used the CLI once before hanging. Per-run bash
+  logs are now recorded on the agent-dx side, so the next run can tell
+  what blocked.
+
+**Changes**: none yet. The remaining differentiators of the CLI, after
+three experiments: workerd bindings, `--trace` / `routes` (runtime route
+resolution), JSX-heavy apps, and `benchmark`. A JSX variant of this task
+can measure the third one — noted, behind the shadowing experiment.
 
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
