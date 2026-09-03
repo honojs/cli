@@ -176,13 +176,13 @@ hono request / --runtime deno
 hono request /api --runtime workerd
 
 # Run many requests in one call. One JSON object per line.
-# `save` stores a value from the response body, later steps use it as ${name}.
+# `save` stores a value from the response body, later steps use it as {{name}}.
 hono request --batch - <<'EOF'
 {"path":"/users","expect":200}
 {"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}
-{"path":"/users/${id}","expect":200}
-{"method":"DELETE","path":"/users/${id}","expect":204}
-{"path":"/users/${id}","expect":404}
+{"path":"/users/{{id}}","expect":200}
+{"method":"DELETE","path":"/users/{{id}}","expect":204}
+{"path":"/users/{{id}}","expect":404}
 EOF
 ```
 

@@ -30,7 +30,7 @@ export interface BatchResult {
 const invalid = (message: string): CliError =>
   new CliError('BATCH_INVALID', message, {
     suggestions: [
-      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}',
+      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}. A later step uses a saved value as {{id}}',
     ],
   })
 
@@ -92,13 +92,14 @@ const isStringRecord = (value: unknown): value is Record<string, string> =>
   Object.values(value).every((v) => typeof v === 'string')
 
 /**
- * Replace `${name}` in every string with a saved variable.
+ * Replace `{{name}}` in every string with a saved variable. Not
+ * `${name}`: the shell expands that inside an unquoted heredoc.
  */
 export const interpolate = <T>(value: T, vars: Record<string, unknown>): T => {
   if (typeof value === 'string') {
-    return value.replace(/\$\{(\w+)\}/g, (_, name: string) => {
+    return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
       if (!(name in vars)) {
-        throw invalid(`Unknown variable \${${name}}. Save it in an earlier step`)
+        throw invalid(`Unknown variable {{${name}}}. Save it in an earlier step`)
       }
       return String(vars[name])
     }) as T
@@ -189,7 +190,7 @@ export const runBatch = async (
     if (step.expect !== undefined && response.status !== step.expect) {
       result.pass = false
       if (response.status === 404) {
-        result.suggestions = [`See which routes matched: hono request -P ${path} --trace`]
+        result.suggestions = [`See which routes matched: hono request ${path} --trace`]
       }
     }
 

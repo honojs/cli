@@ -18,7 +18,8 @@ changed Hono CLI. Newest first.
 
 **Changes**: `hono request --batch -` runs many requests from JSONL in
 one call, in order, against one app instance. Steps carry state
-(`save` a value from a response, use it as `${name}`), assert with
+(`save` a value from a response, use it as `{{name}}` — not `${name}`,
+which the shell expands inside an unquoted heredoc), assert with
 `expect`, and a failed step gets the `--trace` suggestion. The
 throwaway script, without the file, the hand-written checks, or the
 cleanup.

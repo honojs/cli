@@ -48,7 +48,7 @@ describe('parseBatch', () => {
 
 describe('interpolate', () => {
   it('replaces variables in strings, arrays, and objects', () => {
-    expect(interpolate({ a: '/users/${id}', b: ['${id}'], c: 1 }, { id: 7 })).toEqual({
+    expect(interpolate({ a: '/users/{{id}}', b: ['{{id}}'], c: 1 }, { id: 7 })).toEqual({
       a: '/users/7',
       b: ['7'],
       c: 1,
@@ -57,7 +57,7 @@ describe('interpolate', () => {
 
   it('throws BATCH_INVALID on an unknown variable', () => {
     try {
-      interpolate('/users/${nope}', {})
+      interpolate('/users/{{nope}}', {})
       expect.unreachable()
     } catch (e) {
       expect(e).toBeInstanceOf(CliError)
@@ -102,7 +102,7 @@ describe('runBatch', () => {
       parseBatch(
         [
           '{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}',
-          '{"path":"/users/${id}","expect":200}',
+          '{"path":"/users/{{id}}","expect":200}',
         ].join('\n')
       )
     )
@@ -117,7 +117,7 @@ describe('runBatch', () => {
     expect(result.summary.failed).toBe(1)
     expect(result.steps[0].pass).toBe(false)
     expect(result.steps[0].suggestions).toEqual([
-      'See which routes matched: hono request -P /nope --trace',
+      'See which routes matched: hono request /nope --trace',
     ])
   })
 
