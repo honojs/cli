@@ -18,9 +18,16 @@ haiku, four onboarding channels, 5 runs each.
   checking alone cannot catch route regressions. Verify with `npx hono
   routes` or `npx hono request -P <path>`") — 5/5 runs used the CLI.
   A policy with the answer in it beats an introduction of a tool.
+- Success stayed at 2/5: the planted bug was a dropped
+  `app.notFound()`, and a `hono routes` diff cannot show it — the
+  handler is not a route, and from outside the app it is not knowable.
+  Only its behavior is.
 
 **Changes**: `hono agent-context` now includes a "For your AGENTS.md"
-section with that measured line, ready to paste.
+section with that measured line, ready to paste — plus one sentence:
+request one path that matches no route. That compares the 404 behavior
+as behavior, without the CLI claiming anything it cannot know. (A
+`routes` field for the handlers was tried and retracted in #115.)
 
 ## 2026-09-03: Route count does not matter — locality does (no change)
 

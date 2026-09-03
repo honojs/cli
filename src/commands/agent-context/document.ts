@@ -83,6 +83,7 @@ export const renderAgentContext = (program: Command): string =>
       codeBlock('markdown', [
         'Type checking alone cannot catch route regressions. Verify with',
         '`npx hono routes` (compare before and after) or `npx hono request -P <path>`.',
+        'Check the 404 behavior too: request one path that matches no route.',
       ])
     ),
     section(
