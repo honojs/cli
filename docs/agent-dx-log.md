@@ -33,6 +33,52 @@ command recording.
 - Argument parse errors (unknown option, bad argument) return the JSON
   envelope with an `INVALID_ARGUMENTS` code and a help suggestion,
   like every other error.
+## 2026-09-03: Verification is the home ground — and the competitor is `app.request()` itself (no change yet)
+
+**Experiment**: `build-endpoints` — add a users CRUD to an empty Hono app,
+"make sure they work", no tool named. haiku, baseline vs CLI
+(`0.2.0-next.0`) + skill, 5 runs each.
+
+**Findings**:
+
+- CLI usage jumped from 0% to 60% (3/5 runs, all `request`). Creation
+  plus verification pressure is the natural home of the CLI.
+- Efficiency got worse (+220% tokens, one timeout not caused by the
+  CLI). n=5, direction only.
+- The baseline verified cheaply with hand-written test scripts calling
+  `app.request()`. The competitor of `hono request` is not a dev server
+  — it is Hono's own testability. The CLI's value concentrates where a
+  hand-written script does not reach: workerd bindings, `--trace`,
+  zero-setup TS execution, and `benchmark`.
+
+**Follow-up answers**:
+
+- The baseline ran its TS scripts with plain Node — type stripping is on
+  by default since Node 22.18, so zero-setup TS execution is no longer a
+  CLI differentiator. It still is for JSX (type stripping does not
+  handle it, and real Hono apps use `c.html(<... />)` a lot), enums,
+  path aliases, and Node below 22.18.
+- The timeout run had used the CLI once before hanging. Per-run bash
+  logs are now recorded on the agent-dx side, so the next run can tell
+  what blocked.
+
+**Workspace hygiene recount** (same runs): 2 of 10 runs left files
+behind — a baseline run left `test-api.js`, and a CLI-arm run that did
+not use the CLI left `test-users-api.js` plus a stray `src/index.js`
+next to the `.ts`. The three runs that used the CLI left nothing.
+
+**Changes**:
+
+- honojs/skills#2: the skill now mentions that `hono request` does the
+  same check as a hand-written `app.request()` script, with no file and
+  working where plain Node cannot (JSX, enums, path aliases). Worded as
+  information, not a prescription: our own numbers say the script
+  approach is often cheaper, and the skill serves the agent's outcome,
+  not CLI adoption.
+- The remaining differentiators of the CLI, after three experiments:
+  workerd bindings, `--trace` / `routes` (runtime route resolution),
+  JSX-heavy apps, and `benchmark`. A JSX variant of this task can
+  measure the third one — noted, behind the shadowing experiment.
 
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
