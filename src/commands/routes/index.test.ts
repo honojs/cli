@@ -75,6 +75,7 @@ describe('routesCommand', () => {
     const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
     expect(parsed.ok).toBe(true)
     expect(typeof parsed.data.router).toBe('string')
+    expect(parsed.data.handlers).toEqual({ notFound: 'default', onError: 'default' })
     expect(parsed.data.routes).toEqual([
       { method: 'GET', path: '/', name: '[handler]', isMiddleware: false },
       { method: 'POST', path: '/posts', name: '[handler]', isMiddleware: false },

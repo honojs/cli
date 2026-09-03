@@ -3,6 +3,23 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: A route diff misses notFound and onError — report them
+
+**Experiment**: `refactor-routes` — split a routes file, keep behavior.
+haiku, four onboarding channels, 5 runs each.
+
+**Findings**:
+
+- The main planted bug was a dropped `app.notFound()` during the
+  split. Agents that verified with `hono routes` before and after
+  still missed it: the handler is not a route, so the diff was clean.
+  A false negative from the verifier itself.
+
+**Changes**: `hono routes` output now has `handlers`, reporting
+whether the app sets its own `notFound` and `onError` (`custom` /
+`default` / `unknown` when a wildcard answers instead). The
+before-and-after diff catches the dropped handler now.
+
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
 **Experiment**: `fix-404-large` — the same double-prefix mount bug in a

@@ -3,15 +3,17 @@ import { getRouterName, inspectRoutes } from 'hono/dev'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { inspectHandlers } from './handlers.js'
 
 export const agentContext: CommandAgentContext = {
   output:
-    '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }] }',
+    '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }], "handlers": { "notFound": "custom", "onError": "default" } }',
   errors: ['ENTRY_NOT_FOUND', 'INVALID_APP'],
   examples: ['hono routes', 'hono routes --verbose src/app.ts'],
   notes: [
     'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',
     'Run it first to get the full picture of an app without reading the source.',
+    '"handlers" reports whether the app sets its own notFound and onError handlers — a route list alone cannot show them. When you refactor an app, compare the whole output before and after, handlers included.',
   ],
 }
 
@@ -52,6 +54,7 @@ export function routesCommand(program: Command) {
           ({ isMiddleware }) => options.verbose || !isMiddleware
         )
         const router = getRouterName(app)
+        const handlers = await inspectHandlers(app)
 
         if (options.plain) {
           const maxMethodLength = Math.max(...routes.map(({ method }) => method.length), 0)
@@ -61,7 +64,7 @@ export function routesCommand(program: Command) {
           return
         }
 
-        printResult({ router, routes })
+        printResult({ router, routes, handlers })
       })
     )
 }

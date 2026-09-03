@@ -101,10 +101,13 @@ hono routes [file] [options]
     "routes": [
       { "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false },
       { "method": "POST", "path": "/posts", "name": "[handler]", "isMiddleware": false }
-    ]
+    ],
+    "handlers": { "notFound": "custom", "onError": "default" }
   }
 }
 ```
+
+`handlers` reports whether the app sets its own `notFound` and `onError` handlers — a route list alone cannot show them. `unknown` means a wildcard route answered instead. When you refactor an app, compare the whole output before and after, handlers included.
 
 ### `request`
 
