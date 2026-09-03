@@ -1,0 +1,29 @@
+README.md
+  s_449966fc5983c0::t_8347f539c3cb17 104-105,110-111
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_fe5d356990cb82 6-22
+src/commands/routes/handlers.test.ts
+  s_449966fc5983c0::t_693d18038e776e 1-37
+src/commands/routes/handlers.ts
+  s_449966fc5983c0::t_8ea0d4e8b63af0 1-42
+src/commands/routes/index.test.ts
+  s_449966fc5983c0::t_22b750e6b02108 78
+src/commands/routes/index.ts
+  s_449966fc5983c0::t_73dff35d3acad2 6,10,16,57,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c22d09d70e8ce0d30941c3304c319cc4b52b290b",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
