@@ -34,9 +34,9 @@ export const agentContext: CommandAgentContext = {
     'hono request /api --runtime workerd',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request /hello -`,
     `hono request --batch - <<'EOF'
-{"path":"/users","expect":200}
-{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}
-{"path":"/users/{{id}}","expect":200}
+{"path":"/users"}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}
+{"path":"/users/{{id}}"}
 EOF`,
   ],
   notes: [
@@ -46,8 +46,8 @@ EOF`,
     '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
-    '--batch runs many requests in one call, in order, against one app instance — in-memory state carries between steps. One JSON object per line: {"method","path","body","headers","expect","save"}. "save" stores a value from the response body by dot path (e.g. {"id":".id"}), and later steps use it as {{id}}. Prefer --batch over writing a test script: no file to clean up, and every step is checked for you.',
-    'The --batch output has per-step results and a summary. A failed "expect" sets "pass": false on the step — the exit code stays 0 when the batch itself ran.',
+    '--batch runs many requests in one call, in order, against one app instance — in-memory state carries between steps. One JSON object per line: {"method","path","body","headers","save"}. "save" stores a value from the response body by dot path (e.g. {"id":".id"}), and later steps use it as {{id}}. Prefer --batch over writing a test script: no file to clean up.',
+    'The --batch output is one result per step: status and body as facts. Compare them with what you expect — read the bodies too, a right status can hide a wrong body.',
   ],
 }
 
@@ -149,7 +149,7 @@ export function requestCommand(program: Command) {
               options.method !== 'GET'
             if (perRequest) {
               throw new CliError('INVALID_OPTION', 'Cannot use --batch with per-request options', {
-                suggestions: ['Put method, path, body, and expect in the batch lines'],
+                suggestions: ['Put method, path, and body in the batch lines'],
               })
             }
             if (file === '-' && options.batch === '-') {

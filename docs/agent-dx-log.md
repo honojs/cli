@@ -19,10 +19,11 @@ changed Hono CLI. Newest first.
 **Changes**: `hono request --batch -` runs many requests from JSONL in
 one call, in order, against one app instance. Steps carry state
 (`save` a value from a response, use it as `{{name}}` — not `${name}`,
-which the shell expands inside an unquoted heredoc), assert with
-`expect`, and a failed step gets the `--trace` suggestion. The
-throwaway script, without the file, the hand-written checks, or the
-cleanup.
+which the shell expands inside an unquoted heredoc). The output is one
+result per step: status and body as facts. No `expect` on purpose —
+the agent judges anyway, and a status-only `pass: true` would invite
+the very false negative `refactor-routes` measured (right status,
+wrong body). The throwaway script, without the file or the cleanup.
 
 ## 2026-09-03: Agents type curl syntax, hit a dead end, and leave
 

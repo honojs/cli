@@ -6,7 +6,6 @@ export interface BatchStep {
   path: string
   body?: unknown
   headers?: Record<string, string>
-  expect?: number
   save?: Record<string, string>
 }
 
@@ -15,22 +14,18 @@ export interface StepResult {
   path: string
   status: number
   body: unknown
-  pass: boolean
-  expect?: number
   saved?: Record<string, unknown>
   error?: string
-  suggestions?: string[]
 }
 
 export interface BatchResult {
   steps: StepResult[]
-  summary: { total: number; passed: number; failed: number }
 }
 
 const invalid = (message: string): CliError =>
   new CliError('BATCH_INVALID', message, {
     suggestions: [
-      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}. A later step uses a saved value as {{id}}',
+      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}. A later step uses a saved value as {{id}}',
     ],
   })
 
@@ -61,9 +56,6 @@ export const parseBatch = (input: string): BatchStep[] => {
     if (step.method !== undefined && typeof step.method !== 'string') {
       throw invalid(`Line ${i + 1}: "method" must be a string`)
     }
-    if (step.expect !== undefined && typeof step.expect !== 'number') {
-      throw invalid(`Line ${i + 1}: "expect" must be a status code number`)
-    }
     if (step.headers !== undefined && !isStringRecord(step.headers)) {
       throw invalid(`Line ${i + 1}: "headers" must be an object of strings`)
     }
@@ -75,7 +67,6 @@ export const parseBatch = (input: string): BatchStep[] => {
       path: step.path,
       body: step.body,
       headers: step.headers,
-      expect: step.expect,
       save: step.save,
     })
   }
@@ -137,7 +128,8 @@ export const getByPath = (body: unknown, path: string): unknown => {
 
 /**
  * Run the steps in order against one app instance, so in-memory state
- * carries from step to step.
+ * carries from step to step. The result reports facts only — the
+ * statuses and bodies. Judging them is the caller's job.
  */
 export const runBatch = async (
   app: Hono,
@@ -183,15 +175,6 @@ export const runBatch = async (
       path,
       status: response.status,
       body,
-      pass: true,
-      ...(step.expect === undefined ? {} : { expect: step.expect }),
-    }
-
-    if (step.expect !== undefined && response.status !== step.expect) {
-      result.pass = false
-      if (response.status === 404) {
-        result.suggestions = [`See which routes matched: hono request ${path} --trace`]
-      }
     }
 
     if (step.save) {
@@ -199,7 +182,6 @@ export const runBatch = async (
       for (const [name, savePath] of Object.entries(step.save)) {
         const value = getByPath(body, savePath)
         if (value === undefined) {
-          result.pass = false
           result.error = `save: ${savePath} not found in the body`
         } else {
           vars[name] = value
@@ -214,9 +196,5 @@ export const runBatch = async (
     results.push(result)
   }
 
-  const passed = results.filter((r) => r.pass).length
-  return {
-    steps: results,
-    summary: { total: results.length, passed, failed: results.length - passed },
-  }
+  return { steps: results }
 }

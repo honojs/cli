@@ -5,24 +5,10 @@ import { getByPath, interpolate, parseBatch, runBatch } from './batch.js'
 
 describe('parseBatch', () => {
   it('parses one step per line and skips empty lines', () => {
-    const steps = parseBatch('{"path":"/a"}\n\n{"method":"post","path":"/b","expect":201}\n')
+    const steps = parseBatch('{"path":"/a"}\n\n{"method":"post","path":"/b"}\n')
     expect(steps).toEqual([
-      {
-        method: 'GET',
-        path: '/a',
-        body: undefined,
-        headers: undefined,
-        expect: undefined,
-        save: undefined,
-      },
-      {
-        method: 'POST',
-        path: '/b',
-        body: undefined,
-        headers: undefined,
-        expect: 201,
-        save: undefined,
-      },
+      { method: 'GET', path: '/a', body: undefined, headers: undefined, save: undefined },
+      { method: 'POST', path: '/b', body: undefined, headers: undefined, save: undefined },
     ])
   })
 
@@ -30,7 +16,6 @@ describe('parseBatch', () => {
     ['not json', 'not json'],
     ['no path', '{"method":"GET"}'],
     ['path without slash', '{"path":"users"}'],
-    ['non-number expect', '{"path":"/a","expect":"200"}'],
     ['non-string save', '{"path":"/a","save":{"id":1}}'],
     ['empty input', '\n\n'],
   ])('throws BATCH_INVALID on %s', (_, input) => {
@@ -101,33 +86,32 @@ describe('runBatch', () => {
       crudApp(),
       parseBatch(
         [
-          '{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":201,"save":{"id":".id"}}',
-          '{"path":"/users/{{id}}","expect":200}',
+          '{"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}',
+          '{"path":"/users/{{id}}"}',
         ].join('\n')
       )
     )
-    expect(result.summary).toEqual({ total: 2, passed: 2, failed: 0 })
+    expect(result.steps[0].status).toBe(201)
     expect(result.steps[0].saved).toEqual({ id: 1 })
     expect(result.steps[1].path).toBe('/users/1')
+    expect(result.steps[1].status).toBe(200)
     expect(result.steps[1].body).toEqual({ id: 1, name: 'Momo' })
   })
 
-  it('fails a step on an expect mismatch and suggests --trace on 404', async () => {
-    const result = await runBatch(crudApp(), parseBatch('{"path":"/nope","expect":200}'))
-    expect(result.summary.failed).toBe(1)
-    expect(result.steps[0].pass).toBe(false)
-    expect(result.steps[0].suggestions).toEqual([
-      'See which routes matched: hono request /nope --trace',
-    ])
+  it('reports the status and body as facts, without judging', async () => {
+    const result = await runBatch(crudApp(), parseBatch('{"path":"/nope"}'))
+    expect(result.steps[0]).toEqual({
+      method: 'GET',
+      path: '/nope',
+      status: 404,
+      body: '404 Not Found',
+    })
   })
 
-  it('fails a step when a save path is not in the body', async () => {
-    const result = await runBatch(
-      crudApp(),
-      parseBatch('{"path":"/users","expect":200,"save":{"id":".id"}}')
-    )
-    expect(result.steps[0].pass).toBe(false)
+  it('reports a save path missing from the body as an error fact', async () => {
+    const result = await runBatch(crudApp(), parseBatch('{"path":"/users","save":{"id":".id"}}'))
     expect(result.steps[0].error).toBe('save: .id not found in the body')
+    expect(result.steps[0].saved).toBeUndefined()
   })
 
   it('sends shared headers, and step headers win', async () => {
