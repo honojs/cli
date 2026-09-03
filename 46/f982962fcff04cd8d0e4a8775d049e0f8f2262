@@ -1,0 +1,35 @@
+README.md
+  s_449966fc5983c0::t_370215a6954c5c 37,58,114,119,141-142,144,148,150-151,154,160,163,166,169,172-173,176
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_5ba15fa1ee7489 45-52,56-101
+src/commands/agent-context/index.test.ts
+  s_449966fc5983c0::t_0a9ab247a67322 49,57
+src/commands/request/index.test.ts
+  s_449966fc5983c0::t_c95c14e53c5a39 95,106,114,144,155,173,201,232,252,316,412,459,468,477,487,507,615,637,659,732,751,823,843,871,920,932,943,1006,1023,1040,1050,1095-1103,1159,1181,1197-1205,1214,1217-1226,1238,1243,1252,1256
+src/commands/request/index.ts
+  s_449966fc5983c0::t_209a8c040cd72a 10,29-35,74-75,108-114,116-121,124-125,128,130,134-169,172-186,188-204,206-207,210-218,221-228,231-238,240,276
+src/commands/request/positionals.test.ts
+  s_449966fc5983c0::t_600812042b9210 1,3,5,11-12,18-23,26-27,30-31,34-37,40-43,46-49,52-56,59-60,63-66
+src/commands/request/positionals.ts
+  s_449966fc5983c0::t_049cd862de03fb 7,11-13,15-26,28-31,33,36-38,42-48,51,53-56,60-61
+src/utils/output.test.ts
+  s_449966fc5983c0::t_cb6b4f57148d54 50-58
+src/utils/output.ts
+  s_449966fc5983c0::t_e69aa6e0602bb0 41-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "46f982962fcff04cd8d0e4a8775d049e0f8f2262",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
