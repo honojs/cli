@@ -22,7 +22,7 @@ export const agentContext: CommandAgentContext = {
   ],
   examples: [
     'hono request -P /api/users',
-    'hono request GET /api/users',
+    'hono request /api/users/123',
     `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
     'cat payload.json | hono request -P /api/users -X POST -d @-',
     'hono request -P /api/users/123 --trace',
@@ -60,7 +60,7 @@ export function requestCommand(program: Command) {
   program
     .command('request')
     .description('Send request to Hono app using app.request()')
-    .argument('[file|method|path...]', 'App file, and optionally a method and a path (curl style)')
+    .argument('[file|path...]', 'App file, and the request path (curl style)')
     .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <data>', 'Request body data (@file reads a file, @- reads stdin)')
@@ -95,24 +95,12 @@ export function requestCommand(program: Command) {
     .action(
       handleErrors(async (args: string[], options: RequestOptions) => {
         const positionals = classifyPositionals(args)
-        if (
-          positionals.method &&
-          options.method !== 'GET' &&
-          positionals.method !== options.method
-        ) {
-          throw new CliError('INVALID_ARGUMENTS', 'Two methods given', {
-            suggestions: ['Use one: hono request -X POST -P /api/orders'],
-          })
-        }
         if (positionals.path && options.path !== '/' && positionals.path !== options.path) {
           throw new CliError('INVALID_ARGUMENTS', 'Two paths given', {
             suggestions: ['Use one: hono request -P /api/orders'],
           })
         }
         const file = positionals.file
-        if (positionals.method) {
-          options.method = positionals.method
-        }
         if (positionals.path) {
           options.path = positionals.path
         }
