@@ -1,78 +1,68 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { CliError } from '../../utils/output.js'
-import { classifyPositionals } from './positionals.js'
+import { resolvePositionals } from './positionals.js'
 
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-}))
-
-const getExistsSync = async () => vi.mocked((await import('node:fs')).existsSync)
-
-const expectCliError = (fn: () => unknown, code: string): CliError => {
+const expectSuggestions = (fn: () => unknown): string[] => {
   try {
     fn()
   } catch (e) {
     expect(e).toBeInstanceOf(CliError)
     if (e instanceof CliError) {
-      expect(e.code).toBe(code)
-      return e
+      expect(e.code).toBe('INVALID_ARGUMENTS')
+      return e.suggestions ?? []
     }
   }
   expect.unreachable()
 }
 
-describe('classifyPositionals', () => {
-  let existsSync: Awaited<ReturnType<typeof getExistsSync>>
-
-  beforeEach(async () => {
-    existsSync = await getExistsSync()
-    existsSync.mockReturnValue(false)
-  })
-
-  it('classifies a /-leading argument as the request path, like the URL in curl', () => {
-    expect(classifyPositionals(['/api/orders'])).toEqual({ path: '/api/orders' })
-  })
-
-  it('keeps an existing file as the app file', () => {
-    existsSync.mockReturnValue(true)
-    expect(classifyPositionals(['src/app.ts'])).toEqual({ file: 'src/app.ts' })
-  })
-
-  it('classifies file and path together', () => {
-    existsSync.mockImplementation((p) => String(p).endsWith('app.ts'))
-    expect(classifyPositionals(['src/app.ts', '/api/orders'])).toEqual({
+describe('resolvePositionals', () => {
+  it('takes the path first and the file second', () => {
+    expect(resolvePositionals('/api/users', 'src/app.ts', false)).toEqual({
+      path: '/api/users',
       file: 'src/app.ts',
-      path: '/api/orders',
     })
   })
 
-  it('keeps - as the stdin file', () => {
-    expect(classifyPositionals(['-'])).toEqual({ file: '-' })
+  it('takes the path alone', () => {
+    expect(resolvePositionals('/', undefined, false)).toEqual({ path: '/', file: undefined })
   })
 
-  it('treats a missing non-path argument as the app file', () => {
-    expect(classifyPositionals(['missing.ts'])).toEqual({ file: 'missing.ts' })
+  it('takes - as the stdin app file', () => {
+    expect(resolvePositionals('/hello', '-', false)).toEqual({ path: '/hello', file: '-' })
   })
 
-  it('suggests -X for a method-like argument, with the given path', () => {
-    const error = expectCliError(
-      () => classifyPositionals(['GET', '/api/orders']),
-      'INVALID_ARGUMENTS'
-    )
-    expect(error.suggestions).toEqual(['Pass it with -X: hono request -X GET -P /api/orders'])
+  it('requires the path', () => {
+    expect(expectSuggestions(() => resolvePositionals(undefined, undefined, false))).toEqual([
+      'Request the root: hono request /',
+    ])
   })
 
-  it('suggests -X for a method-like argument without a path', () => {
-    const error = expectCliError(() => classifyPositionals(['POST']), 'INVALID_ARGUMENTS')
-    expect(error.suggestions).toEqual(['Pass it with -X: hono request -X POST -P <path>'])
+  it('corrects a curl-style method argument with the exact command', () => {
+    expect(expectSuggestions(() => resolvePositionals('GET', '/api/orders', false))).toEqual([
+      'hono request /api/orders -X GET',
+    ])
   })
 
-  it('an existing file named like a method stays the app file', () => {
-    existsSync.mockReturnValue(true)
-    expect(classifyPositionals(['GET'])).toEqual({ file: 'GET' })
+  it('corrects a method argument without a path', () => {
+    expect(expectSuggestions(() => resolvePositionals('POST', undefined, false))).toEqual([
+      'hono request <path> -X POST',
+    ])
   })
 
-  it('throws INVALID_ARGUMENTS on two paths', () => {
-    expectCliError(() => classifyPositionals(['/a', '/b']), 'INVALID_ARGUMENTS')
+  it('corrects a file-first call with both readings', () => {
+    expect(expectSuggestions(() => resolvePositionals('src/app.ts', undefined, false))).toEqual([
+      'If src/app.ts is the app file: hono request / src/app.ts',
+      'If it is the path: hono request /src/app.ts',
+    ])
+  })
+
+  it('takes the single batch argument as the app file', () => {
+    expect(resolvePositionals('src/app.ts', undefined, true)).toEqual({ file: 'src/app.ts' })
+  })
+
+  it('rejects a path argument with --batch', () => {
+    expect(expectSuggestions(() => resolvePositionals('/api/users', undefined, true))).toEqual([
+      'Put the path in the batch lines',
+    ])
   })
 })

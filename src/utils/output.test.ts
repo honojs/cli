@@ -47,6 +47,15 @@ describe('formatArgumentsError', () => {
   })
 })
 
+describe('formatArgumentsError with -P', () => {
+  it('should point old -P calls at the positional path', () => {
+    const parsed = JSON.parse(formatArgumentsError("error: unknown option '-P'"))
+    expect(parsed.error.suggestions).toEqual([
+      'The path is the first argument: hono request /api/users',
+    ])
+  })
+})
+
 describe('handleErrors', () => {
   afterEach(() => {
     process.exitCode = undefined

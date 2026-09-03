@@ -22,11 +22,14 @@ command recording.
 
 **Changes**:
 
-- `request` accepts the path as an argument, like the URL in curl:
-  `hono request /api/orders` works. A method-like argument
-  (`hono request GET /api/orders`) is an error with the exact fix as
-  a suggestion (`-X GET -P /api/orders`) — curl takes no method
-  argument either, and one corrected retry beats a second syntax.
+- `request` now takes the request path as its first argument, like
+  the URL in curl: `hono request /api/orders`. The app file moved to
+  the optional second argument, and `-P` is gone — one syntax, and no
+  guessing between a file and a path.
+- A method-like first argument is not interpreted. `hono request GET
+  /api/orders` answers with the exact fix in `suggestions`:
+  `hono request /api/orders -X GET`. One wrong try, one corrected
+  retry — suggestion following is measured at 2/2.
 - Argument parse errors (unknown option, bad argument) return the JSON
   envelope with an `INVALID_ARGUMENTS` code and a help suggestion,
   like every other error.

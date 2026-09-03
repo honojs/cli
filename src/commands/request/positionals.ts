@@ -1,60 +1,62 @@
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { CliError } from '../../utils/output.js'
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
 
 export interface Positionals {
-  file?: string
   path?: string
+  file?: string
 }
 
 /**
- * Accept curl-style arguments: like the URL in curl, a `/`-leading
- * argument is the request path. An existing file stays the app file,
- * and `-` stays stdin. curl takes no method argument, so a
- * method-like argument gets the exact `-X` command as a suggestion.
+ * The first argument of `request` is the request path, like the URL
+ * in curl. The second is the app file. A wrong shape is not
+ * interpreted — it returns the exact corrected command.
  */
-export const classifyPositionals = (args: string[]): Positionals => {
-  const result: Positionals = {}
-  const methods: string[] = []
-
-  for (const arg of args) {
-    if (arg === '-' || existsSync(resolve(process.cwd(), arg))) {
-      assign(result, 'file', arg)
-      continue
+export const resolvePositionals = (
+  pathArg: string | undefined,
+  fileArg: string | undefined,
+  batch: boolean
+): Positionals => {
+  if (batch) {
+    // Batch steps carry their own paths, so the only argument is the
+    // app file.
+    if (pathArg !== undefined && fileArg !== undefined) {
+      throw new CliError('INVALID_ARGUMENTS', 'Pass one app file with --batch', {
+        suggestions: ['hono request --batch - src/app.ts'],
+      })
     }
-    if (HTTP_METHODS.includes(arg)) {
-      methods.push(arg)
-      continue
+    if (pathArg?.startsWith('/')) {
+      throw new CliError('INVALID_ARGUMENTS', 'Batch steps carry their own paths', {
+        suggestions: ['Put the path in the batch lines'],
+      })
     }
-    if (arg.startsWith('/')) {
-      assign(result, 'path', arg)
-      continue
-    }
-    // Not a path: treat as the app file. A missing file fails later
-    // with ENTRY_NOT_FOUND and its own suggestions.
-    assign(result, 'file', arg)
+    return { file: pathArg }
   }
 
-  if (methods.length > 0) {
-    throw new CliError('INVALID_ARGUMENTS', 'The method is not an argument, like in curl', {
-      suggestions: [`Pass it with -X: hono request -X ${methods[0]} -P ${result.path ?? '<path>'}`],
+  if (pathArg === undefined) {
+    throw new CliError('INVALID_ARGUMENTS', 'The request path is required', {
+      suggestions: ['Request the root: hono request /'],
     })
   }
 
-  return result
-}
-
-const assign = (result: Positionals, key: keyof Positionals, value: string): void => {
-  if (result[key] !== undefined && result[key] !== value) {
+  if (!pathArg.startsWith('/')) {
+    if (HTTP_METHODS.includes(pathArg)) {
+      const path = fileArg?.startsWith('/') ? fileArg : '<path>'
+      throw new CliError('INVALID_ARGUMENTS', 'The method goes in -X, like curl', {
+        suggestions: [`hono request ${path} -X ${pathArg}`],
+      })
+    }
     throw new CliError(
       'INVALID_ARGUMENTS',
-      `Two values for the ${key}: ${result[key]} and ${value}`,
+      'The first argument is the request path, like the URL in curl',
       {
-        suggestions: ['Request a path like: hono request -P /api/orders'],
+        suggestions: [
+          `If ${pathArg} is the app file: hono request / ${pathArg}`,
+          `If it is the path: hono request /${pathArg}`,
+        ],
       }
     )
   }
-  result[key] = value
+
+  return { path: pathArg, file: fileArg }
 }
