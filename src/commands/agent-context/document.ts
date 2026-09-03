@@ -17,7 +17,10 @@ const contexts: Record<string, CommandAgentContext> = {
 
 const commandDoc = (command: Command, context?: CommandAgentContext): string => {
   const args = command.registeredArguments
-    .map((arg) => (arg.required ? `<${arg.name()}>` : `[${arg.name()}]`))
+    .map((arg) => {
+      const name = arg.variadic ? `${arg.name()}...` : arg.name()
+      return arg.required ? `<${name}>` : `[${name}]`
+    })
     .join(' ')
 
   const optionLines = command.options.map((option) => {

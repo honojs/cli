@@ -4,6 +4,7 @@ import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { resolvePositionals } from './positionals.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
 import { withTracer } from './trace.js'
@@ -20,13 +21,13 @@ export const agentContext: CommandAgentContext = {
     'WRANGLER_CONFIG_NOT_FOUND',
   ],
   examples: [
-    'hono request -P /api/users',
-    `hono request -P /api/users -X POST -d '{"name":"Alice"}'`,
-    'cat payload.json | hono request -P /api/users -X POST -d @-',
-    'hono request -P /api/users/123 --trace',
-    'hono request -P / --runtime bun',
-    'hono request -P /api --runtime workerd',
-    `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello`,
+    'hono request /api/users',
+    `hono request /api/users -X POST -d '{"name":"Alice"}'`,
+    'cat payload.json | hono request /api/users -X POST -d @-',
+    'hono request /api/users/123 --trace',
+    'hono request / --runtime bun',
+    'hono request /api --runtime workerd',
+    `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request /hello -`,
   ],
   notes: [
     'No server needed. The request goes directly to app.request().',
@@ -42,7 +43,6 @@ interface RequestOptions {
   method?: string
   data?: string
   header?: string[]
-  path?: string
   watch: boolean
   plain: boolean
   trace: boolean
@@ -58,8 +58,8 @@ export function requestCommand(program: Command) {
   program
     .command('request')
     .description('Send request to Hono app using app.request()')
+    .argument('[path]', 'Request path, like the URL in curl')
     .argument('[file]', 'Path to the Hono app file')
-    .option('-P, --path <path>', 'Request path', '/')
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <data>', 'Request body data (@file reads a file, @- reads stdin)')
     .option('-w, --watch', 'Watch for changes and resend request', false)
@@ -91,84 +91,101 @@ export function requestCommand(program: Command) {
       [] as string[]
     )
     .action(
-      handleErrors(async (file: string | undefined, options: RequestOptions) => {
-        const doSaveFile = options.output || options.remoteName
-        const path = options.path || '/'
-        const watch = options.watch
-        const external = options.external || []
-        if (!RUNTIMES.includes(options.runtime as Runtime)) {
-          throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
-            suggestions: ['Use one of: node, bun, deno, workerd'],
-          })
-        }
-        const runtime = options.runtime as Runtime
-        if (runtime !== 'node' && (options.watch || options.trace)) {
-          throw new CliError(
-            'INVALID_OPTION',
-            `Cannot use --watch or --trace with --runtime ${runtime}`,
-            {
-              suggestions: ['Drop --watch and --trace, or use --runtime node'],
-            }
-          )
-        }
-        if (options.trace && options.plain) {
-          throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
-            suggestions: ['Drop --plain. The trace is part of the JSON output'],
-          })
-        }
-        if (file === '-' && options.data === '@-') {
-          throw new CliError('INVALID_OPTION', 'Cannot read both the app and the body from stdin', {
-            suggestions: ['Pass the app as a file, or the body with -d @file'],
-          })
-        }
-        options.data = resolveData(options.data)
+      handleErrors(
+        async (
+          pathArg: string | undefined,
+          fileArg: string | undefined,
+          options: RequestOptions
+        ) => {
+          const { path = '/', file } = resolvePositionals(pathArg, fileArg, false)
 
-        if (runtime === 'workerd') {
-          if (file !== undefined) {
-            throw new CliError('INVALID_OPTION', 'workerd runs the app from your wrangler config', {
-              suggestions: ['Drop the file argument. The entry is `main` in the wrangler config'],
+          const doSaveFile = options.output || options.remoteName
+          const watch = options.watch
+          const external = options.external || []
+          if (!RUNTIMES.includes(options.runtime as Runtime)) {
+            throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
+              suggestions: ['Use one of: node, bun, deno, workerd'],
             })
           }
-          const result = await runOnWorkerd({
-            path,
-            method: options.method || 'GET',
-            headers: parseHeaders(options.header),
-            ...(options.data === undefined ? {} : { body: options.data }),
-          })
-          await printResponse(result, path, options, doSaveFile, { runtime })
-          return
-        }
+          const runtime = options.runtime as Runtime
+          if (runtime !== 'node' && (options.watch || options.trace)) {
+            throw new CliError(
+              'INVALID_OPTION',
+              `Cannot use --watch or --trace with --runtime ${runtime}`,
+              {
+                suggestions: ['Drop --watch and --trace, or use --runtime node'],
+              }
+            )
+          }
+          if (options.trace && options.plain) {
+            throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
+              suggestions: ['Drop --plain. The trace is part of the JSON output'],
+            })
+          }
+          if (file === '-' && options.data === '@-') {
+            throw new CliError(
+              'INVALID_OPTION',
+              'Cannot read both the app and the body from stdin',
+              {
+                suggestions: ['Pass the app as a file, or the body with -d @file'],
+              }
+            )
+          }
+          options.data = resolveData(options.data)
 
-        if (runtime !== 'node') {
-          const runnerResponse = await runInRuntime(runtime, resolveEntry(file), external, {
-            path,
-            method: options.method || 'GET',
-            headers: parseHeaders(options.header),
-            ...(options.data === undefined ? {} : { body: options.data }),
-          })
-          const bytes = Buffer.from(runnerResponse.bodyBase64, 'base64')
-          const result = {
-            status: runnerResponse.status,
-            headers: runnerResponse.headers,
-            body: new TextDecoder().decode(bytes),
-            response: new Response(bytes, {
+          if (runtime === 'workerd') {
+            if (file !== undefined) {
+              throw new CliError(
+                'INVALID_OPTION',
+                'workerd runs the app from your wrangler config',
+                {
+                  suggestions: [
+                    'Drop the file argument. The entry is `main` in the wrangler config',
+                  ],
+                }
+              )
+            }
+            const result = await runOnWorkerd({
+              path,
+              method: options.method || 'GET',
+              headers: parseHeaders(options.header),
+              ...(options.data === undefined ? {} : { body: options.data }),
+            })
+            await printResponse(result, path, options, doSaveFile, { runtime })
+            return
+          }
+
+          if (runtime !== 'node') {
+            const runnerResponse = await runInRuntime(runtime, resolveEntry(file), external, {
+              path,
+              method: options.method || 'GET',
+              headers: parseHeaders(options.header),
+              ...(options.data === undefined ? {} : { body: options.data }),
+            })
+            const bytes = Buffer.from(runnerResponse.bodyBase64, 'base64')
+            const result = {
               status: runnerResponse.status,
               headers: runnerResponse.headers,
-            }),
+              body: new TextDecoder().decode(bytes),
+              response: new Response(bytes, {
+                status: runnerResponse.status,
+                headers: runnerResponse.headers,
+              }),
+            }
+            await printResponse(result, path, options, doSaveFile, { runtime })
+            return
           }
-          await printResponse(result, path, options, doSaveFile, { runtime })
-          return
-        }
 
-        const buildIterator = getBuildIterator(file, watch, external)
-        for await (const app of buildIterator) {
-          const traced = options.trace ? withTracer(app) : undefined
-          const result = await executeRequest(traced?.app ?? app, path, options)
-          await printResponse(result, path, options, doSaveFile, {
-            ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
-          })
+          const buildIterator = getBuildIterator(file, watch, external)
+          for await (const app of buildIterator) {
+            const traced = options.trace ? withTracer(app) : undefined
+            const result = await executeRequest(traced?.app ?? app, path, options)
+            await printResponse(result, path, options, doSaveFile, {
+              ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
+            })
+          }
         }
-      })
+      )
     )
 }
 
@@ -204,7 +221,7 @@ const printResponse = async (
     ...(isBinaryData ? { binary: true } : {}),
     ...(savedTo ? { savedTo } : {}),
     ...(suggestTrace
-      ? { suggestions: [`See which routes matched: hono request -P ${path} --trace`] }
+      ? { suggestions: [`See which routes matched: hono request ${path} --trace`] }
       : {}),
     ...extra,
   })

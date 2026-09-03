@@ -92,7 +92,7 @@ describe('requestCommand', () => {
     const jsonBody = { message: 'Success' }
     mockApp.get('/data', (c) => c.json(jsonBody))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '-P', '/data', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/data', 'test-app.js'])
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
@@ -103,12 +103,23 @@ describe('requestCommand', () => {
     })
   })
 
+  it('should correct curl-style arguments with the exact command', async () => {
+    const mockApp = new Hono()
+    setupBasicMocks('test-app.js', mockApp)
+    mockModules.existsSync.mockReturnValue(false)
+    await program.parseAsync(['node', 'test', 'request', 'GET', '/data'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_ARGUMENTS')
+    expect(output.error.suggestions).toEqual(['hono request /data -X GET'])
+  })
+
   it('should output a text body as a string in the envelope', async () => {
     const mockApp = new Hono()
     const text = 'Hello, World!'
     mockApp.get('/data', (c) => c.text(text))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '-P', '/data', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/data', 'test-app.js'])
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
@@ -126,7 +137,7 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/', 'test-app.js'])
 
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
@@ -154,7 +165,7 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-w', '-P', '/', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '-w', '/', 'test-app.js'])
 
     // Verify resolve was called with correct arguments
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'test-app.js')
@@ -185,7 +196,7 @@ describe('requestCommand', () => {
     )
     setupBasicMocks('test-app.js', mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/json-charset', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/json-charset', 'test-app.js'])
 
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
@@ -205,7 +216,7 @@ describe('requestCommand', () => {
     mockApp.get('/json-obj', (c) => c.json(jsonBody))
     setupBasicMocks('test-app.js', mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/json-obj', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/json-obj', 'test-app.js'])
 
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
@@ -231,7 +242,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/data',
       '-X',
       'POST',
@@ -270,7 +280,7 @@ describe('requestCommand', () => {
     })
     mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
-    await program.parseAsync(['node', 'test', 'request'])
+    await program.parseAsync(['node', 'test', 'request', '/'])
 
     // Verify resolve was called with correct arguments for default candidates
     expect(mockModules.resolve).toHaveBeenCalledWith(process.cwd(), 'src/index.ts')
@@ -304,7 +314,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/api/test',
       '-H',
       'Authorization: Bearer token123',
@@ -337,7 +346,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/api/multi',
       '-H',
       'Authorization: Bearer token456',
@@ -368,7 +376,7 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/api/noheader', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/api/noheader', 'test-app.js'])
 
     // Should not include any custom headers, only default ones
     const output = consoleLogSpy.mock.calls[0][0]
@@ -391,7 +399,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/api/malformed',
       '-H',
       'MalformedHeader', // Missing colon
@@ -416,7 +423,7 @@ describe('requestCommand', () => {
     const htmlContent = '<h1>Hello World</h1>'
     mockApp.get('/html', (c) => c.html(htmlContent))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '-P', '/html', '--plain', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/html', '--plain', 'test-app.js'])
     expect(consoleLogSpy).toHaveBeenCalledWith(htmlContent)
   })
 
@@ -425,7 +432,7 @@ describe('requestCommand', () => {
     const xmlContent = '<root><message>Hello</message></root>'
     mockApp.get('/xml', (c) => c.body(xmlContent, 200, { 'Content-Type': 'application/xml' }))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '-P', '/xml', '--plain', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/xml', '--plain', 'test-app.js'])
     expect(consoleLogSpy).toHaveBeenCalledWith(xmlContent)
   })
 
@@ -434,15 +441,7 @@ describe('requestCommand', () => {
     const pngData = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])
     mockApp.get('/image.png', (c) => c.body(pngData.buffer, 200, { 'Content-Type': 'image/png' }))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/image.png',
-      '--plain',
-      'test-app.js',
-    ])
+    await program.parseAsync(['node', 'test', 'request', '/image.png', '--plain', 'test-app.js'])
     expect(consoleWarnSpy).toHaveBeenCalledWith('Binary output can mess up your terminal.')
     expect(consoleLogSpy).not.toHaveBeenCalled()
   })
@@ -452,7 +451,7 @@ describe('requestCommand', () => {
     const pngData = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])
     mockApp.get('/image.png', (c) => c.body(pngData.buffer, 200, { 'Content-Type': 'image/png' }))
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '-P', '/image.png', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/image.png', 'test-app.js'])
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
@@ -472,15 +471,7 @@ describe('requestCommand', () => {
       c.body(pdfData.buffer, 200, { 'Content-Type': 'application/pdf' })
     )
     setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/document.pdf',
-      '--plain',
-      'test-app.js',
-    ])
+    await program.parseAsync(['node', 'test', 'request', '/document.pdf', '--plain', 'test-app.js'])
     expect(consoleWarnSpy).toHaveBeenCalledWith('Binary output can mess up your terminal.')
     expect(consoleLogSpy).not.toHaveBeenCalled()
   })
@@ -510,7 +501,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/resource',
       '-w',
       '--plain',
@@ -535,7 +525,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/save-json',
       '-o',
       outputPath,
@@ -565,7 +554,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/save-binary',
       '-o',
       outputPath,
@@ -591,7 +579,7 @@ describe('requestCommand', () => {
     )
     mockGetFilenameFromPath.mockReturnValue('index.html')
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/index.html', '-O', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/index.html', '-O', 'test-app.js'])
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/index.html', 'text/html; charset=UTF-8')
     const saved = mockSaveFile.mock.calls[0]
@@ -613,7 +601,7 @@ describe('requestCommand', () => {
     )
     mockGetFilenameFromPath.mockReturnValue('image.png')
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/image.png', '-O', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/image.png', '-O', 'test-app.js'])
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/image.png', 'image/png')
     const saved = mockSaveFile.mock.calls[0]
@@ -635,7 +623,7 @@ describe('requestCommand', () => {
     )
     mockGetFilenameFromPath.mockReturnValue('index')
 
-    await program.parseAsync(['node', 'test', 'request', '-P', '/', '-O', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/', '-O', 'test-app.js'])
 
     expect(mockGetFilenameFromPath).toHaveBeenCalledWith('/', 'text/html; charset=UTF-8')
     const saved = mockSaveFile.mock.calls[0]
@@ -662,7 +650,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/text.txt',
       '-o',
       outputPath,
@@ -691,7 +678,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/filtered-data',
       '-o',
       outputPath,
@@ -710,16 +696,7 @@ describe('requestCommand', () => {
     mockApp.get('/text', (c) => c.text(textBody, 200, { 'X-Custom-Header': 'IncludeValue' }))
     setupBasicMocks('test-app.js', mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/text',
-      '--plain',
-      '-i',
-      'test-app.js',
-    ])
+    await program.parseAsync(['node', 'test', 'request', '/text', '--plain', '-i', 'test-app.js'])
 
     const expectedOutput = [
       '200',
@@ -738,16 +715,7 @@ describe('requestCommand', () => {
     mockApp.get('/text', (c) => c.text(textBody, 200, { 'X-Custom-Header': 'HeadValue' }))
     setupBasicMocks('test-app.js', mockApp)
 
-    await program.parseAsync([
-      'node',
-      'test',
-      'request',
-      '-P',
-      '/text',
-      '--plain',
-      '-I',
-      'test-app.js',
-    ])
+    await program.parseAsync(['node', 'test', 'request', '/text', '--plain', '-I', 'test-app.js'])
 
     const expectedOutput = [
       '200',
@@ -769,7 +737,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/text',
       '--plain',
       '-i',
@@ -797,7 +764,6 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
-      '-P',
       '/json-data',
       '--plain',
       '-i',
@@ -821,7 +787,7 @@ describe('requestCommand', () => {
     const expectedPath = 'test-app.js'
     setupBasicMocks(expectedPath, mockApp)
 
-    await program.parseAsync(['node', 'test', 'request', '-e', 'pg', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '/', '-e', 'pg', 'test-app.js'])
 
     expect(mockBuildAndImportApp).toHaveBeenCalledWith(expectedPath, {
       external: ['@hono/node-server', 'pg'],
@@ -841,6 +807,7 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
+      '/',
       '-e',
       'pg',
       '-e',
@@ -868,6 +835,7 @@ describe('requestCommand', () => {
       'node',
       'test',
       'request',
+      '/',
       '--external',
       'pg',
       '--external',
@@ -916,15 +884,7 @@ describe('requestCommand', () => {
         mockApp.get('/test', (c) => c.body(jsonString, 200, { 'Content-Type': contentType }))
         setupBasicMocks('test-app.js', mockApp)
 
-        await program.parseAsync([
-          'node',
-          'test',
-          'request',
-          '-P',
-          '/test',
-          '--plain',
-          'test-app.js',
-        ])
+        await program.parseAsync(['node', 'test', 'request', '/test', '--plain', 'test-app.js'])
 
         expect(consoleLogSpy).toHaveBeenCalledWith(formattedJsonString)
       })
@@ -936,15 +896,7 @@ describe('requestCommand', () => {
         mockApp.get('/test', (c) => c.body(jsonString, 200, { 'Content-Type': contentType }))
         setupBasicMocks('test-app.js', mockApp)
 
-        await program.parseAsync([
-          'node',
-          'test',
-          'request',
-          '-P',
-          '/test',
-          '--plain',
-          'test-app.js',
-        ])
+        await program.parseAsync(['node', 'test', 'request', '/test', '--plain', 'test-app.js'])
 
         expect(consoleLogSpy).toHaveBeenCalledWith(jsonString)
       })
@@ -955,7 +907,7 @@ describe('requestCommand', () => {
     mockModules.existsSync.mockReturnValue(false)
     mockModules.resolve.mockImplementation((cwd: string, path: string) => `${cwd}/${path}`)
 
-    await program.parseAsync(['node', 'test', 'request', 'missing.ts'])
+    await program.parseAsync(['node', 'test', 'request', '/', 'missing.ts'])
 
     const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
     expect(parsed.ok).toBe(false)
@@ -976,7 +928,6 @@ describe('requestCommand', () => {
         'node',
         'test',
         'request',
-        '-P',
         '/echo',
         '-X',
         'POST',
@@ -1000,7 +951,6 @@ describe('requestCommand', () => {
         'node',
         'test',
         'request',
-        '-P',
         '/echo',
         '-X',
         'POST',
@@ -1020,7 +970,7 @@ describe('requestCommand', () => {
       mockModules.readFileSync.mockReturnValue('export default app')
       mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
-      await program.parseAsync(['node', 'test', 'request', '-', '-P', '/'])
+      await program.parseAsync(['node', 'test', 'request', '/', '-'])
 
       expect(mockModules.readFileSync).toHaveBeenCalledWith(0, 'utf-8')
       expect(mockBuildAndImportApp).toHaveBeenCalledWith(
@@ -1037,7 +987,7 @@ describe('requestCommand', () => {
       mockModules.readFileSync.mockReturnValue('app.get("/", (c) => c.text("wrapped"))')
       mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
-      await program.parseAsync(['node', 'test', 'request', '-', '-P', '/'])
+      await program.parseAsync(['node', 'test', 'request', '/', '-'])
 
       expect(mockBuildAndImportApp).toHaveBeenCalledWith(
         {
@@ -1054,7 +1004,7 @@ describe('requestCommand', () => {
     })
 
     it('should reject - together with -d @-', async () => {
-      await program.parseAsync(['node', 'test', 'request', '-', '-d', '@-'])
+      await program.parseAsync(['node', 'test', 'request', '/', '-', '-d', '@-'])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.ok).toBe(false)
@@ -1064,7 +1014,7 @@ describe('requestCommand', () => {
     })
 
     it('should reject - together with --watch', async () => {
-      await program.parseAsync(['node', 'test', 'request', '-', '-w'])
+      await program.parseAsync(['node', 'test', 'request', '/', '-', '-w'])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.ok).toBe(false)
@@ -1089,7 +1039,6 @@ describe('requestCommand', () => {
         'node',
         'test',
         'request',
-        '-P',
         '/api/users/123',
         '--trace',
         'test-app.js',
@@ -1110,7 +1059,15 @@ describe('requestCommand', () => {
     })
 
     it('should reject --trace with --plain', async () => {
-      await program.parseAsync(['node', 'test', 'request', '--trace', '--plain', 'test-app.js'])
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/',
+        '--trace',
+        '--plain',
+        'test-app.js',
+      ])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.ok).toBe(false)
@@ -1140,7 +1097,6 @@ describe('requestCommand', () => {
         'node',
         'test',
         'request',
-        '-P',
         '/api',
         '-H',
         'X-Key: abc',
@@ -1167,7 +1123,7 @@ describe('requestCommand', () => {
     })
 
     it('should reject an unknown runtime', async () => {
-      await program.parseAsync(['node', 'test', 'request', '--runtime', 'php', 'test-app.js'])
+      await program.parseAsync(['node', 'test', 'request', '/', '--runtime', 'php', 'test-app.js'])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.ok).toBe(false)
@@ -1189,7 +1145,7 @@ describe('requestCommand', () => {
         }),
       })
 
-      await program.parseAsync(['node', 'test', 'request', '-P', '/api', '--runtime', 'workerd'])
+      await program.parseAsync(['node', 'test', 'request', '/api', '--runtime', 'workerd'])
 
       expect(runOnWorkerd).toHaveBeenCalledWith({ path: '/api', method: 'GET', headers: {} })
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
@@ -1205,7 +1161,15 @@ describe('requestCommand', () => {
     })
 
     it('should reject a file argument with workerd', async () => {
-      await program.parseAsync(['node', 'test', 'request', '--runtime', 'workerd', 'src/index.ts'])
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/',
+        'src/index.ts',
+        '--runtime',
+        'workerd',
+      ])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.ok).toBe(false)
@@ -1214,10 +1178,19 @@ describe('requestCommand', () => {
     })
 
     it('should reject --runtime bun with --watch or --trace', async () => {
-      await program.parseAsync(['node', 'test', 'request', '--runtime', 'bun', '-w', 'a.ts'])
+      await program.parseAsync(['node', 'test', 'request', '/', 'a.ts', '--runtime', 'bun', '-w'])
       expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).error.code).toBe('INVALID_OPTION')
 
-      await program.parseAsync(['node', 'test', 'request', '--runtime', 'deno', '--trace', 'a.ts'])
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/',
+        'a.ts',
+        '--runtime',
+        'deno',
+        '--trace',
+      ])
       expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).error.code).toBe('INVALID_OPTION')
       process.exitCode = undefined
     })
@@ -1229,12 +1202,12 @@ describe('requestCommand', () => {
       mockApp.get('/exists', (c) => c.text('ok'))
       setupBasicMocks('test-app.js', mockApp)
 
-      await program.parseAsync(['node', 'test', 'request', '-P', '/missing', 'test-app.js'])
+      await program.parseAsync(['node', 'test', 'request', '/missing', 'test-app.js'])
 
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.data.status).toBe(404)
       expect(parsed.data.suggestions).toEqual([
-        'See which routes matched: hono request -P /missing --trace',
+        'See which routes matched: hono request /missing --trace',
       ])
     })
 
@@ -1243,19 +1216,11 @@ describe('requestCommand', () => {
       mockApp.get('/exists', (c) => c.text('ok'))
       setupBasicMocks('test-app.js', mockApp)
 
-      await program.parseAsync(['node', 'test', 'request', '-P', '/exists', 'test-app.js'])
+      await program.parseAsync(['node', 'test', 'request', '/exists', 'test-app.js'])
       expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).data.suggestions).toBeUndefined()
 
       setupBasicMocks('test-app.js', mockApp)
-      await program.parseAsync([
-        'node',
-        'test',
-        'request',
-        '-P',
-        '/missing',
-        '--trace',
-        'test-app.js',
-      ])
+      await program.parseAsync(['node', 'test', 'request', '/missing', '--trace', 'test-app.js'])
       expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).data.suggestions).toBeUndefined()
     })
   })
