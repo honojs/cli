@@ -1,0 +1,21 @@
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_33b4c3fad2cb6e 21-24,27-30
+src/commands/agent-context/document.ts
+  s_449966fc5983c0::t_16abff48bcd521 86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f5514487ccfedd78e1ec3f8d8daffe023a5eb3d0",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
