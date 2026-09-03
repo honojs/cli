@@ -23,11 +23,13 @@ haiku, four onboarding channels, 5 runs each.
   handler is not a route, and from outside the app it is not knowable.
   Only its behavior is.
 
-**Changes**: `hono agent-context` now includes a "For your AGENTS.md"
-section with that measured line, ready to paste — plus one sentence:
-request one path that matches no route. That compares the 404 behavior
-as behavior, without the CLI claiming anything it cannot know. (A
-`routes` field for the handlers was tried and retracted in #115.)
+**Changes**: none in the CLI yet. The winning line is recorded here.
+Where it should live — `agent-context`, the README, hono.dev, or the
+skill — is an open product decision, and the next experiments run
+against the unchanged artifact. Two tries were retracted on the way: a
+`routes` field for the handlers (#115 — the notFound handler is not
+knowable from outside, only its behavior is), and shipping the line in
+`agent-context` (#116, this PR, reduced to this record).
 
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
