@@ -39,6 +39,8 @@ describe('agentContextCommand', () => {
 
   it('should delegate framework details to hono.dev', async () => {
     const output = await getOutput()
+    expect(output).toContain('## For your AGENTS.md')
+    expect(output).toContain('Type checking alone cannot catch route regressions')
     expect(output).toContain('## Hono documentation')
     expect(output).toContain('Accept: text/markdown')
   })

@@ -67,7 +67,7 @@ Build:
 
 ### `agent-context`
 
-Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.
+Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version. It includes a verification-policy line to add to your AGENTS.md — in measurements, that form is what makes agents actually verify with the CLI.
 
 ```bash
 hono agent-context

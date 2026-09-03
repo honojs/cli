@@ -77,6 +77,16 @@ export const renderAgentContext = (program: Command): string =>
     ),
     section(
       2,
+      'For your AGENTS.md',
+      'Add this line to the AGENTS.md of the project. Written as a verification ' +
+        'policy, it makes every session verify routing changes — a tool list does not:',
+      codeBlock('markdown', [
+        'Type checking alone cannot catch route regressions. Verify with',
+        '`npx hono routes` (compare before and after) or `npx hono request -P <path>`.',
+      ])
+    ),
+    section(
+      2,
       'Hono documentation',
       'This document covers the CLI only. For Hono framework details, fetch ' +
         '`https://hono.dev/llms.txt` to find the right page, then fetch the page ' +

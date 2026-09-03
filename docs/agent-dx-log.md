@@ -3,6 +3,25 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: Onboarding works as a policy, not as a tool list
+
+**Experiment**: `refactor-routes` — split a routes file, keep behavior.
+haiku, four onboarding channels, 5 runs each.
+
+**Findings**:
+
+- A devDependency: 0/5 CLI use. The skill: 0/5 activations, under two
+  different descriptions. The gate is not the wording — agents open a
+  skill when they feel they lack knowledge, and a refactor feels
+  self-contained.
+- One channel worked: a verification policy in AGENTS.md ("Type
+  checking alone cannot catch route regressions. Verify with `npx hono
+  routes` or `npx hono request -P <path>`") — 5/5 runs used the CLI.
+  A policy with the answer in it beats an introduction of a tool.
+
+**Changes**: `hono agent-context` now includes a "For your AGENTS.md"
+section with that measured line, ready to paste.
+
 ## 2026-09-03: Route count does not matter — locality does (no change)
 
 **Experiment**: `fix-404-large` — the same double-prefix mount bug in a
