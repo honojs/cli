@@ -42,8 +42,11 @@ command recording.
 
 **Changes**:
 
-- `request` accepts curl-style positionals: `hono request GET
-  /api/orders` and `hono request /api/orders` now work.
+- `request` accepts the path as an argument, like the URL in curl:
+  `hono request /api/orders` works. A method-like argument
+  (`hono request GET /api/orders`) is an error with the exact fix as
+  a suggestion (`-X GET -P /api/orders`) — curl takes no method
+  argument either, and one corrected retry beats a second syntax.
 - Argument parse errors (unknown option, bad argument) return the JSON
   envelope with an `INVALID_ARGUMENTS` code and a help suggestion,
   like every other error.

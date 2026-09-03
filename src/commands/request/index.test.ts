@@ -103,12 +103,12 @@ describe('requestCommand', () => {
     })
   })
 
-  it('should accept curl-style method and path positionals', async () => {
+  it('should accept the request path as a curl-style argument', async () => {
     const mockApp = new Hono()
     mockApp.post('/data', (c) => c.json({ created: true }))
     setupBasicMocks('test-app.js', mockApp)
     mockModules.existsSync.mockImplementation((p) => String(p).endsWith('test-app.js'))
-    await program.parseAsync(['node', 'test', 'request', 'POST', '/data', 'test-app.js'])
+    await program.parseAsync(['node', 'test', 'request', '-X', 'POST', '/data', 'test-app.js'])
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
       data: {
@@ -117,6 +117,17 @@ describe('requestCommand', () => {
         body: { created: true },
       },
     })
+  })
+
+  it('should suggest -X for a method-like argument', async () => {
+    const mockApp = new Hono()
+    setupBasicMocks('test-app.js', mockApp)
+    mockModules.existsSync.mockReturnValue(false)
+    await program.parseAsync(['node', 'test', 'request', 'GET', '/data'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_ARGUMENTS')
+    expect(output.error.suggestions).toEqual(['Pass it with -X: hono request -X GET -P /data'])
   })
 
   it('should error when a positional path conflicts with -P', async () => {
