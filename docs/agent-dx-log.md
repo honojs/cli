@@ -3,6 +3,28 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: One request per call cannot beat a script — add `--batch`
+
+**Experiment**: `build-endpoints` and the recorded runs across fixtures.
+
+**Findings**:
+
+- To verify N endpoints, agents bundle all checks into one throwaway
+  test script and run it in one tool call. `request` costs one call per
+  request, so agents that know it still choose the script. The recorded
+  scripts always chain state: create with POST, then use the returned
+  id in the next request.
+- The economics decide: one tool call is one model round trip.
+
+**Changes**: `hono request --batch -` runs many requests from JSONL in
+one call, in order, against one app instance. Steps carry state
+(`save` a value from a response, use it as `{{name}}` — not `${name}`,
+which the shell expands inside an unquoted heredoc). The output is one
+result per step: status and body as facts. No `expect` on purpose —
+the agent judges anyway, and a status-only `pass: true` would invite
+the very false negative `refactor-routes` measured (right status,
+wrong body). The throwaway script, without the file or the cleanup.
+
 ## 2026-09-03: Agents type curl syntax, hit a dead end, and leave
 
 **Experiment**: `fix-404-shadow` — haiku, baseline vs CLI

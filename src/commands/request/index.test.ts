@@ -114,6 +114,36 @@ describe('requestCommand', () => {
     expect(output.error.suggestions).toEqual(['hono request /data -X GET'])
   })
 
+  it('should run a batch from a JSONL file', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/data', (c) => c.json({ ok: 1 }))
+    setupBasicMocks('test-app.js', mockApp)
+    mockModules.readFileSync.mockReturnValue('{"path":"/data"}')
+    await program.parseAsync(['node', 'test', 'request', '--batch', 'steps.jsonl', 'test-app.js'])
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
+      ok: true,
+      data: {
+        steps: [
+          {
+            method: 'GET',
+            path: '/data',
+            status: 200,
+            body: { ok: 1 },
+          },
+        ],
+      },
+    })
+  })
+
+  it('should error when --batch is combined with a per-request option', async () => {
+    const mockApp = new Hono()
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '--batch', '-', '-X', 'POST'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_OPTION')
+  })
+
   it('should output a text body as a string in the envelope', async () => {
     const mockApp = new Hono()
     const text = 'Hello, World!'
