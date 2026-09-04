@@ -46,7 +46,7 @@ describe('agentContextCommand', () => {
   it('should document every command except itself', async () => {
     const output = await getOutput()
     expect(output).toContain('### hono optimize [entry]')
-    expect(output).toContain('### hono request [file]')
+    expect(output).toContain('### hono request [path] [file]')
     expect(output).toContain('### hono routes [file]')
     expect(output).not.toContain('### hono agent-context')
   })
@@ -54,7 +54,7 @@ describe('agentContextCommand', () => {
   it('should include options from the command definitions', async () => {
     const output = await getOutput()
     expect(output).toContain('`--request-body-api-removal <mode>`')
-    expect(output).toContain('`-P, --path <path>`')
+    expect(output).toContain('`-X, --method <method>`')
     expect(output).toContain('`--verbose`')
   })
 

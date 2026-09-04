@@ -34,7 +34,7 @@ hono agent-context
 hono routes
 
 # Send request to Hono app
-hono request
+hono request /
 
 # Measure the performance of your Hono app
 hono benchmark
@@ -55,7 +55,7 @@ Start here:
 Inspect and test:
 
 - `routes [file]` - Show routes of your Hono app
-- `request [file]` - Send request to Hono app using `app.request()`
+- `request <path> [file]` - Send request to Hono app using `app.request()`
 - `benchmark [file]` - Measure the performance of your Hono app
 
 Build:
@@ -111,16 +111,16 @@ hono routes [file] [options]
 Send HTTP requests to your Hono application using the built-in `app.request()` method. This is particularly useful for testing and development.
 
 ```bash
-hono request [file] [options]
+hono request <path> [file] [options]
 ```
 
 **Arguments:**
 
+- `path` - Request path, like the URL in curl
 - `file` - Path to the Hono app file (TypeScript/JSX supported, optional)
 
 **Options:**
 
-- `-P, --path <path>` - Request path (default: "/")
 - `-X, --method <method>` - HTTP method (default: GET)
 - `-d, --data <data>` - Request body data (`@file` reads a file, `@-` reads stdin)
 - `-H, --header <header>` - Custom headers (can be used multiple times)
@@ -132,48 +132,61 @@ hono request [file] [options]
 - `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, or `workerd`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
+- `--batch <source>` - Run multiple requests from JSONL (`-` reads stdin)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
 
 ```bash
-# GET request to default app root (uses src/index.ts or src/index.tsx)
-hono request
+# GET request to the app root (the app is found in src/index.ts or src/index.tsx)
+hono request /
 
-# GET request to specific path
-hono request -P /users/123
+# GET request to a path, like curl
+hono request /users/123
 
 # POST request with data
-hono request -P /api/users -X POST -d '{"name":"Alice"}'
+hono request /api/users -X POST -d '{"name":"Alice"}'
 
-# Request to specific file
-hono request -P /api src/your-app.ts
+# Request to a specific app file
+hono request /api src/your-app.ts
 
 # Request with custom headers
-hono request -P /api/protected \
+hono request /api/protected \
   -H 'Authorization: Bearer token' \
   -H 'User-Agent: MyApp' \
   src/your-app.ts
 
 # Request with external packages (useful for Node.js native modules)
-hono request -e pg -e dotenv src/your-app.ts
+hono request / src/your-app.ts -e pg -e dotenv
 
 # Read the request body from stdin
-cat payload.json | hono request -P /api/users -X POST -d @-
+cat payload.json | hono request /api/users -X POST -d @-
 
 # Read the app code from stdin: `app` is predefined and exported for you
-echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request - -P /hello
+echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request /hello -
 
 # Debug an unexpected response: which middleware and handler matched?
-hono request -P /api/users/123 --trace
+hono request /api/users/123 --trace
 
 # Run the app on another runtime (it must be installed)
-hono request -P / --runtime bun
-hono request -P / --runtime deno
+hono request / --runtime bun
+hono request / --runtime deno
 
 # Run the app on workerd with your wrangler config: bindings (c.env) are the local ones
-hono request -P /api --runtime workerd
+hono request /api --runtime workerd
+
+# Run many requests in one call. One JSON object per line.
+# `save` stores a value from the response body, later steps use it as {{name}}.
+hono request --batch - <<'EOF'
+{"path":"/users"}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}
+{"path":"/users/{{id}}"}
+{"method":"DELETE","path":"/users/{{id}}"}
+{"path":"/users/{{id}}"}
+EOF
 ```
+
+A batch runs in order against one app instance, so in-memory state carries between steps. The output is one result per step — status and body as facts, for you to judge. A shared header from `-H` goes to every step.
 
 `workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
 

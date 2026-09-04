@@ -33,6 +33,20 @@ export const formatError = (error: CliError): string =>
     2
   )
 
+/**
+ * Turn a commander parse error (unknown option, bad argument) into the
+ * JSON envelope, so argument mistakes get the same contract as command
+ * errors.
+ */
+export const formatArgumentsError = (message: string): string => {
+  const cleaned = message.replace(/^error: /, '').trim()
+  // `-P` was removed in 0.2: the path became the first argument.
+  const suggestions = cleaned.includes("'-P'")
+    ? ['The path is the first argument: hono request /api/users']
+    : ['Check the usage: hono <command> --help']
+  return formatError(new CliError('INVALID_ARGUMENTS', cleaned, { suggestions }))
+}
+
 export const printResult = (data: unknown): void => {
   console.log(formatResult(data))
 }
