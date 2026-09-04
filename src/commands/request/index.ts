@@ -18,6 +18,8 @@ export const agentContext: CommandAgentContext = {
     '{ "status": 200, "headers": { "content-type": "application/json" }, "body": { "message": "Hello" } }',
   errors: [
     'ENTRY_NOT_FOUND',
+    'BUILD_FAILED',
+    'INVALID_APP',
     'RUNTIME_NOT_FOUND',
     'RUNTIME_FAILED',
     'WRANGLER_NOT_FOUND',

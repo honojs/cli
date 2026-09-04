@@ -7,7 +7,7 @@ import { CliError, handleErrors, printResult } from '../../utils/output.js'
 export const agentContext: CommandAgentContext = {
   output:
     '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }] }',
-  errors: ['ENTRY_NOT_FOUND', 'INVALID_APP'],
+  errors: ['ENTRY_NOT_FOUND', 'BUILD_FAILED', 'INVALID_APP'],
   examples: ['hono routes', 'hono routes --verbose src/app.ts'],
   notes: [
     'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',

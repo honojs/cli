@@ -3,6 +3,28 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-04: A failed build must fail, not hang
+
+**Experiment**: the `next.0` vs `next.1` A/B (haiku, 35 runs) — the
+first with the new CLI. Plus a recorded reproduction.
+
+**Findings**:
+
+- 3 of 35 runs were lost to a 600s timeout: `hono request` printed the
+  esbuild error and then never exited. A build failure (an unresolved
+  import — routine while developing) logged the error but never
+  resolved the internal promise, and the esbuild watch context kept
+  the process alive. Agent environments keep stdin open, so nothing
+  saved them.
+- For an agent the worst failure is not a wrong error — it is a silent
+  hang. An error envelope is recovered from 4/4 times; a hang eats the
+  whole run.
+
+**Changes**: a failed one-shot build now rejects: `BUILD_FAILED` (with
+the esbuild message) or `INVALID_APP`, as the JSON envelope with exit
+code 1, and the esbuild context is disposed. `--watch` keeps the old
+behavior: log and wait for the next change.
+
 ## 2026-09-03: Onboarding works as a policy, not as a tool list
 
 **Experiment**: `refactor-routes` — split a routes file, keep behavior.

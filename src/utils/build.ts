@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild'
 import type { Plugin } from 'esbuild'
 import type { Hono } from 'hono'
+import { CliError } from './output.js'
 
 export interface BuildOptions {
   external?: string[]
@@ -32,14 +33,27 @@ export async function* buildAndImportApp(
   options: BuildOptions = {}
 ): AsyncGenerator<Hono> {
   let resolveApp: (app: Hono) => void
+  let rejectApp: (error: unknown) => void
   let appPromise: Promise<Hono>
 
   const preparePromise = () => {
-    appPromise = new Promise((resolve) => {
+    appPromise = new Promise((resolve, reject) => {
       resolveApp = resolve
+      rejectApp = reject
     })
   }
   preparePromise()
+
+  // In watch mode, a failed build logs and waits for the next change.
+  // In one-shot mode it must reject, so the process exits with the
+  // JSON envelope instead of hanging.
+  const fail = (error: unknown) => {
+    if (options.watch) {
+      console.error('Error building app', error)
+    } else {
+      rejectApp(error)
+    }
+  }
 
   const entryConfig = entryConfigOf(entry)
 
@@ -61,6 +75,14 @@ export async function* buildAndImportApp(
         name: 'watch',
         setup(build) {
           build.onEnd(async (result) => {
+            if (result.errors.length > 0) {
+              fail(
+                new CliError('BUILD_FAILED', result.errors.map((e) => e.text).join('\n'), {
+                  suggestions: ['Fix the build error in the app file'],
+                })
+              )
+              return
+            }
             try {
               // Execute the bundled code using data URL
               let code = result.outputFiles?.[0]?.text || ''
@@ -71,13 +93,11 @@ export async function* buildAndImportApp(
               const module = await import(dataUrl)
               const app = module.default
 
-              // Determine entry file path
-              if (!app) {
-                throw new Error('Failed to build app')
-              }
-
               if (!app || typeof app.request !== 'function') {
-                throw new Error('No valid Hono app exported from the file')
+                throw new CliError('INVALID_APP', 'No valid Hono app exported from the file', {
+                  suggestions: ['Export the Hono instance as the default export'],
+                  docs: 'https://hono.dev/docs/api/hono',
+                })
               }
 
               try {
@@ -86,7 +106,7 @@ export async function* buildAndImportApp(
                 // Ignore
               }
             } catch (error) {
-              console.error('Error building app', error)
+              fail(error)
             }
           })
         },
@@ -98,7 +118,14 @@ export async function* buildAndImportApp(
   await context.watch()
 
   do {
-    const app = await appPromise!
+    let app: Hono
+    try {
+      app = await appPromise!
+    } catch (error) {
+      // Dispose after the first build result. See issue #66.
+      await context.dispose()
+      throw error
+    }
     if (!options.watch) {
       // `context.dispose()` must be called after first build result to avoid race condition
       // https://github.com/honojs/cli/issues/66
