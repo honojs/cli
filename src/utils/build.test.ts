@@ -233,6 +233,83 @@ describe('buildAndImportApp', () => {
     await expect(buildIterator.next()).rejects.toThrow('Build failed')
   })
 
+  const setupCapturedOnEnd = () => {
+    let onEnd: OnEndCallback | undefined
+    mockEsbuild.mockImplementation(async (param: Parameters<typeof context>[0]) => {
+      param.plugins?.[0].setup({
+        onEnd: (cb: OnEndCallback) => {
+          onEnd = cb
+        },
+      } as PluginBuild)
+      return {
+        rebuild: vi.fn(),
+        watch: vi.fn(),
+        serve: vi.fn(),
+        cancel: vi.fn(),
+        dispose: mockEsbuildDispose,
+      }
+    })
+    return () => onEnd
+  }
+
+  const failedResult = {
+    errors: [
+      {
+        id: '',
+        pluginName: '',
+        text: 'Could not resolve "./missing.js"',
+        location: null,
+        notes: [],
+        detail: undefined,
+      },
+    ],
+    warnings: [],
+    outputFiles: undefined,
+    metafile: undefined,
+    mangleCache: undefined,
+  }
+
+  it('should reject with BUILD_FAILED instead of hanging when the build fails', async () => {
+    const getOnEnd = setupCapturedOnEnd()
+    const iterator = buildAndImportApp('/path/to/broken.ts')
+    const next = iterator.next()
+    await vi.waitFor(() => expect(getOnEnd()).toBeDefined())
+    await getOnEnd()!(failedResult)
+    await expect(next).rejects.toMatchObject({ code: 'BUILD_FAILED' })
+    expect(mockEsbuildDispose).toHaveBeenCalled()
+  })
+
+  it('should reject with INVALID_APP when the file exports no app', async () => {
+    setupBundledCode('export default 42;')
+    const iterator = buildAndImportApp('/path/to/app.ts')
+    await expect(iterator.next()).rejects.toMatchObject({ code: 'INVALID_APP' })
+  })
+
+  it('should keep watching after a failed build', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const getOnEnd = setupCapturedOnEnd()
+    const iterator = buildAndImportApp('/path/to/app.ts', { watch: true })
+    const next = iterator.next()
+    await vi.waitFor(() => expect(getOnEnd()).toBeDefined())
+    await getOnEnd()!(failedResult)
+    expect(consoleErrorSpy).toHaveBeenCalled()
+    // The next successful build still resolves the iterator
+    const mockApp = new Hono()
+    vi.stubGlobal('__buildTestApp', mockApp)
+    await getOnEnd()!({
+      errors: [],
+      warnings: [],
+      outputFiles: [
+        { path: '', contents: new Uint8Array(), hash: '', text: 'export default __buildTestApp;' },
+      ],
+      metafile: undefined,
+      mangleCache: undefined,
+    })
+    await expect(next).resolves.toMatchObject({ done: false })
+    vi.unstubAllGlobals()
+    consoleErrorSpy.mockRestore()
+  })
+
   it('should use default empty options when none provided', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.ts'

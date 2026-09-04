@@ -12,7 +12,14 @@ import { projectHonoSource, resolveHonoSource } from './hono-source.js'
 export const agentContext: CommandAgentContext = {
   output:
     '{ "results": [{ "hono": "4.13.0", "routes": [{ "method": "GET", "path": "/users", "requests": 48210, "rps": 96420, "latency": { "avg": 0.01, "p50": 0.009, "p75": 0.011, "p99": 0.021 } }] }] }',
-  errors: ['ENTRY_NOT_FOUND', 'INVALID_APP', 'NO_ROUTES', 'HONO_INSTALL_FAILED', 'BENCH_FAILED'],
+  errors: [
+    'ENTRY_NOT_FOUND',
+    'BUILD_FAILED',
+    'INVALID_APP',
+    'NO_ROUTES',
+    'HONO_INSTALL_FAILED',
+    'BENCH_FAILED',
+  ],
   examples: [
     'hono benchmark',
     'hono benchmark -P /users',

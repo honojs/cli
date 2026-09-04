@@ -8,7 +8,7 @@ import { createRouteFilter } from './route-filter.js'
 
 export const agentContext: CommandAgentContext = {
   output: '{ "output": "static", "files": ["static/index.html", "static/about.html"] }',
-  errors: ['ENTRY_NOT_FOUND', 'SSG_FAILED'],
+  errors: ['ENTRY_NOT_FOUND', 'BUILD_FAILED', 'INVALID_APP', 'SSG_FAILED'],
   examples: ['hono ssg', 'hono ssg -o dist/static src/app.ts', "hono ssg --exclude '/api/*'"],
   notes: ['`--include` / `--exclude` select routes by path. `*` matches anything.'],
 }
