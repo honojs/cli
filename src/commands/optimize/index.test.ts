@@ -22,7 +22,8 @@ const writePackageJSON = (dir: string, honoVersion: string = 'latest') => {
 
 const npmInstall = async () =>
   new Promise<void>((resolve) => {
-    const child = execFile('npm', ['install'])
+    // --no-audit: a hanging npm audit endpoint must not hang the tests
+    const child = execFile('npm', ['install', '--no-audit', '--no-fund'])
     child.on('exit', () => {
       resolve()
     })
