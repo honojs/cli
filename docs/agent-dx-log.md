@@ -3,6 +3,19 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-04: A verbatim example halves the tokens again
+
+**Experiment**: `build-endpoints` x `next.3` + the skill example
+(honojs/skills#4). 5 runs.
+
+**Findings**: error runs 4/5 → 2/5 (the rest recovered via the #120
+flag hints), median CLI calls 2 → 1, median tokens 87k → 56k — a
+cumulative -59% since before `--batch`. The median run is one
+`--batch` call, zero errors, ~30s. The only change was the example,
+so the gain belongs to it: agents copy examples verbatim.
+
+**Changes**: none — this closes the `--batch` funnel work.
+
 ## 2026-09-04: One skill line takes `--batch` from 0/40 to 5/5
 
 **Experiment**: `build-endpoints` x `next.2`, old skill vs
