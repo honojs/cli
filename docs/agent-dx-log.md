@@ -3,6 +3,33 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-03: Onboarding works as a policy, not as a tool list
+
+**Experiment**: `refactor-routes` — split a routes file, keep behavior.
+haiku, four onboarding channels, 5 runs each.
+
+**Findings**:
+
+- A devDependency: 0/5 CLI use. The skill: 0/5 activations, under two
+  different descriptions. The gate is not the wording — agents open a
+  skill when they feel they lack knowledge, and a refactor feels
+  self-contained.
+- One channel worked: a verification policy in AGENTS.md ("Type
+  checking alone cannot catch route regressions. Verify with `npx hono
+  routes` or `npx hono request -P <path>`") — 5/5 runs used the CLI.
+  A policy with the answer in it beats an introduction of a tool.
+- Success stayed at 2/5: the planted bug was a dropped
+  `app.notFound()`, and a `hono routes` diff cannot show it — the
+  handler is not a route, and from outside the app it is not knowable.
+  Only its behavior is.
+
+**Changes**: none in the CLI yet. The winning line is recorded here.
+Where it should live — `agent-context`, the README, hono.dev, or the
+skill — is an open product decision, and the next experiments run
+against the unchanged artifact. Two tries were retracted on the way: a
+`routes` field for the handlers (#115 — the notFound handler is not
+knowable from outside, only its behavior is), and shipping the line in
+`agent-context` (#116, this PR, reduced to this record).
 ## 2026-09-03: One request per call cannot beat a script — add `--batch`
 
 **Experiment**: `build-endpoints` and the recorded runs across fixtures.
