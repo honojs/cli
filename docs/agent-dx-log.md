@@ -3,6 +3,22 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-04: One skill line takes `--batch` from 0/40 to 5/5
+
+**Experiment**: `build-endpoints` x `next.2`, old skill vs
+honojs/skills#3 (the one `--batch` line). 5 runs each.
+
+**Findings**: adoption 0/5 → 5/5, median CLI calls 5 → 2, median
+tokens -36%. A feature off the rails does not exist; on them, it is
+used at once. 4/5 first batch calls hit an envelope error and all
+recovered — agents invented flags (`--body`, `-j`, `-m`) and guessed
+JSONL field names.
+
+**Changes**: unknown-option suggestions now map the common wrong
+guesses to the real flag (`--body`/`-j` → `-d`, `-m` → `-X`), like
+the `-P` migration hint. The skill gets a verbatim batch example
+(honojs/skills#4) — agents copy examples exactly, so a real one
+removes the guessing.
 ## 2026-09-04: The loop closes — the next line measured end to end
 
 **Experiment**: `build-endpoints` x skill re-measured on each release

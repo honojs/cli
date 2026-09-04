@@ -47,12 +47,19 @@ describe('formatArgumentsError', () => {
   })
 })
 
-describe('formatArgumentsError with -P', () => {
+describe('formatArgumentsError flag fixes', () => {
   it('should point old -P calls at the positional path', () => {
     const parsed = JSON.parse(formatArgumentsError("error: unknown option '-P'"))
     expect(parsed.error.suggestions).toEqual([
       'The path is the first argument: hono request /api/users',
     ])
+  })
+
+  it('should map an invented flag to the real one', () => {
+    const body = JSON.parse(formatArgumentsError("error: unknown option '--body'"))
+    expect(body.error.suggestions[0]).toContain('-d')
+    const method = JSON.parse(formatArgumentsError("error: unknown option '-m'"))
+    expect(method.error.suggestions[0]).toContain('-X')
   })
 })
 
