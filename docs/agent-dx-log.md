@@ -19,6 +19,19 @@ guesses to the real flag (`--body`/`-j` → `-d`, `-m` → `-X`), like
 the `-P` migration hint. The skill gets a verbatim batch example
 (honojs/skills#4) — agents copy examples exactly, so a real one
 removes the guessing.
+## 2026-09-04: The loop closes — the next line measured end to end
+
+**Experiment**: `build-endpoints` x skill re-measured on each release
+(haiku, 5 runs each), after the `next.0` vs `next.1` A/B.
+
+**Findings**: success / CLI usage went `next.0` 0.6 / 0.4 (2 hangs) →
+`next.1` 0.8 / 1.0 (1 hang) → `next.2` 1.0 / 0.8 (0 hangs).
+`refactor-routes` with the policy line: 5/5, the notFound failure
+class gone. Every envelope error in the runs was recovered from (4/4).
+
+**Changes**: none — this entry records that the ones above worked.
+The one open item is `--batch`: 0 adoptions in 40 runs until the
+skill mentions it (honojs/skills#3).
 
 ## 2026-09-04: A failed build must fail, not hang
 
