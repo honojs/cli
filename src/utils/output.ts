@@ -38,12 +38,20 @@ export const formatError = (error: CliError): string =>
  * JSON envelope, so argument mistakes get the same contract as command
  * errors.
  */
+// Agents invent flags. Map the common wrong guesses to the real one.
+const FLAG_FIXES: Record<string, string> = {
+  '-P': 'The path is the first argument: hono request /api/users',
+  '--path': 'The path is the first argument: hono request /api/users',
+  '--body': `The body flag is -d: hono request /api/users -X POST -d '{"name":"Alice"}'`,
+  '-j': `The body flag is -d: hono request /api/users -X POST -d '{"name":"Alice"}'`,
+  '-m': 'The method flag is -X: hono request /api/users -X POST',
+}
+
 export const formatArgumentsError = (message: string): string => {
   const cleaned = message.replace(/^error: /, '').trim()
-  // `-P` was removed in 0.2: the path became the first argument.
-  const suggestions = cleaned.includes("'-P'")
-    ? ['The path is the first argument: hono request /api/users']
-    : ['Check the usage: hono <command> --help']
+  const flag = cleaned.match(/unknown option '([^']+)'/)?.[1]
+  const fix = flag ? FLAG_FIXES[flag] : undefined
+  const suggestions = [fix ?? 'Check the usage: hono <command> --help']
   return formatError(new CliError('INVALID_ARGUMENTS', cleaned, { suggestions }))
 }
 
