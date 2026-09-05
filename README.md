@@ -428,7 +428,7 @@ hono ssg --exclude '/api/*'
 
 ### Using Hono CLI with AI Code Agents
 
-Use the [Hono skill](https://github.com/yusukebe/hono-skill). It teaches the agent when and how to use Hono CLI, together with Hono best practices.
+Use the [Hono skill](https://github.com/honojs/skills). It teaches the agent when and how to use Hono CLI, together with Hono best practices.
 
 Without the skill, add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 
