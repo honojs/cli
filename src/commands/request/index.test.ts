@@ -118,7 +118,7 @@ describe('requestCommand', () => {
     const mockApp = new Hono()
     mockApp.get('/data', (c) => c.json({ ok: 1 }))
     setupBasicMocks('test-app.js', mockApp)
-    mockModules.readFileSync.mockReturnValue('{"path":"/data"}')
+    mockModules.readFileSync.mockReturnValue('{"path":"/data","expect":{"status":200}}')
     await program.parseAsync(['node', 'test', 'request', '--batch', 'steps.jsonl', 'test-app.js'])
     expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
       ok: true,
@@ -129,8 +129,11 @@ describe('requestCommand', () => {
             path: '/data',
             status: 200,
             body: { ok: 1 },
+            pass: true,
+            expect: { status: 200 },
           },
         ],
+        summary: { total: 1, passed: 1, failed: 0 },
       },
     })
   })

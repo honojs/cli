@@ -1,11 +1,17 @@
 import type { Hono } from 'hono'
 import { CliError } from '../../utils/output.js'
 
+export interface StepExpect {
+  status?: number
+  body?: unknown
+}
+
 export interface BatchStep {
   method: string
   path: string
   body?: unknown
   headers?: Record<string, string>
+  expect?: StepExpect
   save?: Record<string, string>
 }
 
@@ -14,18 +20,22 @@ export interface StepResult {
   path: string
   status: number
   body: unknown
+  pass: boolean
+  expect?: StepExpect
   saved?: Record<string, unknown>
   error?: string
+  suggestions?: string[]
 }
 
 export interface BatchResult {
   steps: StepResult[]
+  summary: { total: number; passed: number; failed: number }
 }
 
 const invalid = (message: string): CliError =>
   new CliError('BATCH_INVALID', message, {
     suggestions: [
-      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}. A later step uses a saved value as {{id}}',
+      'Each line is one JSON object: {"method":"POST","path":"/users","body":{"name":"Momo"},"expect":{"status":201},"save":{"id":".id"}}. A later step uses a saved value as {{id}}',
     ],
   })
 
@@ -56,6 +66,11 @@ export const parseBatch = (input: string): BatchStep[] => {
     if (step.method !== undefined && typeof step.method !== 'string') {
       throw invalid(`Line ${i + 1}: "method" must be a string`)
     }
+    if (step.expect !== undefined && !isValidExpect(step.expect)) {
+      throw invalid(
+        `Line ${i + 1}: "expect" is an object like {"status":201} or {"status":200,"body":{"name":"Momo"}}`
+      )
+    }
     if (step.headers !== undefined && !isStringRecord(step.headers)) {
       throw invalid(`Line ${i + 1}: "headers" must be an object of strings`)
     }
@@ -67,6 +82,7 @@ export const parseBatch = (input: string): BatchStep[] => {
       path: step.path,
       body: step.body,
       headers: step.headers,
+      expect: step.expect as StepExpect | undefined,
       save: step.save,
     })
   }
@@ -74,6 +90,41 @@ export const parseBatch = (input: string): BatchStep[] => {
     throw invalid('The batch input is empty')
   }
   return steps
+}
+
+const isValidExpect = (value: unknown): value is StepExpect => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+  const expect = value as Record<string, unknown>
+  if (expect.status !== undefined && typeof expect.status !== 'number') {
+    return false
+  }
+  return Object.keys(expect).every((key) => key === 'status' || key === 'body')
+}
+
+/**
+ * Deep partial match, like `toMatchObject`: declared fields must
+ * match, extra fields in the actual value are ignored. Arrays match
+ * by index and length.
+ */
+export const matchesSubset = (actual: unknown, expected: unknown): boolean => {
+  if (Array.isArray(expected)) {
+    return (
+      Array.isArray(actual) &&
+      actual.length === expected.length &&
+      expected.every((item, i) => matchesSubset(actual[i], item))
+    )
+  }
+  if (typeof expected === 'object' && expected !== null) {
+    if (typeof actual !== 'object' || actual === null || Array.isArray(actual)) {
+      return false
+    }
+    return Object.entries(expected).every(([key, value]) =>
+      matchesSubset((actual as Record<string, unknown>)[key], value)
+    )
+  }
+  return actual === expected
 }
 
 const isStringRecord = (value: unknown): value is Record<string, string> =>
@@ -88,6 +139,15 @@ const isStringRecord = (value: unknown): value is Record<string, string> =>
  */
 export const interpolate = <T>(value: T, vars: Record<string, unknown>): T => {
   if (typeof value === 'string') {
+    // A string that is exactly one variable keeps the saved type, so
+    // a saved number stays a number in bodies and expects.
+    const whole = value.match(/^\{\{(\w+)\}\}$/)
+    if (whole) {
+      if (!(whole[1] in vars)) {
+        throw invalid(`Unknown variable {{${whole[1]}}}. Save it in an earlier step`)
+      }
+      return vars[whole[1]] as T
+    }
     return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
       if (!(name in vars)) {
         throw invalid(`Unknown variable {{${name}}}. Save it in an earlier step`)
@@ -128,8 +188,10 @@ export const getByPath = (body: unknown, path: string): unknown => {
 
 /**
  * Run the steps in order against one app instance, so in-memory state
- * carries from step to step. The result reports facts only — the
- * statuses and bodies. Judging them is the caller's job.
+ * carries from step to step. Each result carries the facts — status
+ * and body — and, when the step declares `expect`, the deterministic
+ * check against them. Agents miss lines when they compare a spec
+ * table by eye, so the comparison belongs to the CLI.
  */
 export const runBatch = async (
   app: Hono,
@@ -175,6 +237,20 @@ export const runBatch = async (
       path,
       status: response.status,
       body,
+      pass: true,
+      ...(step.expect === undefined ? {} : { expect: interpolate(step.expect, vars) }),
+    }
+
+    if (result.expect !== undefined) {
+      const statusOk =
+        result.expect.status === undefined || response.status === result.expect.status
+      const bodyOk = result.expect.body === undefined || matchesSubset(body, result.expect.body)
+      if (!statusOk || !bodyOk) {
+        result.pass = false
+        if (response.status === 404) {
+          result.suggestions = [`See which routes matched: hono request ${path} --trace`]
+        }
+      }
     }
 
     if (step.save) {
@@ -182,6 +258,7 @@ export const runBatch = async (
       for (const [name, savePath] of Object.entries(step.save)) {
         const value = getByPath(body, savePath)
         if (value === undefined) {
+          result.pass = false
           result.error = `save: ${savePath} not found in the body`
         } else {
           vars[name] = value
@@ -196,5 +273,9 @@ export const runBatch = async (
     results.push(result)
   }
 
-  return { steps: results }
+  const passed = results.filter((r) => r.pass).length
+  return {
+    steps: results,
+    summary: { total: results.length, passed, failed: results.length - passed },
+  }
 }
