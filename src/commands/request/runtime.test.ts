@@ -74,6 +74,27 @@ describe('buildRunnerBody', () => {
   })
 })
 
+describe('runInRuntime', () => {
+  it('should throw BUILD_FAILED before starting the runtime when the build fails', async () => {
+    const { runInRuntime } = await import('./runtime.js')
+    const { CliError } = await import('../../utils/output.js')
+    try {
+      await runInRuntime(
+        'bun',
+        { code: 'import x from "./missing-module.js"\nexport default x' },
+        [],
+        { path: '/', method: 'GET', headers: {} }
+      )
+      expect.unreachable()
+    } catch (e) {
+      expect(e).toBeInstanceOf(CliError)
+      if (e instanceof CliError) {
+        expect(e.code).toBe('BUILD_FAILED')
+      }
+    }
+  })
+})
+
 describe('parseRunnerOutput', () => {
   afterEach(() => {
     vi.restoreAllMocks()
