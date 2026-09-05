@@ -90,23 +90,30 @@ export const runInRuntime = async (
   const [importSource, plugins] =
     typeof entry === 'string' ? [entry, []] : ['virtual:app', [virtualAppPlugin(entry.code)]]
 
-  const built = await esbuild.build({
-    stdin: {
-      contents: `import app from ${JSON.stringify(importSource)}\n${body}`,
-      resolveDir: process.cwd(),
-      loader: 'tsx',
-      sourcefile: '__runner__.tsx',
-    },
-    bundle: true,
-    write: false,
-    format: 'esm',
-    target: 'esnext',
-    platform: 'node',
-    jsx: 'automatic',
-    jsxImportSource: 'hono/jsx',
-    external: ['@hono/node-server', ...external],
-    plugins,
-  })
+  let built: esbuild.BuildResult<{ write: false }>
+  try {
+    built = await esbuild.build({
+      stdin: {
+        contents: `import app from ${JSON.stringify(importSource)}\n${body}`,
+        resolveDir: process.cwd(),
+        loader: 'tsx',
+        sourcefile: '__runner__.tsx',
+      },
+      bundle: true,
+      write: false,
+      format: 'esm',
+      target: 'esnext',
+      platform: 'node',
+      jsx: 'automatic',
+      jsxImportSource: 'hono/jsx',
+      external: ['@hono/node-server', ...external],
+      plugins,
+    })
+  } catch (e) {
+    throw new CliError('BUILD_FAILED', e instanceof Error ? e.message : String(e), {
+      suggestions: ['Fix the build error in the app file'],
+    })
+  }
 
   const command = RUNNER_COMMANDS[runtime]
   const stdout = await execRunner(runtime, command, built.outputFiles[0].text)
