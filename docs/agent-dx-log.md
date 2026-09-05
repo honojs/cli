@@ -3,6 +3,24 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-05: `expect` returns — measurement beats our reasoning
+
+**Experiment**: an auto-mode task (build a shop API against an
+acceptance spec table), script vs hybrid vs CLI-only, 3 runs each.
+
+**Findings**: CLI-only was the fastest and cheapest (76k tokens, 48s)
+but lost runs the same way every condition did: the agent compared
+the spec table against the batch facts by eye and missed a line.
+Deterministic comparison across many lines is exactly what agents are
+bad at. We removed `expect` from `--batch` on reasoning (#114 — "the
+agent judges anyway"); the measurement says otherwise.
+
+**Changes**: `expect` is back, stronger: `{"status":201}` and/or
+`{"body":{...}}` — the body check is a deep partial match, which
+answers the original objection (a status-only pass hides a wrong
+body). Steps report `pass`, the batch reports a `summary` — the spec
+table becomes an executable check file, rerun until `failed` is 0.
+
 ## 2026-09-04: A verbatim example halves the tokens again
 
 **Experiment**: `build-endpoints` x `next.3` + the skill example

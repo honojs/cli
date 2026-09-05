@@ -178,15 +178,15 @@ hono request /api --runtime workerd
 # Run many requests in one call. One JSON object per line.
 # `save` stores a value from the response body, later steps use it as {{name}}.
 hono request --batch - <<'EOF'
-{"path":"/users"}
-{"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"id":".id"}}
-{"path":"/users/{{id}}"}
-{"method":"DELETE","path":"/users/{{id}}"}
-{"path":"/users/{{id}}"}
+{"path":"/users","expect":{"status":200}}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":{"status":201,"body":{"name":"Momo"}},"save":{"id":".id"}}
+{"path":"/users/{{id}}","expect":{"status":200}}
+{"method":"DELETE","path":"/users/{{id}}","expect":{"status":204}}
+{"path":"/users/{{id}}","expect":{"status":404}}
 EOF
 ```
 
-A batch runs in order against one app instance, so in-memory state carries between steps. The output is one result per step — status and body as facts, for you to judge. A shared header from `-H` goes to every step.
+A batch runs in order against one app instance, so in-memory state carries between steps. Each step reports the actual `status` and `body`, and `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries `pass` per step and a `summary` — rerun until `failed` is 0. A shared header from `-H` goes to every step.
 
 `workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
 

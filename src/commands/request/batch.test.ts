@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { describe, it, expect } from 'vitest'
 import { CliError } from '../../utils/output.js'
-import { getByPath, interpolate, parseBatch, runBatch } from './batch.js'
+import { getByPath, interpolate, matchesSubset, parseBatch, runBatch } from './batch.js'
 
 describe('parseBatch', () => {
   it('parses one step per line and skips empty lines', () => {
@@ -17,6 +17,8 @@ describe('parseBatch', () => {
     ['no path', '{"method":"GET"}'],
     ['path without slash', '{"path":"users"}'],
     ['non-string save', '{"path":"/a","save":{"id":1}}'],
+    ['non-object expect', '{"path":"/a","expect":200}'],
+    ['unknown expect field', '{"path":"/a","expect":{"code":200}}'],
     ['empty input', '\n\n'],
   ])('throws BATCH_INVALID on %s', (_, input) => {
     try {
@@ -35,9 +37,14 @@ describe('interpolate', () => {
   it('replaces variables in strings, arrays, and objects', () => {
     expect(interpolate({ a: '/users/{{id}}', b: ['{{id}}'], c: 1 }, { id: 7 })).toEqual({
       a: '/users/7',
-      b: ['7'],
+      b: [7],
       c: 1,
     })
+  })
+
+  it('keeps the saved type when the string is exactly one variable', () => {
+    expect(interpolate('{{id}}', { id: 7 })).toBe(7)
+    expect(interpolate('/users/{{id}}', { id: 7 })).toBe('/users/7')
   })
 
   it('throws BATCH_INVALID on an unknown variable', () => {
@@ -50,6 +57,17 @@ describe('interpolate', () => {
         expect(e.code).toBe('BATCH_INVALID')
       }
     }
+  })
+})
+
+describe('matchesSubset', () => {
+  it('matches declared fields and ignores extras', () => {
+    expect(matchesSubset({ a: 1, b: 2 }, { a: 1 })).toBe(true)
+    expect(matchesSubset({ a: 1 }, { a: 2 })).toBe(false)
+    expect(matchesSubset({ a: { b: [1, 2] } }, { a: { b: [1, 2] } })).toBe(true)
+    expect(matchesSubset([1, 2], [1])).toBe(false)
+    expect(matchesSubset(null, null)).toBe(true)
+    expect(matchesSubset('x', { a: 1 })).toBe(false)
   })
 })
 
@@ -98,19 +116,60 @@ describe('runBatch', () => {
     expect(result.steps[1].body).toEqual({ id: 1, name: 'Momo' })
   })
 
-  it('reports the status and body as facts, without judging', async () => {
+  it('reports the status and body as facts', async () => {
     const result = await runBatch(crudApp(), parseBatch('{"path":"/nope"}'))
     expect(result.steps[0]).toEqual({
       method: 'GET',
       path: '/nope',
       status: 404,
       body: '404 Not Found',
+      pass: true,
     })
+    expect(result.summary).toEqual({ total: 1, passed: 1, failed: 0 })
   })
 
-  it('reports a save path missing from the body as an error fact', async () => {
+  it('checks expect.status and expect.body as a deep partial match', async () => {
+    const result = await runBatch(
+      crudApp(),
+      parseBatch(
+        [
+          '{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":{"status":201,"body":{"name":"Momo"}},"save":{"id":".id"}}',
+          '{"path":"/users/{{id}}","expect":{"body":{"id":1,"name":"Momo"}}}',
+          '{"path":"/users/{{id}}","expect":{"body":{"name":"WRONG"}}}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps[0].pass).toBe(true)
+    expect(result.steps[1].pass).toBe(true)
+    expect(result.steps[2].pass).toBe(false)
+    expect(result.summary).toEqual({ total: 3, passed: 2, failed: 1 })
+  })
+
+  it('fails a step on an expect.status mismatch and suggests --trace on 404', async () => {
+    const result = await runBatch(crudApp(), parseBatch('{"path":"/nope","expect":{"status":200}}'))
+    expect(result.steps[0].pass).toBe(false)
+    expect(result.steps[0].suggestions).toEqual([
+      'See which routes matched: hono request /nope --trace',
+    ])
+  })
+
+  it('interpolates saved values inside expect', async () => {
+    const result = await runBatch(
+      crudApp(),
+      parseBatch(
+        [
+          '{"method":"POST","path":"/users","body":{"name":"Momo"},"save":{"name":".name"}}',
+          '{"path":"/users/1","expect":{"body":{"name":"{{name}}"}}}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps[1].pass).toBe(true)
+  })
+
+  it('reports a save path missing from the body as a failure', async () => {
     const result = await runBatch(crudApp(), parseBatch('{"path":"/users","save":{"id":".id"}}'))
     expect(result.steps[0].error).toBe('save: .id not found in the body')
+    expect(result.steps[0].pass).toBe(false)
     expect(result.steps[0].saved).toBeUndefined()
   })
 
