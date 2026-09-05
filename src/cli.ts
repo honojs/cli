@@ -3,10 +3,12 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { agentContextCommand } from './commands/agent-context/index.js'
+import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
 import { optimizeCommand } from './commands/optimize/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
+import { snapshotCommand } from './commands/snapshot/index.js'
 import { ssgCommand } from './commands/ssg/index.js'
 import { formatArgumentsError } from './utils/output.js'
 
@@ -30,6 +32,8 @@ program
 agentContextCommand(program)
 routesCommand(program)
 requestCommand(program)
+batchCommand(program)
+snapshotCommand(program)
 benchmarkCommand(program)
 optimizeCommand(program)
 ssgCommand(program)

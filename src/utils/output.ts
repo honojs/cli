@@ -42,6 +42,8 @@ export const formatError = (error: CliError): string =>
 const FLAG_FIXES: Record<string, string> = {
   '-P': 'The path is the first argument: hono request /api/users',
   '--path': 'The path is the first argument: hono request /api/users',
+  '--batch': 'batch is a command now: hono batch -',
+  '--snapshot': 'snapshot is a command now: hono snapshot',
   '--body': `The body flag is -d: hono request /api/users -X POST -d '{"name":"Alice"}'`,
   '-j': `The body flag is -d: hono request /api/users -X POST -d '{"name":"Alice"}'`,
   '-m': 'The method flag is -X: hono request /api/users -X POST',

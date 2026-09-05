@@ -109,7 +109,7 @@ export function benchmarkCommand(program: Command) {
         }
 
         const external = options.external || []
-        const entry = resolveEntry(file)
+        const entry = await resolveEntry(file)
         const targets = await collectTargets(file, entry, options, method, external)
 
         const sources: HonoSource[] = []
@@ -145,7 +145,7 @@ export function benchmarkCommand(program: Command) {
 
 const collectTargets = async (
   file: string | undefined,
-  entry: ReturnType<typeof resolveEntry>,
+  entry: Awaited<ReturnType<typeof resolveEntry>>,
   options: BenchmarkOptions,
   method: string,
   external: string[]
@@ -158,7 +158,7 @@ const collectTargets = async (
         headers[key.trim()] = value.trim()
       }
     }
-    const body = resolveData(options.data)
+    const body = await resolveData(options.data)
     return options.path.map((path) => ({
       method,
       path,

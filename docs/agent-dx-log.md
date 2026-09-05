@@ -3,6 +3,29 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-06: The spec travels in the conversation, not in a file
+
+**Experiment**: the `expect` re-run (`next.4`): a ready-made
+`checks.jsonl` scored 3/3 at a 65k median — the top of every
+condition — while agents transcribing the spec themselves lost runs
+to interpretation (2/3, 110k).
+
+**Findings**: what won is an executable spec that exists before the
+implementation, is reviewable by a human, and reruns until green.
+The file was the harness's delivery detail: ten JSONL lines travel
+fine in the request itself and run as a heredoc — no artifact to
+clean up.
+
+**Changes**: two new commands, split out of `request` (both rejected
+almost every single-request option — the sign of separate commands
+under one flag). `hono batch <source> [file]` runs the JSONL lines;
+`hono snapshot [file]` prints the current behavior as batch JSONL
+lines, to stdout: paramless GET routes run and their actual response
+becomes the `expect`; param and non-GET routes print without one; a
+probe line records the current not-found behavior as a fact. The
+taxonomy: `routes` never sends a request; `request`, `batch`, and
+`snapshot` exist to send them.
+
 ## 2026-09-05: `expect` returns — measurement beats our reasoning
 
 **Experiment**: an auto-mode task (build a shop API against an

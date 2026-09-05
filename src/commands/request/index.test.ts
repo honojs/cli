@@ -1,6 +1,7 @@
 import { Command } from 'commander'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { Readable } from 'node:stream'
 import type * as RuntimeModule from './runtime.js'
 
 // Mock dependencies
@@ -52,6 +53,15 @@ describe('requestCommand', () => {
 
   let mockModules: Awaited<ReturnType<typeof getMockModules>>
   let mockBuildAndImportApp: Awaited<ReturnType<typeof getMockBuildAndImportApp>>
+
+  const stubStdin = (content: string) => {
+    const original = Object.getOwnPropertyDescriptor(process, 'stdin')!
+    const fake = Readable.from([Buffer.from(content)])
+    Object.defineProperty(process, 'stdin', { value: fake, configurable: true })
+    return () => {
+      Object.defineProperty(process, 'stdin', original)
+    }
+  }
 
   async function* createBuildIterator(app: Hono): AsyncGenerator<Hono> {
     yield app
@@ -112,39 +122,6 @@ describe('requestCommand', () => {
     expect(output.ok).toBe(false)
     expect(output.error.code).toBe('INVALID_ARGUMENTS')
     expect(output.error.suggestions).toEqual(['hono request /data -X GET'])
-  })
-
-  it('should run a batch from a JSONL file', async () => {
-    const mockApp = new Hono()
-    mockApp.get('/data', (c) => c.json({ ok: 1 }))
-    setupBasicMocks('test-app.js', mockApp)
-    mockModules.readFileSync.mockReturnValue('{"path":"/data","expect":{"status":200}}')
-    await program.parseAsync(['node', 'test', 'request', '--batch', 'steps.jsonl', 'test-app.js'])
-    expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
-      ok: true,
-      data: {
-        steps: [
-          {
-            method: 'GET',
-            path: '/data',
-            status: 200,
-            body: { ok: 1 },
-            pass: true,
-            expect: { status: 200 },
-          },
-        ],
-        summary: { total: 1, passed: 1, failed: 0 },
-      },
-    })
-  })
-
-  it('should error when --batch is combined with a per-request option', async () => {
-    const mockApp = new Hono()
-    setupBasicMocks('test-app.js', mockApp)
-    await program.parseAsync(['node', 'test', 'request', '--batch', '-', '-X', 'POST'])
-    const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
-    expect(output.ok).toBe(false)
-    expect(output.error.code).toBe('INVALID_OPTION')
   })
 
   it('should output a text body as a string in the envelope', async () => {
@@ -978,7 +955,7 @@ describe('requestCommand', () => {
       const mockApp = new Hono()
       mockApp.post('/echo', async (c) => c.json({ received: await c.req.text() }))
       setupBasicMocks('test-app.js', mockApp)
-      mockModules.readFileSync.mockReturnValue('from stdin')
+      const restore = stubStdin('from stdin')
 
       await program.parseAsync([
         'node',
@@ -991,8 +968,8 @@ describe('requestCommand', () => {
         '@-',
         'test-app.js',
       ])
+      restore()
 
-      expect(mockModules.readFileSync).toHaveBeenCalledWith(0, 'utf-8')
       const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
       expect(parsed.data.body).toEqual({ received: 'from stdin' })
     })
@@ -1000,12 +977,12 @@ describe('requestCommand', () => {
     it('should read the app code from stdin with -', async () => {
       const mockApp = new Hono()
       mockApp.get('/', (c) => c.text('from code'))
-      mockModules.readFileSync.mockReturnValue('export default app')
+      const restore = stubStdin('export default app')
       mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
       await program.parseAsync(['node', 'test', 'request', '/', '-'])
+      restore()
 
-      expect(mockModules.readFileSync).toHaveBeenCalledWith(0, 'utf-8')
       expect(mockBuildAndImportApp).toHaveBeenCalledWith(
         { code: 'export default app' },
         { external: ['@hono/node-server'] }
@@ -1017,10 +994,11 @@ describe('requestCommand', () => {
     it('should wrap stdin code without a default export', async () => {
       const mockApp = new Hono()
       mockApp.get('/', (c) => c.text('wrapped'))
-      mockModules.readFileSync.mockReturnValue('app.get("/", (c) => c.text("wrapped"))')
+      const restore = stubStdin('app.get("/", (c) => c.text("wrapped"))')
       mockBuildAndImportApp.mockReturnValue(createBuildIterator(mockApp))
 
       await program.parseAsync(['node', 'test', 'request', '/', '-'])
+      restore()
 
       expect(mockBuildAndImportApp).toHaveBeenCalledWith(
         {

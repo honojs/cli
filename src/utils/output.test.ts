@@ -60,6 +60,8 @@ describe('formatArgumentsError flag fixes', () => {
     expect(body.error.suggestions[0]).toContain('-d')
     const method = JSON.parse(formatArgumentsError("error: unknown option '-m'"))
     expect(method.error.suggestions[0]).toContain('-X')
+    const batch = JSON.parse(formatArgumentsError("error: unknown option '--batch'"))
+    expect(batch.error.suggestions).toEqual(['batch is a command now: hono batch -'])
   })
 })
 

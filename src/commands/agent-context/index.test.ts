@@ -1,8 +1,10 @@
 import { Command } from 'commander'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { batchCommand } from '../batch/index.js'
 import { optimizeCommand } from '../optimize/index.js'
 import { requestCommand } from '../request/index.js'
 import { routesCommand } from '../routes/index.js'
+import { snapshotCommand } from '../snapshot/index.js'
 import { agentContextCommand } from './index.js'
 
 describe('agentContextCommand', () => {
@@ -15,6 +17,8 @@ describe('agentContextCommand', () => {
     optimizeCommand(program)
     requestCommand(program)
     routesCommand(program)
+    batchCommand(program)
+    snapshotCommand(program)
     agentContextCommand(program)
     consoleLogSpy = spyOnLog()
   })
@@ -48,6 +52,8 @@ describe('agentContextCommand', () => {
     expect(output).toContain('### hono optimize [entry]')
     expect(output).toContain('### hono request [path] [file]')
     expect(output).toContain('### hono routes [file]')
+    expect(output).toContain('### hono batch <source> [file]')
+    expect(output).toContain('### hono snapshot [file]')
     expect(output).not.toContain('### hono agent-context')
   })
 

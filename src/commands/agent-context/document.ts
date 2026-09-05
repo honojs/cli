@@ -1,10 +1,12 @@
 import type { Command } from 'commander'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { bullets, codeBlock, section, steps } from '../../utils/markdown.js'
+import { agentContext as batchContext } from '../batch/index.js'
 import { agentContext as benchmarkContext } from '../benchmark/index.js'
 import { agentContext as optimizeContext } from '../optimize/index.js'
 import { agentContext as requestContext } from '../request/index.js'
 import { agentContext as routesContext } from '../routes/index.js'
+import { agentContext as snapshotContext } from '../snapshot/index.js'
 import { agentContext as ssgContext } from '../ssg/index.js'
 
 const contexts: Record<string, CommandAgentContext> = {
@@ -13,6 +15,8 @@ const contexts: Record<string, CommandAgentContext> = {
   optimize: optimizeContext,
   ssg: ssgContext,
   benchmark: benchmarkContext,
+  batch: batchContext,
+  snapshot: snapshotContext,
 }
 
 const commandDoc = (command: Command, context?: CommandAgentContext): string => {

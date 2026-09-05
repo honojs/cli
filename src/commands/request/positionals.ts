@@ -14,25 +14,8 @@ export interface Positionals {
  */
 export const resolvePositionals = (
   pathArg: string | undefined,
-  fileArg: string | undefined,
-  batch: boolean
+  fileArg: string | undefined
 ): Positionals => {
-  if (batch) {
-    // Batch steps carry their own paths, so the only argument is the
-    // app file.
-    if (pathArg !== undefined && fileArg !== undefined) {
-      throw new CliError('INVALID_ARGUMENTS', 'Pass one app file with --batch', {
-        suggestions: ['hono request --batch - src/app.ts'],
-      })
-    }
-    if (pathArg?.startsWith('/')) {
-      throw new CliError('INVALID_ARGUMENTS', 'Batch steps carry their own paths', {
-        suggestions: ['Put the path in the batch lines'],
-      })
-    }
-    return { file: pathArg }
-  }
-
   if (pathArg === undefined) {
     throw new CliError('INVALID_ARGUMENTS', 'The request path is required', {
       suggestions: ['Request the root: hono request /'],
