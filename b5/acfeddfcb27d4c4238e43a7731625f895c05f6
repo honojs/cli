@@ -1,0 +1,55 @@
+README.md
+  s_449966fc5983c0::t_50eb0f2bfa89ed 39-44,65-66,231-271
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_19a7a8a18b474b 6-28
+src/cli.ts
+  s_449966fc5983c0::t_713d6efebe7af2 6,11,35-36
+src/commands/agent-context/document.ts
+  s_449966fc5983c0::t_be56ce26719d6b 4,9,18-19
+src/commands/agent-context/index.test.ts
+  s_449966fc5983c0::t_2ac611673d161f 3,7,20-21,55-56
+src/commands/batch/index.test.ts
+  s_449966fc5983c0::t_6075d81fb4dea6 1-76
+src/commands/batch/index.ts
+  s_449966fc5983c0::t_5b42146f20c1e5 1-85
+src/commands/benchmark/index.ts
+  s_449966fc5983c0::t_298694eef56029 112,148,161
+src/commands/request/index.test.ts
+  s_449966fc5983c0::t_cc27a727c08d49 4,57-65,958,971,980,984,997,1001
+src/commands/request/index.ts
+  s_449966fc5983c0::t_5d91b29e47152c 5-6,42,104,139,164
+src/commands/request/positionals.test.ts
+  s_449966fc5983c0::t_8c2726a41de586 20,27,31,35,41,47,53
+src/commands/request/positionals.ts
+  s_449966fc5983c0::t_fbe309bdead19f 17
+src/commands/snapshot/index.ts
+  s_449966fc5983c0::t_2788dbfcd17f6c 1-45
+src/commands/snapshot/snapshot.test.ts
+  s_449966fc5983c0::t_b62e8d8ee64830 1-43
+src/commands/snapshot/snapshot.ts
+  s_449966fc5983c0::t_45fe90dea05b58 1-48
+src/utils/load-app.ts
+  s_449966fc5983c0::t_a788c34060b278 13,24,27,30,41,43,73,76,79-85,103,108
+src/utils/output.test.ts
+  s_449966fc5983c0::t_2c600b54d76bab 63-64
+src/utils/output.ts
+  s_449966fc5983c0::t_38d25efa1d4153 45-46
+src/utils/headers.ts
+  s_449966fc5983c0::t_914dca5d9e9bfe 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b5acfeddfcb27d4c4238e43a7731625f895c05f6",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
