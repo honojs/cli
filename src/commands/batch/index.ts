@@ -24,6 +24,7 @@ EOF`,
     'Declare the acceptance criteria in "expect": {"status":201} and/or {"body":{...}} (a deep partial match — declared fields must match, extra response fields are ignored). Turn the spec into batch lines and rerun until "failed" is 0 — comparing a spec table by eye misses lines.',
     'A shared header from -H goes to every step. Prefer a heredoc over writing a file: the lines live in your context.',
     '--compact prints only the failed steps and the summary — use it when you only need the failed: 0 loop.',
+    'A failed step carries "diff": one line per mismatch (e.g. "body.name: expected \'Alice\', got \'Bob\'"). Fix what the diff names — no need to compare the bodies yourself.',
     'hono snapshot prints the current behavior of an app in this format — capture before a refactor, rerun after.',
   ],
 }

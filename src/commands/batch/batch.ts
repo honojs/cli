@@ -22,6 +22,7 @@ export interface StepResult {
   body: unknown
   pass: boolean
   expect?: StepExpect
+  diff?: string[]
   saved?: Record<string, unknown>
   error?: string
   suggestions?: string[]
@@ -103,29 +104,45 @@ const isValidExpect = (value: unknown): value is StepExpect => {
   return Object.keys(expect).every((key) => key === 'status' || key === 'body')
 }
 
+const shortValue = (value: unknown): string => {
+  const text = JSON.stringify(value) ?? 'undefined'
+  return text.length > 80 ? `${text.slice(0, 77)}...` : text
+}
+
 /**
  * Deep partial match, like `toMatchObject`: declared fields must
  * match, extra fields in the actual value are ignored. Arrays match
- * by index and length.
+ * by index and length. Returns one line per mismatch — agents miss
+ * differences when they compare by eye, so the comparison says what
+ * differed.
  */
-export const matchesSubset = (actual: unknown, expected: unknown): boolean => {
+export const subsetDiff = (actual: unknown, expected: unknown, path = 'body'): string[] => {
   if (Array.isArray(expected)) {
-    return (
-      Array.isArray(actual) &&
-      actual.length === expected.length &&
-      expected.every((item, i) => matchesSubset(actual[i], item))
-    )
+    if (!Array.isArray(actual)) {
+      return [`${path}: expected an array, got ${shortValue(actual)}`]
+    }
+    if (actual.length !== expected.length) {
+      return [`${path}: expected length ${expected.length}, got ${actual.length}`]
+    }
+    return expected.flatMap((item, i) => subsetDiff(actual[i], item, `${path}.${i}`))
   }
   if (typeof expected === 'object' && expected !== null) {
     if (typeof actual !== 'object' || actual === null || Array.isArray(actual)) {
-      return false
+      return [`${path}: expected an object, got ${shortValue(actual)}`]
     }
-    return Object.entries(expected).every(([key, value]) =>
-      matchesSubset((actual as Record<string, unknown>)[key], value)
+    return Object.entries(expected).flatMap(([key, value]) =>
+      key in (actual as Record<string, unknown>)
+        ? subsetDiff((actual as Record<string, unknown>)[key], value, `${path}.${key}`)
+        : [`${path}.${key}: missing`]
     )
   }
   return actual === expected
+    ? []
+    : [`${path}: expected ${shortValue(expected)}, got ${shortValue(actual)}`]
 }
+
+export const matchesSubset = (actual: unknown, expected: unknown): boolean =>
+  subsetDiff(actual, expected).length === 0
 
 const isStringRecord = (value: unknown): value is Record<string, string> =>
   typeof value === 'object' &&
@@ -242,11 +259,15 @@ export const runBatch = async (
     }
 
     if (result.expect !== undefined) {
-      const statusOk =
-        result.expect.status === undefined || response.status === result.expect.status
-      const bodyOk = result.expect.body === undefined || matchesSubset(body, result.expect.body)
-      if (!statusOk || !bodyOk) {
+      const diff = [
+        ...(result.expect.status !== undefined && response.status !== result.expect.status
+          ? [`status: expected ${result.expect.status}, got ${response.status}`]
+          : []),
+        ...(result.expect.body === undefined ? [] : subsetDiff(body, result.expect.body)),
+      ]
+      if (diff.length > 0) {
         result.pass = false
+        result.diff = diff
         if (response.status === 404) {
           result.suggestions = [`See which routes matched: hono request ${path} --trace`]
         }

@@ -86,6 +86,7 @@ describe('batchCommand', () => {
             body: { ok: 1 },
             pass: false,
             expect: { status: 404 },
+            diff: ['status: expected 404, got 200'],
           },
         ],
         summary: { total: 2, passed: 1, failed: 1 },

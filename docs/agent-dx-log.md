@@ -3,6 +3,23 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-07: Say what differed — the diff joins the failed step
+
+**Experiment**: the cost-trio measurement. `--status-only` cut a
+40-item fixture from 472k to 210k; but the dominant cost is the
+number of fix-verify laps, with a huge variance (164k-980k in one
+condition).
+
+**Findings**: each lap starts with the agent comparing the actual
+body against the expected one by eye — the exact failure class that
+brought `expect` back. The comparison is deterministic; its result
+should be, too.
+
+**Changes**: a failed step now carries `diff` — one line per
+mismatch, like `status: expected 200, got 404` and `body.name:
+expected "Alice", got "Bob"`. In `--compact` output the diff is most
+of what remains: fix what it names, rerun.
+
 ## 2026-09-07: The loop works — now make it cheap
 
 **Experiment**: `next.5` re-measurements. The spec-in-the-request

@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { describe, it, expect } from 'vitest'
 import { CliError } from '../../utils/output.js'
-import { getByPath, interpolate, matchesSubset, parseBatch, runBatch } from './batch.js'
+import { getByPath, interpolate, matchesSubset, parseBatch, runBatch, subsetDiff } from './batch.js'
 
 describe('parseBatch', () => {
   it('parses one step per line and skips empty lines', () => {
@@ -68,6 +68,17 @@ describe('matchesSubset', () => {
     expect(matchesSubset([1, 2], [1])).toBe(false)
     expect(matchesSubset(null, null)).toBe(true)
     expect(matchesSubset('x', { a: 1 })).toBe(false)
+  })
+})
+
+describe('subsetDiff', () => {
+  it('says what differed, one line per mismatch', () => {
+    expect(subsetDiff({ name: 'Bob', id: 1 }, { name: 'Alice' })).toEqual([
+      'body.name: expected "Alice", got "Bob"',
+    ])
+    expect(subsetDiff({ a: {} }, { a: { b: 1 } })).toEqual(['body.a.b: missing'])
+    expect(subsetDiff([1, 2, 3], [1, 2])).toEqual(['body: expected length 2, got 3'])
+    expect(subsetDiff('text', { a: 1 })).toEqual(['body: expected an object, got "text"'])
   })
 })
 
@@ -148,6 +159,7 @@ describe('runBatch', () => {
   it('fails a step on an expect.status mismatch and suggests --trace on 404', async () => {
     const result = await runBatch(crudApp(), parseBatch('{"path":"/nope","expect":{"status":200}}'))
     expect(result.steps[0].pass).toBe(false)
+    expect(result.steps[0].diff).toEqual(['status: expected 200, got 404'])
     expect(result.steps[0].suggestions).toEqual([
       'See which routes matched: hono request /nope --trace',
     ])
