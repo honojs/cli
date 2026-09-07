@@ -8,20 +8,24 @@ import { inspectRoutes } from 'hono/dev'
  * printed without an `expect`, for the caller to fill in. One probe
  * line records the current not-found behavior as a fact.
  */
-export const snapshotLines = async (app: Hono): Promise<string[]> => {
+export const snapshotLines = async (app: Hono, statusOnly = false): Promise<string[]> => {
   const lines: string[] = []
   const routes = inspectRoutes(app).filter((route) => !route.isMiddleware)
 
   for (const route of routes) {
     const isParamless = !route.path.includes(':') && !route.path.includes('*')
     if (route.method === 'GET' && isParamless) {
-      lines.push(JSON.stringify({ path: route.path, expect: await capture(app, route.path) }))
+      const captured = await capture(app, route.path)
+      const expect = statusOnly ? { status: captured.status } : captured
+      lines.push(JSON.stringify({ path: route.path, expect }))
     } else {
       const method = route.method === 'GET' ? {} : { method: route.method }
       lines.push(JSON.stringify({ ...method, path: route.path }))
     }
   }
 
+  // The probe keeps its body even with --status-only: a dropped
+  // notFound handler still answers 404, only the body changes.
   lines.push(
     JSON.stringify({
       path: '/__no_such_path__',

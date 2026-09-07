@@ -3,6 +3,25 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-07: The loop works — now make it cheap
+
+**Experiment**: `next.5` re-measurements. The spec-in-the-request
+condition: 3/3 at a 79k median (file-parity, beats self-authoring).
+The snapshot workflow on a 27-route split refactor: baseline 3/5 →
+5/5 with one AGENTS.md line, snapshot used in every run — but 0/5
+from the skill alone (a refactor request does not fire it, again).
+
+**Findings**: the verification loop wins on correctness and loses on
+tokens: the snapshot run cost 262k vs a 149k baseline, mostly full
+bodies printed for 27 routes, echoed back through the batch results.
+
+**Changes**: cost controls, all opt-in flags. `hono batch --compact`
+prints only the failed steps and the summary, as one-line JSON.
+`hono snapshot --status-only` captures status codes without bodies —
+except the not-found probe line, which keeps its body: a dropped
+notFound handler still answers 404, only the body changes.
+`hono request --compact` drops the headers and prints one line.
+
 ## 2026-09-06: The spec travels in the conversation, not in a file
 
 **Experiment**: the `expect` re-run (`next.4`): a ready-made
