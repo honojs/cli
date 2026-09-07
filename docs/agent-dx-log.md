@@ -3,6 +3,30 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-06: An executable spec wins — when the user hands it over
+
+**Experiment**: the auto-mode task re-run with `expect` (`next.4`),
+haiku, 3 runs per condition.
+
+**Findings**:
+
+- The agent writing `checks.jsonl` from the spec table itself: 2/3,
+  110k — transcription mixes interpretation in.
+- A ready-made `checks.jsonl` shipped with the task: 3/3, median 65k
+  tokens, 43s — the top of every condition measured so far, beating
+  hand-written scripts (3/3, 92k, 92s). Every run opened with
+  `--batch checks.jsonl`, implemented, and finished at `failed: 0`.
+- So `expect` pays off with a workflow: the user (or an approved
+  draft) hands the agent an executable acceptance spec.
+- Also recorded: a real Claude Code run tried `npx hono dev &` — it
+  expects a dev server to exist.
+
+**Changes**: `dev` / `serve` / `start` now answer with the point of
+the whole design: "No server needed. Send requests directly:
+hono request /path". Open ideas, not yet built: scaffolding
+`checks.jsonl` from the routes, and a docs section on handing specs
+to agents.
+
 ## 2026-09-05: `expect` returns — measurement beats our reasoning
 
 **Experiment**: an auto-mode task (build a shop API against an
