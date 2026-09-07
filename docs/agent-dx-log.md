@@ -3,6 +3,27 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-07: The diff converges the laps
+
+**Experiment**: `next.7` on the large fixture, plus the wording A/B.
+5 runs per condition, all 5/5.
+
+**Findings**:
+
+- With `diff`, the token distribution moved 174k/210k/267k →
+  123k/201k/228k and every batch converged to one lap per fix. The
+  upper tail — the lap-count variance — is what compressed.
+- The combo line ("on a large API: `snapshot --status-only` →
+  `batch - --compact`") won the wording A/B at a 201k median; the
+  file-roundtrip wording lost at 416k and induced detours (49 single
+  requests, an invented `hono start`).
+- Recorded for later: the `start` guidance answered, but did not
+  always change the behavior. Watching, not acting — the winning
+  wording removes the scene where it happens.
+
+**Changes**: the combo line joins the skill (honojs/skills#6). No CLI
+change.
+
 ## 2026-09-07: Say what differed — the diff joins the failed step
 
 **Experiment**: the cost-trio measurement. `--status-only` cut a
