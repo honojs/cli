@@ -55,6 +55,13 @@ describe('formatArgumentsError flag fixes', () => {
     ])
   })
 
+  it('should point an invented server command at request', () => {
+    const parsed = JSON.parse(formatArgumentsError("error: unknown command 'dev'"))
+    expect(parsed.error.suggestions).toEqual([
+      'No server needed. Send requests directly: hono request /path',
+    ])
+  })
+
   it('should map an invented flag to the real one', () => {
     const body = JSON.parse(formatArgumentsError("error: unknown option '--body'"))
     expect(body.error.suggestions[0]).toContain('-d')

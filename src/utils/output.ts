@@ -49,10 +49,19 @@ const FLAG_FIXES: Record<string, string> = {
   '-m': 'The method flag is -X: hono request /api/users -X POST',
 }
 
+// There is no server command on purpose. Agents that expect one get
+// pointed at the serverless flow.
+const COMMAND_FIXES: Record<string, string> = {
+  dev: 'No server needed. Send requests directly: hono request /path',
+  serve: 'No server needed. Send requests directly: hono request /path',
+  start: 'No server needed. Send requests directly: hono request /path',
+}
+
 export const formatArgumentsError = (message: string): string => {
   const cleaned = message.replace(/^error: /, '').trim()
   const flag = cleaned.match(/unknown option '([^']+)'/)?.[1]
-  const fix = flag ? FLAG_FIXES[flag] : undefined
+  const command = cleaned.match(/unknown command '([^']+)'/)?.[1]
+  const fix = (flag && FLAG_FIXES[flag]) || (command && COMMAND_FIXES[command]) || undefined
   const suggestions = [fix ?? 'Check the usage: hono <command> --help']
   return formatError(new CliError('INVALID_ARGUMENTS', cleaned, { suggestions }))
 }
