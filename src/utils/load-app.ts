@@ -10,7 +10,7 @@ const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js
 /**
  * Resolve the entry file and return an iterator of the built app.
  */
-export function getBuildIterator(
+export async function* getBuildIterator(
   appPath: string | undefined,
   watch: boolean,
   external: string[] = []
@@ -21,12 +21,13 @@ export function getBuildIterator(
         suggestions: ['Pass a file path instead of - when using --watch'],
       })
     }
-    return buildAndImportApp(resolveEntry(appPath), {
+    yield* buildAndImportApp(await resolveEntry(appPath), {
       external: ['@hono/node-server', ...external],
     })
+    return
   }
 
-  return buildAndImportApp(resolveEntry(appPath), {
+  yield* buildAndImportApp(await resolveEntry(appPath), {
     external: ['@hono/node-server', ...external],
     watch,
     sourcemap: true,
@@ -37,9 +38,9 @@ export function getBuildIterator(
  * Resolve the app source: `-` reads code from stdin, a path is used
  * as-is, and without a path the default candidates are tried.
  */
-export function resolveEntry(appPath: string | undefined): AppEntry {
+export async function resolveEntry(appPath: string | undefined): Promise<AppEntry> {
   if (appPath === '-') {
-    return { code: wrapCode(readStdin()) }
+    return { code: wrapCode(await readStdin()) }
   }
 
   let entry: string
@@ -69,13 +70,19 @@ export function resolveEntry(appPath: string | undefined): AppEntry {
   return realpathSync(resolvedAppPath)
 }
 
-export const readStdin = (): string => {
+export const readStdin = async (): Promise<string> => {
   if (process.stdin.isTTY) {
     throw new CliError('MISSING_STDIN', 'No input on stdin', {
-      suggestions: ['Pipe the app code: cat app.ts | hono request - -P /'],
+      suggestions: ['Pipe the input: hono snapshot | hono batch -'],
     })
   }
-  return readFileSync(0, 'utf-8')
+  // Not readFileSync(0): a pipe from another process can be
+  // non-blocking, and the sync read fails with EAGAIN.
+  const chunks: Buffer[] = []
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk as Buffer)
+  }
+  return Buffer.concat(chunks).toString('utf-8')
 }
 
 /**
@@ -93,12 +100,12 @@ export const wrapCode = (code: string): string => {
  * Resolve a request body option: `@file` reads a file, `@-` reads
  * stdin, anything else is the body itself.
  */
-export const resolveData = (data: string | undefined): string | undefined => {
+export const resolveData = async (data: string | undefined): Promise<string | undefined> => {
   if (data === undefined || !data.startsWith('@')) {
     return data
   }
   if (data === '@-') {
-    return readStdin()
+    return await readStdin()
   }
   return readFileSync(data.slice(1), 'utf-8')
 }

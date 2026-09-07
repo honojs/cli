@@ -36,6 +36,12 @@ hono routes
 # Send request to Hono app
 hono request /
 
+# Run multiple requests from JSONL
+hono batch -
+
+# Print the current behavior as batch JSONL lines
+hono snapshot
+
 # Measure the performance of your Hono app
 hono benchmark
 
@@ -56,6 +62,8 @@ Inspect and test:
 
 - `routes [file]` - Show routes of your Hono app
 - `request <path> [file]` - Send request to Hono app using `app.request()`
+- `batch <source> [file]` - Run multiple requests from JSONL using `app.request()`
+- `snapshot [file]` - Print the current behavior as batch JSONL lines
 - `benchmark [file]` - Measure the performance of your Hono app
 
 Build:
@@ -132,7 +140,6 @@ hono request <path> [file] [options]
 - `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, or `workerd`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
-- `--batch <source>` - Run multiple requests from JSONL (`-` reads stdin)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
@@ -175,18 +182,7 @@ hono request / --runtime deno
 # Run the app on workerd with your wrangler config: bindings (c.env) are the local ones
 hono request /api --runtime workerd
 
-# Run many requests in one call. One JSON object per line.
-# `save` stores a value from the response body, later steps use it as {{name}}.
-hono request --batch - <<'EOF'
-{"path":"/users","expect":{"status":200}}
-{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":{"status":201,"body":{"name":"Momo"}},"save":{"id":".id"}}
-{"path":"/users/{{id}}","expect":{"status":200}}
-{"method":"DELETE","path":"/users/{{id}}","expect":{"status":204}}
-{"path":"/users/{{id}}","expect":{"status":404}}
-EOF
 ```
-
-A batch runs in order against one app instance, so in-memory state carries between steps. Each step reports the actual `status` and `body`, and `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries `pass` per step and a `summary` — rerun until `failed` is 0. A shared header from `-H` goes to every step.
 
 `workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
 
@@ -231,6 +227,47 @@ The result is JSON with the shared envelope. A JSON response body is embedded as
 ```
 
 A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl. A 404 result includes a suggestion to run `--trace`.
+
+### `batch`
+
+Run multiple requests from JSONL in one call, in order, against one app instance — in-memory state carries between steps.
+
+```bash
+hono batch <source> [file]
+```
+
+**Arguments:**
+
+- `source` - JSONL file, or `-` to read stdin
+- `file` - Path to the Hono app file (optional)
+
+**Options:**
+
+- `-H, --header <header>` - Shared headers for every step
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+```bash
+hono batch - <<'EOF'
+{"path":"/users","expect":{"status":200}}
+{"method":"POST","path":"/users","body":{"name":"Momo"},"expect":{"status":201,"body":{"name":"Momo"}},"save":{"id":".id"}}
+{"path":"/users/{{id}}","expect":{"status":200}}
+{"method":"DELETE","path":"/users/{{id}}","expect":{"status":204}}
+EOF
+```
+
+One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0.
+
+### `snapshot`
+
+Print the current behavior of the app as batch JSONL lines, to stdout — no file is written.
+
+```bash
+hono snapshot [file]
+```
+
+Paramless GET routes are executed and their actual response becomes the `expect`. Param and non-GET routes are printed without one, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
+
+Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
 
 ### `benchmark`
 

@@ -1,0 +1,48 @@
+import type { Hono } from 'hono'
+import { inspectRoutes } from 'hono/dev'
+
+/**
+ * Print the current behavior of the app as batch JSONL lines, to
+ * stdout — no file. Parameterless GET routes are executed and their
+ * actual status and body become the `expect`. Other routes are
+ * printed without an `expect`, for the caller to fill in. One probe
+ * line records the current not-found behavior as a fact.
+ */
+export const snapshotLines = async (app: Hono): Promise<string[]> => {
+  const lines: string[] = []
+  const routes = inspectRoutes(app).filter((route) => !route.isMiddleware)
+
+  for (const route of routes) {
+    const isParamless = !route.path.includes(':') && !route.path.includes('*')
+    if (route.method === 'GET' && isParamless) {
+      lines.push(JSON.stringify({ path: route.path, expect: await capture(app, route.path) }))
+    } else {
+      const method = route.method === 'GET' ? {} : { method: route.method }
+      lines.push(JSON.stringify({ ...method, path: route.path }))
+    }
+  }
+
+  lines.push(
+    JSON.stringify({
+      path: '/__no_such_path__',
+      expect: await capture(app, '/__no_such_path__'),
+    })
+  )
+
+  return lines
+}
+
+const capture = async (app: Hono, path: string): Promise<{ status: number; body?: unknown }> => {
+  const response = await app.request(new URL(path, 'http://localhost').href)
+  const text = await response.text()
+  const isJson = response.headers.get('content-type')?.includes('json')
+  let body: unknown = text
+  if (isJson) {
+    try {
+      body = JSON.parse(text)
+    } catch {
+      // keep the text
+    }
+  }
+  return { status: response.status, ...(text === '' ? {} : { body }) }
+}
