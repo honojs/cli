@@ -1,6 +1,6 @@
 {
   "name": "@hono/cli",
-  "version": "0.2.0-next.5",
+  "version": "0.2.0-next.6",
   "type": "module",
   "bin": {
     "hono": "dist/cli.js"
