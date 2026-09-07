@@ -35,6 +35,16 @@ describe('snapshotLines', () => {
     })
   })
 
+  it('captures only the status with statusOnly, except the probe line', async () => {
+    const lines = (await snapshotLines(app(), true)).map((l) => JSON.parse(l))
+    expect(lines).toContainEqual({ path: '/users', expect: { status: 200 } })
+    expect(lines).toContainEqual({ path: '/health', expect: { status: 200 } })
+    expect(lines).toContainEqual({
+      path: '/__no_such_path__',
+      expect: { status: 404, body: '404 Not Found' },
+    })
+  })
+
   it('every line is valid batch input', async () => {
     const { parseBatch } = await import('../batch/batch.js')
     const lines = await snapshotLines(app())

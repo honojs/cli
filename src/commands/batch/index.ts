@@ -23,6 +23,7 @@ EOF`,
     '"save" stores a value from the response body by dot path (e.g. {"id":".id"}), and later steps use it as {{id}}. A whole-variable string like "{{id}}" keeps the saved type.',
     'Declare the acceptance criteria in "expect": {"status":201} and/or {"body":{...}} (a deep partial match — declared fields must match, extra response fields are ignored). Turn the spec into batch lines and rerun until "failed" is 0 — comparing a spec table by eye misses lines.',
     'A shared header from -H goes to every step. Prefer a heredoc over writing a file: the lines live in your context.',
+    '--compact prints only the failed steps and the summary — use it when you only need the failed: 0 loop.',
     'hono snapshot prints the current behavior of an app in this format — capture before a refactor, rerun after.',
   ],
 }
@@ -30,6 +31,7 @@ EOF`,
 interface BatchOptions {
   header?: string[]
   external?: string[]
+  compact: boolean
 }
 
 export function batchCommand(program: Command) {
@@ -46,6 +48,7 @@ export function batchCommand(program: Command) {
       },
       [] as string[]
     )
+    .option('--compact', 'Print only the failed steps and the summary', false)
     .option(
       '-e, --external <package>',
       'Mark package as external (can be used multiple times)',
@@ -68,7 +71,18 @@ export function batchCommand(program: Command) {
         const input = source === '-' ? await readStdin() : readBatchFile(source)
         const steps = parseBatch(input)
         for await (const app of getBuildIterator(file, false, options.external || [])) {
-          printResult(await runBatch(app, steps, parseHeaders(options.header)))
+          const result = await runBatch(app, steps, parseHeaders(options.header))
+          if (options.compact) {
+            printResult(
+              {
+                steps: result.steps.filter((step) => !step.pass),
+                summary: result.summary,
+              },
+              true
+            )
+          } else {
+            printResult(result)
+          }
         }
       })
     )

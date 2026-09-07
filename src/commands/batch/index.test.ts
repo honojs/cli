@@ -67,6 +67,32 @@ describe('batchCommand', () => {
     })
   })
 
+  it('should print only the failed steps and the summary with --compact', async () => {
+    const fs = await import('node:fs')
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      '{"path":"/data","expect":{"status":200}}\n{"path":"/data","expect":{"status":404}}'
+    )
+    await program.parseAsync(['node', 'test', 'batch', 'steps.jsonl', 'test-app.js', '--compact'])
+    const raw = consoleLogSpy.mock.calls[0][0] as string
+    expect(raw).not.toContain('\n  ')
+    expect(JSON.parse(raw)).toEqual({
+      ok: true,
+      data: {
+        steps: [
+          {
+            method: 'GET',
+            path: '/data',
+            status: 200,
+            body: { ok: 1 },
+            pass: false,
+            expect: { status: 404 },
+          },
+        ],
+        summary: { total: 2, passed: 1, failed: 1 },
+      },
+    })
+  })
+
   it('should reject the app and the batch both from stdin', async () => {
     await program.parseAsync(['node', 'test', 'batch', '-', '-'])
     const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)

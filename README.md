@@ -140,6 +140,7 @@ hono request <path> [file] [options]
 - `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, or `workerd`
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
+- `--compact` - One-line JSON without the headers
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
@@ -244,6 +245,7 @@ hono batch <source> [file]
 **Options:**
 
 - `-H, --header <header>` - Shared headers for every step
+- `--compact` - Print only the failed steps and the summary, as one-line JSON
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 ```bash
@@ -265,7 +267,7 @@ Print the current behavior of the app as batch JSONL lines, to stdout — no fil
 hono snapshot [file]
 ```
 
-Paramless GET routes are executed and their actual response becomes the `expect`. Param and non-GET routes are printed without one, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
+Paramless GET routes are executed and their actual response becomes the `expect` (`--status-only` captures only the status codes — much smaller on a large app; the probe line keeps its body either way). Param and non-GET routes are printed without one, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
 
 Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
 

@@ -124,6 +124,19 @@ describe('requestCommand', () => {
     expect(output.error.suggestions).toEqual(['hono request /data -X GET'])
   })
 
+  it('should print one-line JSON without headers with --compact', async () => {
+    const mockApp = new Hono()
+    mockApp.get('/data', (c) => c.json({ ok: 1 }))
+    setupBasicMocks('test-app.js', mockApp)
+    await program.parseAsync(['node', 'test', 'request', '/data', 'test-app.js', '--compact'])
+    const raw = consoleLogSpy.mock.calls[0][0]
+    expect(raw).not.toContain('\n')
+    expect(JSON.parse(raw)).toEqual({
+      ok: true,
+      data: { status: 200, body: { ok: 1 } },
+    })
+  })
+
   it('should output a text body as a string in the envelope', async () => {
     const mockApp = new Hono()
     const text = 'Hello, World!'

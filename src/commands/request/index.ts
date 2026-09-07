@@ -40,6 +40,7 @@ export const agentContext: CommandAgentContext = {
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
     'For several requests, or a flow that keeps state, use hono batch. To capture the current behavior of the app, use hono snapshot.',
+    '--compact prints one-line JSON without the headers — cheaper to read when you only need the status and body.',
   ],
 }
 
@@ -56,6 +57,7 @@ interface RequestOptions {
   include: boolean
   head: boolean
   external?: string[]
+  compact: boolean
 }
 
 export function requestCommand(program: Command) {
@@ -84,6 +86,7 @@ export function requestCommand(program: Command) {
       'runtime to execute the app (node | bun | deno | workerd)',
       'node'
     )
+    .option('--compact', 'One-line JSON without the headers', false)
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -122,6 +125,11 @@ export function requestCommand(program: Command) {
             )
           }
 
+          if (options.compact && options.plain) {
+            throw new CliError('INVALID_OPTION', 'Cannot use --compact with --plain', {
+              suggestions: ['Drop one of them'],
+            })
+          }
           if (options.trace && options.plain) {
             throw new CliError('INVALID_OPTION', 'Cannot use --trace with --plain', {
               suggestions: ['Drop --plain. The trace is part of the JSON output'],
@@ -219,17 +227,20 @@ const printResponse = async (
   // it helps, so point at it right there.
   const suggestTrace = result.status === 404 && !options.trace && options.runtime === 'node'
 
-  printResult({
-    status: result.status,
-    headers: result.headers,
-    body: isBinaryData ? null : parseBody(result.body, contentType),
-    ...(isBinaryData ? { binary: true } : {}),
-    ...(savedTo ? { savedTo } : {}),
-    ...(suggestTrace
-      ? { suggestions: [`See which routes matched: hono request ${path} --trace`] }
-      : {}),
-    ...extra,
-  })
+  printResult(
+    {
+      status: result.status,
+      ...(options.compact ? {} : { headers: result.headers }),
+      body: isBinaryData ? null : parseBody(result.body, contentType),
+      ...(isBinaryData ? { binary: true } : {}),
+      ...(savedTo ? { savedTo } : {}),
+      ...(suggestTrace
+        ? { suggestions: [`See which routes matched: hono request ${path} --trace`] }
+        : {}),
+      ...extra,
+    },
+    options.compact
+  )
 }
 
 const printPlain = (

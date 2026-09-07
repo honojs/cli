@@ -66,8 +66,8 @@ export const formatArgumentsError = (message: string): string => {
   return formatError(new CliError('INVALID_ARGUMENTS', cleaned, { suggestions }))
 }
 
-export const printResult = (data: unknown): void => {
-  console.log(formatResult(data))
+export const printResult = (data: unknown, compact = false): void => {
+  console.log(compact ? JSON.stringify({ ok: true, data }) : formatResult(data))
 }
 
 /**

@@ -14,12 +14,14 @@ export const agentContext: CommandAgentContext = {
     'Paramless GET routes are executed and their actual status and body become the "expect". Param and non-GET routes are printed without one, for you to fill in — the tool does not invent intent.',
     'One probe line records the current response for a path that matches no route.',
     'Capture before a refactor, then rerun the lines with hono batch until "failed" is 0.',
+    '--status-only captures only the status codes — much smaller on a large app. The probe line keeps its body either way: a dropped notFound handler still answers 404, only the body changes.',
     'Unlike routes, this command sends real requests to the app — middleware runs.',
   ],
 }
 
 interface SnapshotOptions {
   external?: string[]
+  statusOnly: boolean
 }
 
 export function snapshotCommand(program: Command) {
@@ -27,6 +29,7 @@ export function snapshotCommand(program: Command) {
     .command('snapshot')
     .description('Print the current behavior as batch JSONL lines')
     .argument('[file]', 'Path to the Hono app file')
+    .option('--status-only', 'Capture only the status codes, not the bodies', false)
     .option(
       '-e, --external <package>',
       'Mark package as external (can be used multiple times)',
@@ -38,7 +41,7 @@ export function snapshotCommand(program: Command) {
     .action(
       handleErrors(async (file: string | undefined, options: SnapshotOptions) => {
         for await (const app of getBuildIterator(file, false, options.external || [])) {
-          console.log((await snapshotLines(app)).join('\n'))
+          console.log((await snapshotLines(app, options.statusOnly)).join('\n'))
         }
       })
     )
