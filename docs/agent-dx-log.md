@@ -47,6 +47,13 @@ dev server to start (the create-hono Workers template, no AGENTS.md).
   calls and 1.5M tokens. `--compact` makes a lap cheaper, not fewer.
 - The AGENTS.md line remains the gate: skill-only fired snapshot in
   1/5 runs. Whoever writes that one line decides the outcome.
+- The isolation runs killed the easy explanation: removing the `dev`
+  script changes nothing (5/5 run `npx wrangler dev` on their own),
+  and the node template behaves the same (5/5 start a server and
+  fight over port 3000). The trigger is not the script — it is that
+  a server can be started at all, and the means cannot be removed
+  (wrangler is needed to deploy). The one lever that changed the
+  behavior, measured: stating the agent-directed way to run the app.
 
 **Changes**: none in the CLI. Two delivery questions are now on the
 table: `create-hono` shipping the skill and the AGENTS.md line in its
