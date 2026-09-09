@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { MiddlewareHandler } from 'hono'
+import { matchedRoutes } from 'hono/route'
 import type { RouterRoute } from 'hono/types'
 import { findTargetHandler, isMiddleware } from 'hono/utils/handler'
 
@@ -26,7 +27,8 @@ export const withTracer = (app: Hono): { app: Hono; getTrace: () => TraceEntry[]
   let matched: Matched | undefined
   const tracer: MiddlewareHandler = async (c, next) => {
     await next()
-    matched = { routes: c.req.matchedRoutes, index: c.req.routeIndex, status: c.res.status }
+    // matchedRoutes(c) from hono/route: c.req.matchedRoutes is deprecated
+    matched = { routes: matchedRoutes(c), index: c.req.routeIndex, status: c.res.status }
   }
   const wrapper = new Hono()
   wrapper.use(tracer)
