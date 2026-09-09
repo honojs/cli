@@ -24,6 +24,42 @@ changed Hono CLI. Newest first.
 **Changes**: the combo line joins the skill (honojs/skills#6). No CLI
 change.
 
+## 2026-09-09: The origin story, finally measured
+
+**Experiment**: the weekly matrix (`next.7` + skills#6, n=5 per cell,
+three models) — including, for the first time, a fixture with a real
+dev server to start (the create-hono Workers template, no AGENTS.md).
+
+**Findings**:
+
+- The dev-server trap is real and severe: every baseline run (15/15)
+  started `wrangler dev`; a bare `&` hangs the bash tool, and only
+  Opus knew the subshell workaround. Sonnet 5 scored 20% with four
+  600s hangs. With cli+skill: 15/15 runs started no server, opened
+  with `hono batch`, and scored 100% at ~30s on every model.
+- Rails move success where the agent breaks its own earlier work:
+  `session-users` (4 change requests in one conversation) went
+  20% → 80% on haiku. On solved tasks they are a tax — Sonnet 5's
+  baseline passes everything cheaply without verifying.
+- Opus uses the loop as designed (snapshot → split → batch, 8-19 tool
+  calls) and comes out cheaper and faster than its own baseline.
+- The open cost problem is lap count: one refactor run hit 15 batch
+  calls and 1.5M tokens. `--compact` makes a lap cheaper, not fewer.
+- The AGENTS.md line remains the gate: skill-only fired snapshot in
+  1/5 runs. Whoever writes that one line decides the outcome.
+- The isolation runs killed the easy explanation: removing the `dev`
+  script changes nothing (5/5 run `npx wrangler dev` on their own),
+  and the node template behaves the same (5/5 start a server and
+  fight over port 3000). The trigger is not the script — it is that
+  a server can be started at all, and the means cannot be removed
+  (wrangler is needed to deploy). The one lever that changed the
+  behavior, measured: stating the agent-directed way to run the app.
+
+**Changes**: none in the CLI. Two delivery questions are now on the
+table: `create-hono` shipping the skill and the AGENTS.md line in its
+templates, and `agent-context` offering the line. Totals so far:
+~700 runs, ~$200, 7 CLI releases.
+
 ## 2026-09-07: Say what differed — the diff joins the failed step
 
 **Experiment**: the cost-trio measurement. `--status-only` cut a
