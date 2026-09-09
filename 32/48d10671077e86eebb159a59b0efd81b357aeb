@@ -1,0 +1,19 @@
+docs/agent-dx-log.md
+  s_449966fc5983c0::t_ae5ef30de417f2 27-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3248d10671077e86eebb159a59b0efd81b357aeb",
+  "prompts": {},
+  "sessions": {
+    "s_449966fc5983c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f17bb4f-880e-4e5a-a9db-77bbb1298819",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
