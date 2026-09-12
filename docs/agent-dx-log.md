@@ -24,6 +24,25 @@ changed Hono CLI. Newest first.
 **Changes**: the combo line joins the skill (honojs/skills#6). No CLI
 change.
 
+## 2026-09-12: The bindings come to the app, not the app to workerd
+
+**Experiment**: the dev-server measurement named the condition ("plain
+`request` does not reach `c.env`"), and the isolation runs showed the
+only working lever is making the agent-directed path the correct one.
+
+**Findings**: `--runtime workerd` covers bindings but is heavy and
+excludes `batch` and `snapshot` — the commands agents actually live
+in. wrangler's `getPlatformProxy` builds the real local bindings
+while the app stays on Node.js.
+
+**Changes**: in a project with a wrangler config, `c.env` carries the
+real local bindings automatically in `request`, `batch`, and
+`snapshot` (`--no-bindings` to skip; a missing wrangler warns and
+continues, a broken config fails as `BINDINGS_FAILED`). Automatic on
+purpose: a flag nobody routes to does not exist, and the correct
+default needs no rail at all. agent-dx measures next with a D1/KV
+fixture.
+
 ## 2026-09-09: The origin story, finally measured
 
 **Experiment**: the weekly matrix (`next.7` + skills#6, n=5 per cell,

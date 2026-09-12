@@ -213,7 +213,8 @@ export const getByPath = (body: unknown, path: string): unknown => {
 export const runBatch = async (
   app: Hono,
   steps: BatchStep[],
-  sharedHeaders: Record<string, string> = {}
+  sharedHeaders: Record<string, string> = {},
+  env?: Record<string, unknown>
 ): Promise<BatchResult> => {
   const vars: Record<string, unknown> = {}
   const results: StepResult[] = []
@@ -237,7 +238,11 @@ export const runBatch = async (
       }
     }
 
-    const response = await app.request(new Request(new URL(path, 'http://localhost').href, init))
+    const response = await app.request(
+      new Request(new URL(path, 'http://localhost').href, init),
+      undefined,
+      env
+    )
     const text = await response.text()
     const isJson = response.headers.get('content-type')?.includes('json')
     let body: unknown = text

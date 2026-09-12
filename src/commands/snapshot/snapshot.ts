@@ -8,14 +8,18 @@ import { inspectRoutes } from 'hono/dev'
  * printed without an `expect`, for the caller to fill in. One probe
  * line records the current not-found behavior as a fact.
  */
-export const snapshotLines = async (app: Hono, statusOnly = false): Promise<string[]> => {
+export const snapshotLines = async (
+  app: Hono,
+  statusOnly = false,
+  env?: Record<string, unknown>
+): Promise<string[]> => {
   const lines: string[] = []
   const routes = inspectRoutes(app).filter((route) => !route.isMiddleware)
 
   for (const route of routes) {
     const isParamless = !route.path.includes(':') && !route.path.includes('*')
     if (route.method === 'GET' && isParamless) {
-      const captured = await capture(app, route.path)
+      const captured = await capture(app, route.path, env)
       const expect = statusOnly ? { status: captured.status } : captured
       lines.push(JSON.stringify({ path: route.path, expect }))
     } else {
@@ -29,15 +33,19 @@ export const snapshotLines = async (app: Hono, statusOnly = false): Promise<stri
   lines.push(
     JSON.stringify({
       path: '/__no_such_path__',
-      expect: await capture(app, '/__no_such_path__'),
+      expect: await capture(app, '/__no_such_path__', env),
     })
   )
 
   return lines
 }
 
-const capture = async (app: Hono, path: string): Promise<{ status: number; body?: unknown }> => {
-  const response = await app.request(new URL(path, 'http://localhost').href)
+const capture = async (
+  app: Hono,
+  path: string,
+  env?: Record<string, unknown>
+): Promise<{ status: number; body?: unknown }> => {
+  const response = await app.request(new URL(path, 'http://localhost').href, undefined, env)
   const text = await response.text()
   const isJson = response.headers.get('content-type')?.includes('json')
   let body: unknown = text

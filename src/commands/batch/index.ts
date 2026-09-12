@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
+import { maybeLoadBindings } from '../../utils/bindings.js'
 import { parseHeaders } from '../../utils/headers.js'
 import { getBuildIterator, readStdin } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
@@ -10,7 +11,14 @@ import { parseBatch, runBatch } from './batch.js'
 export const agentContext: CommandAgentContext = {
   output:
     '{ "steps": [{ "method": "GET", "path": "/users", "status": 200, "body": [], "pass": true, "expect": { "status": 200 } }], "summary": { "total": 1, "passed": 1, "failed": 0 } }',
-  errors: ['BATCH_INVALID', 'BATCH_NOT_FOUND', 'ENTRY_NOT_FOUND', 'BUILD_FAILED', 'INVALID_APP'],
+  errors: [
+    'BATCH_INVALID',
+    'BATCH_NOT_FOUND',
+    'ENTRY_NOT_FOUND',
+    'BUILD_FAILED',
+    'INVALID_APP',
+    'BINDINGS_FAILED',
+  ],
   examples: [
     `hono batch - <<'EOF'
 {"path":"/users","expect":{"status":200}}
@@ -26,6 +34,7 @@ EOF`,
     '--compact prints only the failed steps and the summary — use it when you only need the failed: 0 loop.',
     'A failed step carries "diff": one line per mismatch (e.g. "body.name: expected \'Alice\', got \'Bob\'"). Fix what the diff names — no need to compare the bodies yourself.',
     'hono snapshot prints the current behavior of an app in this format — capture before a refactor, rerun after.',
+    'In a project with a wrangler config, c.env carries the real local bindings (KV, D1, R2, vars) automatically — no server, no --runtime needed. Skip it with --no-bindings.',
   ],
 }
 
@@ -33,6 +42,7 @@ interface BatchOptions {
   header?: string[]
   external?: string[]
   compact: boolean
+  bindings: boolean
 }
 
 export function batchCommand(program: Command) {
@@ -50,6 +60,7 @@ export function batchCommand(program: Command) {
       [] as string[]
     )
     .option('--compact', 'Print only the failed steps and the summary', false)
+    .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',
       'Mark package as external (can be used multiple times)',
@@ -71,19 +82,24 @@ export function batchCommand(program: Command) {
         }
         const input = source === '-' ? await readStdin() : readBatchFile(source)
         const steps = parseBatch(input)
-        for await (const app of getBuildIterator(file, false, options.external || [])) {
-          const result = await runBatch(app, steps, parseHeaders(options.header))
-          if (options.compact) {
-            printResult(
-              {
-                steps: result.steps.filter((step) => !step.pass),
-                summary: result.summary,
-              },
-              true
-            )
-          } else {
-            printResult(result)
+        const proxy = options.bindings ? await maybeLoadBindings() : undefined
+        try {
+          for await (const app of getBuildIterator(file, false, options.external || [])) {
+            const result = await runBatch(app, steps, parseHeaders(options.header), proxy?.env)
+            if (options.compact) {
+              printResult(
+                {
+                  steps: result.steps.filter((step) => !step.pass),
+                  summary: result.summary,
+                },
+                true
+              )
+            } else {
+              printResult(result)
+            }
           }
+        } finally {
+          await proxy?.dispose()
         }
       })
     )
