@@ -141,6 +141,7 @@ hono request <path> [file] [options]
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `--compact` - One-line JSON without the headers
+- `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
@@ -185,7 +186,9 @@ hono request /api --runtime workerd
 
 ```
 
-`workerd` starts the app with the wrangler config of the project, so pass no file argument. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project. wrangler is not a dependency of Hono CLI.
+In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr).
+
+`--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
@@ -246,6 +249,7 @@ hono batch <source> [file]
 
 - `-H, --header <header>` - Shared headers for every step
 - `--compact` - Print only the failed steps and the summary, as one-line JSON
+- `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 ```bash

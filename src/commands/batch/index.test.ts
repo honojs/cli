@@ -16,6 +16,10 @@ vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
 }))
 
+vi.mock('../../utils/bindings.js', () => ({
+  maybeLoadBindings: vi.fn(async () => undefined),
+}))
+
 import { batchCommand } from './index.js'
 
 describe('batchCommand', () => {

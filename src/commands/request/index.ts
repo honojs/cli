@@ -1,6 +1,8 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
 import type { CommandAgentContext } from '../../utils/agent-context.js'
+import { maybeLoadBindings } from '../../utils/bindings.js'
+import type { PlatformProxy } from '../../utils/bindings.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { parseHeaders } from '../../utils/headers.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
@@ -22,6 +24,7 @@ export const agentContext: CommandAgentContext = {
     'RUNTIME_FAILED',
     'WRANGLER_NOT_FOUND',
     'WRANGLER_CONFIG_NOT_FOUND',
+    'BINDINGS_FAILED',
   ],
   examples: [
     'hono request /api/users',
@@ -36,7 +39,8 @@ export const agentContext: CommandAgentContext = {
     'No server needed. The request goes directly to app.request().',
     'Pass - as the file to read the app code from stdin. `app` is predefined and exported for you — write only routes. Code with its own `export default` is used as-is.',
     '-d @file reads the body from a file, -d @- reads it from stdin.',
-    '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd starts the app with the wrangler config of the project, so the local bindings (c.env) are real — it needs wrangler installed and no file argument.',
+    'In a project with a wrangler config, c.env carries the real local bindings (KV, D1, R2, vars) automatically, while the app runs on Node.js. Skip it with --no-bindings.',
+    '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd runs the whole app inside workerd with the wrangler config — heavier than the automatic bindings, but the full runtime.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
     'For several requests, or a flow that keeps state, use hono batch. To capture the current behavior of the app, use hono snapshot.',
@@ -58,6 +62,7 @@ interface RequestOptions {
   head: boolean
   external?: string[]
   compact: boolean
+  bindings: boolean
 }
 
 export function requestCommand(program: Command) {
@@ -87,6 +92,7 @@ export function requestCommand(program: Command) {
       'node'
     )
     .option('--compact', 'One-line JSON without the headers', false)
+    .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option('-i, --include', 'Include protocol and headers in the output (with --plain)', false)
     .option('-I, --head', 'Show only protocol and headers in the output (with --plain)', false)
     .option(
@@ -189,13 +195,20 @@ export function requestCommand(program: Command) {
             return
           }
 
-          const buildIterator = getBuildIterator(file, watch, external)
-          for await (const app of buildIterator) {
-            const traced = options.trace ? withTracer(app) : undefined
-            const result = await executeRequest(traced?.app ?? app, path, options)
-            await printResponse(result, path, options, doSaveFile, {
-              ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
-            })
+          const proxy: PlatformProxy | undefined = options.bindings
+            ? await maybeLoadBindings()
+            : undefined
+          try {
+            const buildIterator = getBuildIterator(file, watch, external)
+            for await (const app of buildIterator) {
+              const traced = options.trace ? withTracer(app) : undefined
+              const result = await executeRequest(traced?.app ?? app, path, options, proxy?.env)
+              await printResponse(result, path, options, doSaveFile, {
+                ...(traced ? { matchedRoutes: traced.getTrace() } : {}),
+              })
+            }
+          } finally {
+            await proxy?.dispose()
           }
         }
       )
@@ -296,7 +309,8 @@ const handleSaveOutput = async (
 export async function executeRequest(
   app: Hono,
   requestPath: string,
-  options: RequestOptions
+  options: RequestOptions,
+  env?: Record<string, unknown>
 ): Promise<{ status: number; body: string; headers: Record<string, string>; response: Response }> {
   // Build request
   const url = new URL(requestPath, 'http://localhost')
@@ -316,7 +330,7 @@ export async function executeRequest(
 
   // Execute request
   const request = new Request(url.href, requestInit)
-  const response = await app.request(request)
+  const response = await app.request(request, undefined, env)
 
   // Convert response to our format
   const responseHeaders: Record<string, string> = {}

@@ -185,6 +185,13 @@ describe('runBatch', () => {
     expect(result.steps[0].saved).toBeUndefined()
   })
 
+  it('passes the env through to c.env', async () => {
+    const app = new Hono()
+    app.get('/env', (c) => c.json({ v: (c.env as { MY_VAR: string }).MY_VAR }))
+    const result = await runBatch(app, parseBatch('{"path":"/env"}'), {}, { MY_VAR: 'hello' })
+    expect(result.steps[0].body).toEqual({ v: 'hello' })
+  })
+
   it('sends shared headers, and step headers win', async () => {
     const app = new Hono()
     app.get('/echo', (c) => c.json({ auth: c.req.header('authorization'), x: c.req.header('x-a') }))

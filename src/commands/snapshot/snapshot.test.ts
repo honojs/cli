@@ -45,6 +45,13 @@ describe('snapshotLines', () => {
     })
   })
 
+  it('passes the env through to c.env', async () => {
+    const a = new Hono()
+    a.get('/env', (c) => c.json({ v: (c.env as { MY_VAR: string }).MY_VAR }))
+    const lines = (await snapshotLines(a, false, { MY_VAR: 'hello' })).map((l) => JSON.parse(l))
+    expect(lines).toContainEqual({ path: '/env', expect: { status: 200, body: { v: 'hello' } } })
+  })
+
   it('every line is valid batch input', async () => {
     const { parseBatch } = await import('../batch/batch.js')
     const lines = await snapshotLines(app())

@@ -19,6 +19,10 @@ vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
 }))
 
+vi.mock('../../utils/bindings.js', () => ({
+  maybeLoadBindings: vi.fn(async () => undefined),
+}))
+
 vi.mock('./runtime.js', async (importOriginal) => {
   const original = await importOriginal<typeof RuntimeModule>()
   return { ...original, runInRuntime: vi.fn() }
