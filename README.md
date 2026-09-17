@@ -261,7 +261,7 @@ hono batch - <<'EOF'
 EOF
 ```
 
-One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0.
+One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
 
 ### `snapshot`
 
