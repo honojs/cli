@@ -3,6 +3,25 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-17: A 500 is not `failed: 0`
+
+**Experiment**: preparing the D1 A/B for `next.8` (bindings-aware
+`request`/`batch`). On `next.7`, where `c.env` has no D1, `/users`
+returns a 500.
+
+**Findings**:
+
+- A batch line without `expect` counted that 500 as `pass: true`, so
+  the summary said `failed: 0`. The verification tool reported a
+  broken endpoint as working; an agent in the baseline condition would
+  read that as done.
+- The rule "no `expect` means facts only" was too literal. The facts
+  are still there, but the summary is what agents act on.
+
+**Change**: a step without `expect` now fails on a 4xx or 5xx, with a
+`diff` line that says how to accept one on purpose
+(`expect.status`). 2xx and 3xx pass as before.
+
 ## 2026-09-07: The diff converges the laps
 
 **Experiment**: `next.7` on the large fixture, plus the wording A/B.

@@ -208,7 +208,9 @@ export const getByPath = (body: unknown, path: string): unknown => {
  * carries from step to step. Each result carries the facts — status
  * and body — and, when the step declares `expect`, the deterministic
  * check against them. Agents miss lines when they compare a spec
- * table by eye, so the comparison belongs to the CLI.
+ * table by eye, so the comparison belongs to the CLI. A step without
+ * `expect` still fails on a 4xx or 5xx: a summary that reports a 500
+ * as `failed: 0` reads as "it works".
  */
 export const runBatch = async (
   app: Hono,
@@ -263,19 +265,22 @@ export const runBatch = async (
       ...(step.expect === undefined ? {} : { expect: interpolate(step.expect, vars) }),
     }
 
-    if (result.expect !== undefined) {
-      const diff = [
-        ...(result.expect.status !== undefined && response.status !== result.expect.status
-          ? [`status: expected ${result.expect.status}, got ${response.status}`]
-          : []),
-        ...(result.expect.body === undefined ? [] : subsetDiff(body, result.expect.body)),
-      ]
-      if (diff.length > 0) {
-        result.pass = false
-        result.diff = diff
-        if (response.status === 404) {
-          result.suggestions = [`See which routes matched: hono request ${path} --trace`]
-        }
+    const diff =
+      result.expect === undefined
+        ? response.status >= 400
+          ? [`status: expected 2xx or 3xx, got ${response.status} (set expect.status to accept it)`]
+          : []
+        : [
+            ...(result.expect.status !== undefined && response.status !== result.expect.status
+              ? [`status: expected ${result.expect.status}, got ${response.status}`]
+              : []),
+            ...(result.expect.body === undefined ? [] : subsetDiff(body, result.expect.body)),
+          ]
+    if (diff.length > 0) {
+      result.pass = false
+      result.diff = diff
+      if (response.status === 404) {
+        result.suggestions = [`See which routes matched: hono request ${path} --trace`]
       }
     }
 

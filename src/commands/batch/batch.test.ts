@@ -127,16 +127,51 @@ describe('runBatch', () => {
     expect(result.steps[1].body).toEqual({ id: 1, name: 'Momo' })
   })
 
-  it('reports the status and body as facts', async () => {
-    const result = await runBatch(crudApp(), parseBatch('{"path":"/nope"}'))
+  it('passes a step without expect on a 2xx or 3xx', async () => {
+    const app = crudApp()
+    app.get('/moved', (c) => c.redirect('/users'))
+    const result = await runBatch(app, parseBatch('{"path":"/users"}\n{"path":"/moved"}'))
     expect(result.steps[0]).toEqual({
       method: 'GET',
-      path: '/nope',
-      status: 404,
-      body: '404 Not Found',
+      path: '/users',
+      status: 200,
+      body: [],
       pass: true,
     })
-    expect(result.summary).toEqual({ total: 1, passed: 1, failed: 0 })
+    expect(result.steps[1].status).toBe(302)
+    expect(result.steps[1].pass).toBe(true)
+    expect(result.summary).toEqual({ total: 2, passed: 2, failed: 0 })
+  })
+
+  it('fails a step without expect on a 4xx or 5xx', async () => {
+    const app = crudApp()
+    app.get('/boom', () => {
+      throw new Error('boom')
+    })
+    const result = await runBatch(app, parseBatch('{"path":"/nope"}\n{"path":"/boom"}'))
+    expect(result.steps[0].status).toBe(404)
+    expect(result.steps[0].pass).toBe(false)
+    expect(result.steps[0].diff).toEqual([
+      'status: expected 2xx or 3xx, got 404 (set expect.status to accept it)',
+    ])
+    expect(result.steps[0].suggestions).toEqual([
+      'See which routes matched: hono request /nope --trace',
+    ])
+    expect(result.steps[1].status).toBe(500)
+    expect(result.steps[1].pass).toBe(false)
+    expect(result.steps[1].diff).toEqual([
+      'status: expected 2xx or 3xx, got 500 (set expect.status to accept it)',
+    ])
+    expect(result.summary).toEqual({ total: 2, passed: 0, failed: 2 })
+  })
+
+  it('passes a 4xx when expect.status declares it', async () => {
+    const result = await runBatch(
+      crudApp(),
+      parseBatch('{"path":"/users/999","expect":{"status":404}}')
+    )
+    expect(result.steps[0].pass).toBe(true)
+    expect(result.steps[0].diff).toBeUndefined()
   })
 
   it('checks expect.status and expect.body as a deep partial match', async () => {
