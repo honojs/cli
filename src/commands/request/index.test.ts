@@ -28,7 +28,7 @@ vi.mock('./runtime.js', async (importOriginal) => {
   return { ...original, runInRuntime: vi.fn() }
 })
 
-vi.mock('./workerd.js', () => ({
+vi.mock('../../utils/workerd.js', () => ({
   runOnWorkerd: vi.fn(),
 }))
 
@@ -1161,7 +1161,7 @@ describe('requestCommand', () => {
     })
 
     it('should run the app on workerd with the wrangler config', async () => {
-      const runOnWorkerd = vi.mocked((await import('./workerd.js')).runOnWorkerd)
+      const runOnWorkerd = vi.mocked((await import('../../utils/workerd.js')).runOnWorkerd)
       const body = JSON.stringify({ who: 'workerd' })
       runOnWorkerd.mockResolvedValue({
         status: 200,

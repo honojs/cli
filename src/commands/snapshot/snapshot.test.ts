@@ -58,3 +58,25 @@ describe('snapshotLines', () => {
     expect(() => parseBatch(lines.join('\n'))).not.toThrow()
   })
 })
+
+describe('snapshotLines with a target', () => {
+  it('reads the routes from the app and sends the requests to the target', async () => {
+    const a = new Hono()
+    a.get('/users', (c) => c.json([{ id: 1 }]))
+    a.get('/users/:id', (c) => c.json({ id: c.req.param('id') }))
+    const seen: string[] = []
+    const target = {
+      request: async (input: Request) => {
+        seen.push(new URL(input.url).pathname)
+        return Response.json({ from: 'workerd' })
+      },
+    }
+    const lines = (await snapshotLines(a, false, undefined, target)).map((l) => JSON.parse(l))
+    expect(seen).toEqual(['/users', '/__no_such_path__'])
+    expect(lines).toEqual([
+      { path: '/users', expect: { status: 200, body: { from: 'workerd' } } },
+      { path: '/users/:id' },
+      { path: '/__no_such_path__', expect: { status: 200, body: { from: 'workerd' } } },
+    ])
+  })
+})
