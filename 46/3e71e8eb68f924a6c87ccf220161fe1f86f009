@@ -1,0 +1,49 @@
+README.md
+  s_dc6239c7c86ef7::t_09b26b7dad5c37 191,252,265-266,277-283,288-289
+src/commands/batch/batch.test.ts
+  s_dc6239c7c86ef7::t_fd0c546bd04aba 188-205
+src/commands/batch/batch.ts
+  s_dc6239c7c86ef7::t_ed911b6c9cf6d6 2,214,241
+src/commands/batch/index.test.ts
+  s_dc6239c7c86ef7::t_0d0945a09239d8 23-26,105-150
+src/commands/batch/index.ts
+  s_dc6239c7c86ef7::t_c5d89ae0fbc19c 9-11,24-26,44,53,71,92,95-118,122
+src/commands/request/index.test.ts
+  s_dc6239c7c86ef7::t_0a98dc98e79194 31,1164
+src/commands/request/index.ts
+  s_dc6239c7c86ef7::t_00f4ef7a1da8fd 10
+src/commands/snapshot/index.test.ts
+  s_dc6239c7c86ef7::t_485b84341af4d2 1-75
+src/commands/snapshot/index.ts
+  s_dc6239c7c86ef7::t_5bd26bf387a1ef 6-7,13-21,31,39,48,60-76,79
+src/commands/snapshot/snapshot.test.ts
+  s_dc6239c7c86ef7::t_bd28475920ae8d 61-82
+src/commands/snapshot/snapshot.ts
+  s_dc6239c7c86ef7::t_bbf6a23c92e867 3,10-12,17-18,26,40,48,52-56
+src/utils/runtime-option.test.ts
+  s_dc6239c7c86ef7::t_5ea64f69a96bf7 1-25
+src/utils/runtime-option.ts
+  s_dc6239c7c86ef7::t_aa6c41be502c7c 1-25
+src/utils/target.ts
+  s_dc6239c7c86ef7::t_216662cb61b170 1-7
+src/utils/workerd.test.ts
+  s_dc6239c7c86ef7::t_0377f1e1d814d6 2,8-9,52-118
+src/utils/workerd.ts
+  s_dc6239c7c86ef7::t_8cfa649cd75474 3,5-13,22,32-42,50-60,81-162,164,166-170,173-174,176-187,189-191,193-196,198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "463e71e8eb68f924a6c87ccf220161fe1f86f009",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
