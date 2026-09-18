@@ -69,7 +69,7 @@ export function batchCommand(program: Command) {
       [] as string[]
     )
     .option('--compact', 'Print only the failed steps and the summary', false)
-    .option('--runtime <runtime>', 'Runtime to execute the app: node (default) or workerd', 'node')
+    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd)', 'node')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',

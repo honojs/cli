@@ -45,7 +45,7 @@ export function snapshotCommand(program: Command) {
     .description('Print the current behavior as batch JSONL lines')
     .argument('[file]', 'Path to the Hono app file')
     .option('--status-only', 'Capture only the status codes, not the bodies', false)
-    .option('--runtime <runtime>', 'Runtime to execute the app: node (default) or workerd', 'node')
+    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd)', 'node')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',
