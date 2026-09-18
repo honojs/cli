@@ -58,7 +58,7 @@ export function snapshotCommand(program: Command) {
     .action(
       handleErrors(async (file: string | undefined, options: SnapshotOptions) => {
         const external = options.external || []
-        if (resolveRuntime(options.runtime, file) === 'workerd') {
+        if (resolveRuntime(options.runtime, file, options.bindings) === 'workerd') {
           // The routes come from the entry in-process; the requests go to workerd.
           const main = await readWorkerdMain()
           const target = await startWorkerd()

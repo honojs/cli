@@ -1205,6 +1205,22 @@ describe('requestCommand', () => {
       process.exitCode = undefined
     })
 
+    it('should reject --no-bindings with another runtime', async () => {
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/',
+        '--runtime',
+        'workerd',
+        '--no-bindings',
+      ])
+      const output = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(output.error.code).toBe('INVALID_OPTION')
+      expect(output.error.message).toBe('--no-bindings applies to --runtime node only')
+      process.exitCode = undefined
+    })
+
     it('should reject --runtime bun with --watch or --trace', async () => {
       await program.parseAsync(['node', 'test', 'request', '/', 'a.ts', '--runtime', 'bun', '-w'])
       expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).error.code).toBe('INVALID_OPTION')

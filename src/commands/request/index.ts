@@ -131,6 +131,15 @@ export function requestCommand(program: Command) {
             )
           }
 
+          if (runtime !== 'node' && !options.bindings) {
+            throw new CliError('INVALID_OPTION', '--no-bindings applies to --runtime node only', {
+              suggestions: [
+                'Drop --no-bindings: another runtime never loads the bindings proxy, and workerd has the real bindings from the wrangler config',
+                'Or drop --runtime to run on Node.js without the bindings',
+              ],
+            })
+          }
+
           if (options.compact && options.plain) {
             throw new CliError('INVALID_OPTION', 'Cannot use --compact with --plain', {
               suggestions: ['Drop one of them'],
