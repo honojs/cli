@@ -90,7 +90,7 @@ export function batchCommand(program: Command) {
             }
           )
         }
-        const runtime = resolveRuntime(options.runtime, file)
+        const runtime = resolveRuntime(options.runtime, file, options.bindings)
         const input = source === '-' ? await readStdin() : readBatchFile(source)
         const steps = parseBatch(input)
         const print = (result: BatchResult) => {

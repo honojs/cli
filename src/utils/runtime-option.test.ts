@@ -17,6 +17,13 @@ describe('resolveRuntime', () => {
     }
   })
 
+  it('rejects --no-bindings with workerd', () => {
+    expect(() => resolveRuntime('workerd', undefined, false)).toThrowError(
+      /--no-bindings applies to --runtime node only/
+    )
+    expect(resolveRuntime('node', undefined, false)).toBe('node')
+  })
+
   it('rejects a file argument with workerd', () => {
     expect(() => resolveRuntime('workerd', 'src/app.ts')).toThrowError(
       /workerd runs the app from your wrangler config/

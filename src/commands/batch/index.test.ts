@@ -141,6 +141,21 @@ describe('batchCommand', () => {
     expect(output.error.code).toBe('INVALID_OPTION')
   })
 
+  it('should reject --no-bindings with --runtime workerd', async () => {
+    await program.parseAsync([
+      'node',
+      'test',
+      'batch',
+      'steps.jsonl',
+      '--runtime',
+      'workerd',
+      '--no-bindings',
+    ])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.error.code).toBe('INVALID_OPTION')
+    expect(output.error.message).toBe('--no-bindings applies to --runtime node only')
+  })
+
   it('should reject --runtime bun', async () => {
     await program.parseAsync(['node', 'test', 'batch', 'steps.jsonl', '--runtime', 'bun'])
     const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
