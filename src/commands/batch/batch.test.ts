@@ -220,6 +220,24 @@ describe('runBatch', () => {
     expect(result.steps[0].saved).toBeUndefined()
   })
 
+  it('sends the steps to the given target instead of a Hono app', async () => {
+    const seen: string[] = []
+    const target = {
+      request: async (input: Request) => {
+        seen.push(`${input.method} ${new URL(input.url).pathname}`)
+        return Response.json({ id: 7 }, { status: 201 })
+      },
+    }
+    const result = await runBatch(
+      target,
+      parseBatch(
+        '{"method":"POST","path":"/users","body":{},"save":{"id":".id"}}\n{"path":"/users/{{id}}"}'
+      )
+    )
+    expect(seen).toEqual(['POST /users', 'GET /users/7'])
+    expect(result.summary).toEqual({ total: 2, passed: 2, failed: 0 })
+  })
+
   it('passes the env through to c.env', async () => {
     const app = new Hono()
     app.get('/env', (c) => c.json({ v: (c.env as { MY_VAR: string }).MY_VAR }))

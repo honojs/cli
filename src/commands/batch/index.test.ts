@@ -20,6 +20,10 @@ vi.mock('../../utils/bindings.js', () => ({
   maybeLoadBindings: vi.fn(async () => undefined),
 }))
 
+vi.mock('../../utils/workerd.js', () => ({
+  startWorkerd: vi.fn(),
+}))
+
 import { batchCommand } from './index.js'
 
 describe('batchCommand', () => {
@@ -96,6 +100,52 @@ describe('batchCommand', () => {
         summary: { total: 2, passed: 1, failed: 1 },
       },
     })
+  })
+
+  it('should run every step in one workerd with --runtime workerd', async () => {
+    const workerd = await import('../../utils/workerd.js')
+    const target = {
+      request: vi.fn(async (input: Request) =>
+        Response.json({ path: new URL(input.url).pathname })
+      ),
+      fetch: vi.fn(),
+      dispose: vi.fn(async () => {}),
+    }
+    vi.mocked(workerd.startWorkerd).mockResolvedValue(target)
+    const fs = await import('node:fs')
+    vi.mocked(fs.readFileSync).mockReturnValue('{"path":"/a"}\n{"path":"/b"}')
+    await program.parseAsync(['node', 'test', 'batch', 'steps.jsonl', '--runtime', 'workerd'])
+    expect(workerd.startWorkerd).toHaveBeenCalledTimes(1)
+    expect(target.request).toHaveBeenCalledTimes(2)
+    expect(target.dispose).toHaveBeenCalledTimes(1)
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.data.steps.map((s: { body: { path: string } }) => s.body.path)).toEqual([
+      '/a',
+      '/b',
+    ])
+    expect(output.data.summary).toEqual({ total: 2, passed: 2, failed: 0 })
+  })
+
+  it('should reject a file argument with --runtime workerd', async () => {
+    await program.parseAsync([
+      'node',
+      'test',
+      'batch',
+      'steps.jsonl',
+      'test-app.js',
+      '--runtime',
+      'workerd',
+    ])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_OPTION')
+  })
+
+  it('should reject --runtime bun', async () => {
+    await program.parseAsync(['node', 'test', 'batch', 'steps.jsonl', '--runtime', 'bun'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.error.code).toBe('INVALID_OPTION')
+    expect(output.error.message).toBe('Unknown runtime: bun')
   })
 
   it('should reject the app and the batch both from stdin', async () => {

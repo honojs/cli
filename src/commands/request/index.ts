@@ -7,11 +7,11 @@ import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { parseHeaders } from '../../utils/headers.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { runOnWorkerd } from '../../utils/workerd.js'
 import { resolvePositionals } from './positionals.js'
 import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
 import { withTracer } from './trace.js'
-import { runOnWorkerd } from './workerd.js'
 
 export const agentContext: CommandAgentContext = {
   output:

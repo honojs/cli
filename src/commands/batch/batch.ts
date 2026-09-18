@@ -1,5 +1,5 @@
-import type { Hono } from 'hono'
 import { CliError } from '../../utils/output.js'
+import type { RequestTarget } from '../../utils/target.js'
 
 export interface StepExpect {
   status?: number
@@ -213,7 +213,7 @@ export const getByPath = (body: unknown, path: string): unknown => {
  * as `failed: 0` reads as "it works".
  */
 export const runBatch = async (
-  app: Hono,
+  target: RequestTarget,
   steps: BatchStep[],
   sharedHeaders: Record<string, string> = {},
   env?: Record<string, unknown>
@@ -240,7 +240,7 @@ export const runBatch = async (
       }
     }
 
-    const response = await app.request(
+    const response = await target.request(
       new Request(new URL(path, 'http://localhost').href, init),
       undefined,
       env

@@ -188,7 +188,7 @@ hono request /api --runtime workerd
 
 In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr).
 
-`--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument.
+`--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
@@ -249,6 +249,7 @@ hono batch <source> [file]
 
 - `-H, --header <header>` - Shared headers for every step
 - `--compact` - Print only the failed steps and the summary, as one-line JSON
+- `--runtime <runtime>` - runtime to execute the app: `node` (default) or `workerd`
 - `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
@@ -261,6 +262,8 @@ hono batch - <<'EOF'
 EOF
 ```
 
+With `--runtime workerd`, one workerd starts and every step runs in it, so a flow over the real bindings (put to KV, then get; D1; an AI binding) runs in one call. The entry is `main` in the wrangler config, so pass no file argument.
+
 One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
 
 ### `snapshot`
@@ -271,9 +274,18 @@ Print the current behavior of the app as batch JSONL lines, to stdout — no fil
 hono snapshot [file]
 ```
 
+**Options:**
+
+- `--status-only` - Capture only the status codes, not the bodies
+- `--runtime <runtime>` - runtime to execute the app: `node` (default) or `workerd`
+- `--no-bindings` - Skip loading the local Cloudflare bindings
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
 Paramless GET routes are executed and their actual response becomes the `expect` (`--status-only` captures only the status codes — much smaller on a large app; the probe line keeps its body either way). Param and non-GET routes are printed without one, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
 
 Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
+
+With `--runtime workerd`, the requests go to the app running inside workerd. The routes are read from `main` in the wrangler config in-process, so pass no file argument.
 
 ### `benchmark`
 

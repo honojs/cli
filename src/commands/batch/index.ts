@@ -6,6 +6,9 @@ import { maybeLoadBindings } from '../../utils/bindings.js'
 import { parseHeaders } from '../../utils/headers.js'
 import { getBuildIterator, readStdin } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { resolveRuntime } from '../../utils/runtime-option.js'
+import { startWorkerd } from '../../utils/workerd.js'
+import type { BatchResult } from './batch.js'
 import { parseBatch, runBatch } from './batch.js'
 
 export const agentContext: CommandAgentContext = {
@@ -18,6 +21,9 @@ export const agentContext: CommandAgentContext = {
     'BUILD_FAILED',
     'INVALID_APP',
     'BINDINGS_FAILED',
+    'WRANGLER_NOT_FOUND',
+    'WRANGLER_CONFIG_NOT_FOUND',
+    'RUNTIME_FAILED',
   ],
   examples: [
     `hono batch - <<'EOF'
@@ -36,6 +42,7 @@ EOF`,
     'A failed step carries "diff": one line per mismatch (e.g. "body.name: expected \'Alice\', got \'Bob\'"). Fix what the diff names — no need to compare the bodies yourself.',
     'hono snapshot prints the current behavior of an app in this format — capture before a refactor, rerun after.',
     'In a project with a wrangler config, c.env carries the real local bindings (KV, D1, R2, vars) automatically — no server, no --runtime needed. Skip it with --no-bindings.',
+    '--runtime workerd runs the whole app inside workerd instead: one workerd starts, every step runs in it. The entry is main in the wrangler config, so pass no file argument.',
   ],
 }
 
@@ -44,6 +51,7 @@ interface BatchOptions {
   external?: string[]
   compact: boolean
   bindings: boolean
+  runtime: string
 }
 
 export function batchCommand(program: Command) {
@@ -61,6 +69,7 @@ export function batchCommand(program: Command) {
       [] as string[]
     )
     .option('--compact', 'Print only the failed steps and the summary', false)
+    .option('--runtime <runtime>', 'Runtime to execute the app: node (default) or workerd', 'node')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',
@@ -81,23 +90,37 @@ export function batchCommand(program: Command) {
             }
           )
         }
+        const runtime = resolveRuntime(options.runtime, file)
         const input = source === '-' ? await readStdin() : readBatchFile(source)
         const steps = parseBatch(input)
+        const print = (result: BatchResult) => {
+          if (options.compact) {
+            printResult(
+              {
+                steps: result.steps.filter((step) => !step.pass),
+                summary: result.summary,
+              },
+              true
+            )
+          } else {
+            printResult(result)
+          }
+        }
+
+        if (runtime === 'workerd') {
+          const target = await startWorkerd()
+          try {
+            print(await runBatch(target, steps, parseHeaders(options.header)))
+          } finally {
+            await target.dispose().catch(() => {})
+          }
+          return
+        }
+
         const proxy = options.bindings ? await maybeLoadBindings() : undefined
         try {
           for await (const app of getBuildIterator(file, false, options.external || [])) {
-            const result = await runBatch(app, steps, parseHeaders(options.header), proxy?.env)
-            if (options.compact) {
-              printResult(
-                {
-                  steps: result.steps.filter((step) => !step.pass),
-                  summary: result.summary,
-                },
-                true
-              )
-            } else {
-              printResult(result)
-            }
+            print(await runBatch(app, steps, parseHeaders(options.header), proxy?.env))
           }
         } finally {
           await proxy?.dispose()
