@@ -3,6 +3,37 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-09-20: The skill's workerd line hides #132 (no change yet)
+
+**Experiment**: D1 bindings A/B for #132. create-hono Workers
+template plus a D1 `users` table with 3 rows; task: add `GET /users`
+from D1 and confirm it works. Both conditions had the Hono skill and
+the AGENTS.md policy line; only the CLI differed (`next.7` vs
+`next.9`). Haiku, 15 runs each.
+
+**Findings**:
+
+- 15/15 success in both. `--runtime workerd` was used in 15/15 on
+  `next.7` and 14/15 on `next.9`: the skill tells agents to use it for
+  bindings, so `next.7` reached D1 through the documented detour and
+  the automatic bindings had nothing left to show.
+- The one significant difference: `next.7` agents went to read
+  `--help` (5/15 vs 0/15, Fisher p=0.042). Tokens (130k → 120k
+  median, 480k → 228k max) and dev-server starts (1/15 → 0/15) point
+  the same way but are within noise at 15 runs; ~50 per condition
+  would be needed for the token tail.
+- So #132 removed a documented detour rather than enabled something
+  new. Its size cannot be measured while the skill routes around it.
+  The unmeasured condition is the skill without the `--runtime
+  workerd` line — the situation of a user without the skill.
+- Found on the way: `--no-bindings` was accepted with `--runtime
+  workerd` and did nothing (D1 rows still came back), and a stack trace
+  on stderr with `--no-bindings` that we could not reproduce yet.
+
+**Change**: `--no-bindings` with a runtime other than `node` is now an
+error (#136). The skill line and the extra condition are open
+questions, not CLI changes.
+
 ## 2026-09-17: A 500 is not `failed: 0`
 
 **Experiment**: preparing the D1 A/B for `next.8` (bindings-aware
