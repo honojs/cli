@@ -41,6 +41,13 @@ describe('runOnWorkerd', () => {
     await expect(promise).rejects.toMatchObject({ code: 'WRANGLER_CONFIG_NOT_FOUND' })
   })
 
+  it('should fail with CLOUDFLARE_CONFIG_NOT_SUPPORTED with only cloudflare.config.ts', async () => {
+    const existsSync = await getMockExistsSync()
+    existsSync.mockImplementation((path) => String(path).endsWith('cloudflare.config.ts'))
+    const promise = runOnWorkerd({ path: '/', method: 'GET', headers: {} })
+    await expect(promise).rejects.toMatchObject({ code: 'CLOUDFLARE_CONFIG_NOT_SUPPORTED' })
+  })
+
   it('should fail with WRANGLER_NOT_FOUND when wrangler is not installed', async () => {
     // This repo has a config (mocked) but no wrangler dependency
     const existsSync = await getMockExistsSync()

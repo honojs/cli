@@ -47,15 +47,33 @@ const CONFIG_CANDIDATES = ['wrangler.json', 'wrangler.jsonc', 'wrangler.toml']
 export const findWranglerConfig = (): string | undefined =>
   CONFIG_CANDIDATES.find((file) => existsSync(join(process.cwd(), file)))
 
+/**
+ * `cloudflare.config.ts` is the config of the cf CLI. wrangler's
+ * programmatic API does not read it yet, so Hono CLI cannot use it.
+ */
+export const CLOUDFLARE_CONFIG = 'cloudflare.config.ts'
+
+export const hasCloudflareConfig = (): boolean => existsSync(join(process.cwd(), CLOUDFLARE_CONFIG))
+
 const requireWranglerConfig = (): string => {
   const config = findWranglerConfig()
-  if (!config) {
-    throw new CliError('WRANGLER_CONFIG_NOT_FOUND', 'No wrangler config found', {
-      suggestions: ['Create wrangler.jsonc with a main entry'],
-      docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
-    })
+  if (config) {
+    return config
   }
-  return config
+  if (hasCloudflareConfig()) {
+    throw new CliError(
+      'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
+      `${CLOUDFLARE_CONFIG} is not supported yet`,
+      {
+        suggestions: ['Add wrangler.jsonc with a main entry'],
+        docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
+      }
+    )
+  }
+  throw new CliError('WRANGLER_CONFIG_NOT_FOUND', 'No wrangler config found', {
+    suggestions: ['Create wrangler.jsonc with a main entry'],
+    docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
+  })
 }
 
 /**

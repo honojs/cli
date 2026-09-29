@@ -23,6 +23,7 @@ export const agentContext: CommandAgentContext = {
     'BINDINGS_FAILED',
     'WRANGLER_NOT_FOUND',
     'WRANGLER_CONFIG_NOT_FOUND',
+    'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
     'RUNTIME_FAILED',
   ],
   examples: [
