@@ -15,6 +15,18 @@ describe('maybeLoadBindings', () => {
     expect(await maybeLoadBindings()).toBeUndefined()
   })
 
+  it('warns and continues with only cloudflare.config.ts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hono-cli-bindings-'))
+    writeFileSync(join(dir, 'cloudflare.config.ts'), 'export default {}')
+    process.chdir(dir)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(await maybeLoadBindings()).toBeUndefined()
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('cloudflare.config.ts found but it is not supported yet')
+    )
+    errorSpy.mockRestore()
+  })
+
   it('warns and continues when wrangler is not installed', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'hono-cli-bindings-'))
     writeFileSync(join(dir, 'wrangler.jsonc'), '{"name":"probe"}')
