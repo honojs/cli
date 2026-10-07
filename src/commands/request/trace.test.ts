@@ -28,6 +28,27 @@ describe('withTracer', () => {
     ])
   })
 
+  it('should mark the handler that responded when routeIndex is restored after next()', async () => {
+    // Hono v5 restores c.req.routeIndex after next() returns (honojs/hono#4424)
+    const app = new Hono()
+    app.use(async function restore(c, next) {
+      const index = c.req.routeIndex
+      await next()
+      c.req.routeIndex = index
+    })
+    app.get('/y', function handler(c) {
+      return c.text('y')
+    })
+
+    const { app: traced, getTrace } = withTracer(app)
+    await traced.request('http://localhost/y')
+
+    expect(getTrace()).toEqual([
+      { method: 'ALL', path: '/*', name: 'restore', isMiddleware: true },
+      { method: 'GET', path: '/y', name: 'handler', isMiddleware: false, responded: true },
+    ])
+  })
+
   it('should mark a middleware that responded', async () => {
     const app = new Hono()
     app.use(async function guard(c, next) {
