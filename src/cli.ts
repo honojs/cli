@@ -2,7 +2,6 @@ import { Command, CommanderError } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { agentContextCommand } from './commands/agent-context/index.js'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
 import { optimizeCommand } from './commands/optimize/index.js'
@@ -10,6 +9,7 @@ import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
 import { snapshotCommand } from './commands/snapshot/index.js'
 import { ssgCommand } from './commands/ssg/index.js'
+import { agentHelp } from './utils/help.js'
 import { formatArgumentsError } from './utils/output.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -24,12 +24,11 @@ program
   .name('hono')
   .description('CLI for Hono')
   .version(packageJson.version, '-v, --version', 'display version number')
-  .addHelpText('after', "\nFor coding agents: run 'hono agent-context' and follow it.")
+  .addHelpText('before', agentHelp)
   .exitOverride()
   .configureOutput({ writeErr: () => {} })
 
 // Register commands
-agentContextCommand(program)
 routesCommand(program)
 requestCommand(program)
 batchCommand(program)

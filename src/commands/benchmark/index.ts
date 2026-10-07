@@ -1,7 +1,8 @@
 import type { Command } from 'commander'
 import { inspectRoutes } from 'hono/dev'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { buildAndImportApp } from '../../utils/build.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import type { BenchTarget, RouteResult } from './engine.js'
@@ -9,17 +10,9 @@ import { runBench } from './engine.js'
 import type { HonoSource } from './hono-source.js'
 import { projectHonoSource, resolveHonoSource } from './hono-source.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{ "results": [{ "hono": "4.13.0", "routes": [{ "method": "GET", "path": "/users", "requests": 48210, "rps": 96420, "latency": { "avg": 0.01, "p50": 0.009, "p75": 0.011, "p99": 0.021 } }] }] }',
-  errors: [
-    'ENTRY_NOT_FOUND',
-    'BUILD_FAILED',
-    'INVALID_APP',
-    'NO_ROUTES',
-    'HONO_INSTALL_FAILED',
-    'BENCH_FAILED',
-  ],
   examples: [
     'hono benchmark',
     'hono benchmark -P /users',
@@ -55,6 +48,7 @@ interface BenchmarkOptions {
 export function benchmarkCommand(program: Command) {
   program
     .command('benchmark')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Measure the performance of your Hono app')
     .argument('[file]', 'Path to the Hono app file')
     .option(

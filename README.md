@@ -7,7 +7,7 @@ It's not a `create-*` command and not a Vite wrapper. It loads your Hono app dir
 ## Installation
 
 > [!NOTE]
-> This is the 0.2 prerelease. Try it with `npm install -g @hono/cli@next`. The stable 0.1 is on `latest`.
+> This is the 1.0 release candidate. Try it with `npm install -g @hono/cli@next`. The stable 0.1 is on `latest`.
 
 Install it in your project. Coding agents find it in `package.json`:
 
@@ -26,9 +26,6 @@ npm install -g @hono/cli
 ```bash
 # Show help
 hono --help
-
-# Show how to use Hono CLI, for coding agents
-hono agent-context
 
 # Show routes of your Hono app
 hono routes
@@ -54,10 +51,6 @@ hono ssg
 
 ## Commands
 
-Start here:
-
-- `agent-context` - Show how to use Hono CLI, for coding agents
-
 Inspect and test:
 
 - `routes [file]` - Show routes of your Hono app
@@ -72,14 +65,6 @@ Build:
 - `ssg [file]` - Generate static files from your Hono app
 
 ---
-
-### `agent-context`
-
-Show how to use Hono CLI, as Markdown for coding agents. The content is generated from the command definitions, so it always matches the installed version.
-
-```bash
-hono agent-context
-```
 
 ### `routes`
 
@@ -488,7 +473,7 @@ Use the [Hono skill](https://github.com/honojs/skills). It teaches the agent whe
 Without the skill, add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 
 ```markdown
-Working on this Hono app? Run `hono agent-context` first and follow it.
+Working on this Hono app? Run `hono --help` first and follow it.
 ```
 
 ## Authors

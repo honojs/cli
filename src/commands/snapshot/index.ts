@@ -1,25 +1,16 @@
 import type { Command } from 'commander'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { maybeLoadBindings } from '../../utils/bindings.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { handleErrors } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
 import { readWorkerdMain, startWorkerd } from '../../utils/workerd.js'
 import { snapshotLines } from './snapshot.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{"path":"/users","expect":{"status":200,"body":[{"id":1}]}} — one batch JSONL line per route, not the JSON envelope',
-  errors: [
-    'ENTRY_NOT_FOUND',
-    'BUILD_FAILED',
-    'INVALID_APP',
-    'BINDINGS_FAILED',
-    'WRANGLER_NOT_FOUND',
-    'WRANGLER_CONFIG_NOT_FOUND',
-    'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
-    'RUNTIME_FAILED',
-  ],
   examples: ['hono snapshot', 'hono snapshot src/app.ts'],
   notes: [
     'Prints the current behavior of the app as batch JSONL lines, to stdout. No file is written — keep the lines in your context, or redirect if you want one.',
@@ -43,6 +34,7 @@ interface SnapshotOptions {
 export function snapshotCommand(program: Command) {
   program
     .command('snapshot')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Print the current behavior as batch JSONL lines')
     .argument('[file]', 'Path to the Hono app file')
     .option('--status-only', 'Capture only the status codes, not the bodies', false)
