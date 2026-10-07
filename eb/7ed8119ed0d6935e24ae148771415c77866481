@@ -1,0 +1,25 @@
+package.json
+  s_dc6239c7c86ef7::t_b3d2e014a78c0a 39
+pnpm-lock.yaml
+  s_dc6239c7c86ef7::t_c6f72cf4e0066d 18
+src/commands/request/trace.test.ts
+  s_dc6239c7c86ef7::t_aee072943cc9a3 31-51
+src/commands/request/trace.ts
+  s_dc6239c7c86ef7::t_255e3a4a8bc04e 29-42,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "eb7ed8119ed0d6935e24ae148771415c77866481",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
