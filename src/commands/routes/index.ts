@@ -1,13 +1,13 @@
 import type { Command } from 'commander'
 import { getRouterName, inspectRoutes } from 'hono/dev'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }] }',
-  errors: ['ENTRY_NOT_FOUND', 'BUILD_FAILED', 'INVALID_APP'],
   examples: ['hono routes', 'hono routes --verbose src/app.ts'],
   notes: [
     'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',
@@ -24,6 +24,7 @@ interface RoutesOptions {
 export function routesCommand(program: Command) {
   program
     .command('routes')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Show routes of your Hono app')
     .argument('[file]', 'Path to the Hono app file')
     .option('--verbose', 'include middleware', false)

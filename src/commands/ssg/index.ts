@@ -1,14 +1,14 @@
 import type { Command } from 'commander'
 import { toSSG } from 'hono/ssg'
 import fs from 'node:fs/promises'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { createRouteFilter } from './route-filter.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output: '{ "output": "static", "files": ["static/index.html", "static/about.html"] }',
-  errors: ['ENTRY_NOT_FOUND', 'BUILD_FAILED', 'INVALID_APP', 'SSG_FAILED'],
   examples: ['hono ssg', 'hono ssg -o dist/static src/app.ts', "hono ssg --exclude '/api/*'"],
   notes: ['`--include` / `--exclude` select routes by path. `*` matches anything.'],
 }
@@ -27,6 +27,7 @@ const collect = (value: string, previous: string[]): string[] =>
 export function ssgCommand(program: Command) {
   program
     .command('ssg')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Generate static files from your Hono app')
     .argument('[file]', 'Path to the Hono app file')
     .option('-o, --outdir <dir>', 'output directory', 'static')

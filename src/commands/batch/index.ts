@@ -1,9 +1,10 @@
 import type { Command } from 'commander'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import { parseHeaders } from '../../utils/headers.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator, readStdin } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
@@ -11,21 +12,9 @@ import { startWorkerd } from '../../utils/workerd.js'
 import type { BatchResult } from './batch.js'
 import { parseBatch, runBatch } from './batch.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{ "steps": [{ "method": "GET", "path": "/users", "status": 200, "body": [], "pass": true, "expect": { "status": 200 } }], "summary": { "total": 1, "passed": 1, "failed": 0 } }',
-  errors: [
-    'BATCH_INVALID',
-    'BATCH_NOT_FOUND',
-    'ENTRY_NOT_FOUND',
-    'BUILD_FAILED',
-    'INVALID_APP',
-    'BINDINGS_FAILED',
-    'WRANGLER_NOT_FOUND',
-    'WRANGLER_CONFIG_NOT_FOUND',
-    'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
-    'RUNTIME_FAILED',
-  ],
   examples: [
     `hono batch - <<'EOF'
 {"path":"/users","expect":{"status":200}}
@@ -58,6 +47,7 @@ interface BatchOptions {
 export function batchCommand(program: Command) {
   program
     .command('batch')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Run multiple requests from JSONL using app.request()')
     .argument('<source>', 'JSONL file (- reads stdin)')
     .argument('[file]', 'Path to the Hono app file')

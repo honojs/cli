@@ -1,10 +1,11 @@
 import type { Command } from 'commander'
 import type { Hono } from 'hono'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import type { PlatformProxy } from '../../utils/bindings.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
 import { parseHeaders } from '../../utils/headers.js'
+import { renderCommandHelp } from '../../utils/help.js'
+import type { CommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { runOnWorkerd } from '../../utils/workerd.js'
@@ -13,20 +14,9 @@ import type { Runtime } from './runtime.js'
 import { RUNTIMES, runInRuntime } from './runtime.js'
 import { withTracer } from './trace.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{ "status": 200, "headers": { "content-type": "application/json" }, "body": { "message": "Hello" } }',
-  errors: [
-    'ENTRY_NOT_FOUND',
-    'BUILD_FAILED',
-    'INVALID_APP',
-    'RUNTIME_NOT_FOUND',
-    'RUNTIME_FAILED',
-    'WRANGLER_NOT_FOUND',
-    'WRANGLER_CONFIG_NOT_FOUND',
-    'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
-    'BINDINGS_FAILED',
-  ],
   examples: [
     'hono request /api/users',
     `hono request /api/users -X POST -d '{"name":"Alice"}'`,
@@ -69,6 +59,7 @@ interface RequestOptions {
 export function requestCommand(program: Command) {
   program
     .command('request')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Send request to Hono app using app.request()')
     .argument('[path]', 'Request path, like the URL in curl')
     .argument('[file]', 'Path to the Hono app file')

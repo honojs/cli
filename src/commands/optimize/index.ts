@@ -5,15 +5,15 @@ import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import type { CommandAgentContext } from '../../utils/agent-context.js'
 import { buildAndImportApp } from '../../utils/build.js'
+import type { CommandHelp } from '../../utils/help.js'
+import { renderCommandHelp } from '../../utils/help.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { removeApis } from './remove-apis.js'
 
-export const agentContext: CommandAgentContext = {
+const help: CommandHelp = {
   output:
     '{ "router": "PreparedRegExpRouter", "removed": { "requestBodyApis": true, "contextResponseApis": ["html"], "honoApis": ["route"] }, "output": "dist/index.js", "size": 34124 }',
-  errors: ['ENTRY_NOT_FOUND', 'INVALID_OPTION'],
   examples: ['hono optimize', 'hono optimize -m -o dist/app.js'],
   notes: [
     'For a plain bundle, use your normal build tool. This command exists for the Hono-specific optimizations.',
@@ -60,6 +60,7 @@ interface OptimizeResult {
 export function optimizeCommand(program: Command) {
   program
     .command('optimize')
+    .addHelpText('after', renderCommandHelp(help))
     .description('Build an optimized Hono app')
     .argument('[entry]', 'entry file')
     .option('-o, --outfile [outfile]', 'output file', 'dist/index.js')
