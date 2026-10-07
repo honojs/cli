@@ -9,6 +9,7 @@ import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
 import { snapshotCommand } from './commands/snapshot/index.js'
 import { ssgCommand } from './commands/ssg/index.js'
+import { ignoreEpipe } from './utils/epipe.js'
 import { agentHelp } from './utils/help.js'
 import { formatArgumentsError } from './utils/output.js'
 
@@ -17,6 +18,8 @@ const __dirname = dirname(__filename)
 
 // Read version from package.json
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'))
+
+ignoreEpipe(process.stdout)
 
 const program = new Command()
 
