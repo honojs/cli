@@ -36,7 +36,7 @@
   "dependencies": {
     "commander": "^14.0.1",
     "esbuild": "^0.25.10",
-    "hono": "^4.9.12"
+    "hono": "^4.9.12 || ^5.0.0-0"
   },
   "devDependencies": {
     "@babel/parser": "^7.28.5",

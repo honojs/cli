@@ -26,9 +26,23 @@ interface Matched {
 export const withTracer = (app: Hono): { app: Hono; getTrace: () => TraceEntry[] } => {
   let matched: Matched | undefined
   const tracer: MiddlewareHandler = async (c, next) => {
+    // Hono v5 restores c.req.routeIndex after next() returns, so it no
+    // longer points at the route that responded. Record the deepest
+    // index compose sets instead: the chain stops at the responder.
+    let current = c.req.routeIndex
+    let deepest = current
+    Object.defineProperty(c.req, 'routeIndex', {
+      configurable: true,
+      enumerable: true,
+      get: () => current,
+      set: (value: number) => {
+        current = value
+        deepest = Math.max(deepest, value)
+      },
+    })
     await next()
     // matchedRoutes(c) from hono/route: c.req.matchedRoutes is deprecated
-    matched = { routes: matchedRoutes(c), index: c.req.routeIndex, status: c.res.status }
+    matched = { routes: matchedRoutes(c), index: deepest, status: c.res.status }
   }
   const wrapper = new Hono()
   wrapper.use(tracer)
