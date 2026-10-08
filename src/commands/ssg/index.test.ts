@@ -20,6 +20,10 @@ vi.mock('hono/ssg', () => ({
   toSSG: vi.fn(),
 }))
 
+vi.mock('../../utils/bindings.js', () => ({
+  maybeLoadBindings: vi.fn(async () => undefined),
+}))
+
 import { ssgCommand } from './index.js'
 
 describe('ssgCommand', () => {
@@ -35,6 +39,8 @@ describe('ssgCommand', () => {
   const getMockBuildAndImportApp = async () =>
     vi.mocked((await import('../../utils/build.js')).buildAndImportApp)
   const getMockToSSG = async () => vi.mocked((await import('hono/ssg')).toSSG)
+  const getMockLoadBindings = async () =>
+    vi.mocked((await import('../../utils/bindings.js')).maybeLoadBindings)
 
   let mockModules: Awaited<ReturnType<typeof getMockModules>>
   let mockBuildAndImportApp: Awaited<ReturnType<typeof getMockBuildAndImportApp>>
@@ -134,6 +140,33 @@ describe('ssgCommand', () => {
     await program.parseAsync(['node', 'test', 'ssg', '--plain', 'test-app.js'])
 
     expect(consoleLogSpy).toHaveBeenCalledWith('static/index.html')
+  })
+
+  it('should give c.env the local bindings and dispose them', async () => {
+    setupBasicMocks()
+    const dispose = vi.fn(async () => {})
+    const loadBindings = await getMockLoadBindings()
+    loadBindings.mockResolvedValueOnce({ env: { COUNTER: '2' }, dispose })
+    const bindingsApp = new Hono<{ Bindings: { COUNTER: string } }>()
+    bindingsApp.get('/', (c) => c.text(c.env.COUNTER))
+    mockBuildAndImportApp.mockReturnValue(createBuildIterator(bindingsApp as unknown as Hono))
+    mockToSSG.mockResolvedValue({ success: true, files: [] })
+
+    await program.parseAsync(['node', 'test', 'ssg', 'test-app.js'])
+
+    const passed = mockToSSG.mock.calls[0][0]
+    expect(await (await passed.request('/')).text()).toBe('2')
+    expect(dispose).toHaveBeenCalled()
+  })
+
+  it('should skip the bindings with --no-bindings', async () => {
+    setupBasicMocks()
+    const loadBindings = await getMockLoadBindings()
+    mockToSSG.mockResolvedValue({ success: true, files: [] })
+
+    await program.parseAsync(['node', 'test', 'ssg', '--no-bindings', 'test-app.js'])
+
+    expect(loadBindings).not.toHaveBeenCalled()
   })
 
   it('should print a JSON error when toSSG fails', async () => {
