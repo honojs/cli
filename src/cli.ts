@@ -4,7 +4,6 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
-import { optimizeCommand } from './commands/optimize/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
 import { snapshotCommand } from './commands/snapshot/index.js'
@@ -37,7 +36,6 @@ requestCommand(program)
 batchCommand(program)
 snapshotCommand(program)
 benchmarkCommand(program)
-optimizeCommand(program)
 ssgCommand(program)
 
 try {
