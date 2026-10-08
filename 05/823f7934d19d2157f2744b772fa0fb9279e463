@@ -1,0 +1,21 @@
+src/utils/help.test.ts
+  s_dc6239c7c86ef7::t_0688899218fdf1 69-70
+src/utils/help.ts
+  s_dc6239c7c86ef7::t_240570b636bb2b 55-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "05823f7934d19d2157f2744b772fa0fb9279e463",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
