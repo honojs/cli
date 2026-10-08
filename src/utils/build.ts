@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild'
 import type { Plugin } from 'esbuild'
 import type { Hono } from 'hono'
+import { appLogsToStderr, logsToStderr } from './app-logs.js'
 import { CliError } from './output.js'
 
 export interface BuildOptions {
@@ -90,7 +91,7 @@ export async function* buildAndImportApp(
                 code += `\n//# sourceURL=file://${process.cwd()}/__hono_cli_bundle__.js`
               }
               const dataUrl = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
-              const module = await import(dataUrl)
+              const module = await logsToStderr(() => import(dataUrl))
               const app = module.default
 
               if (!app || typeof app.request !== 'function') {
@@ -101,7 +102,7 @@ export async function* buildAndImportApp(
               }
 
               try {
-                resolveApp(app)
+                resolveApp(appLogsToStderr(app))
               } catch {
                 // Ignore
               }
