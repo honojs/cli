@@ -62,6 +62,17 @@ describe('formatArgumentsError flag fixes', () => {
     ])
   })
 
+  it('should point a removed command at its replacement', () => {
+    const docs = JSON.parse(formatArgumentsError("error: unknown command 'docs'"))
+    expect(docs.error.suggestions[0]).toContain('https://hono.dev/llms.txt')
+    const search = JSON.parse(formatArgumentsError("error: unknown command 'search'"))
+    expect(search.error.suggestions[0]).toContain('https://hono.dev/llms.txt')
+    const agentContext = JSON.parse(formatArgumentsError("error: unknown command 'agent-context'"))
+    expect(agentContext.error.suggestions).toEqual([
+      'agent-context was removed. Read the guide for agents: hono --help',
+    ])
+  })
+
   it('should map an invented flag to the real one', () => {
     const body = JSON.parse(formatArgumentsError("error: unknown option '--body'"))
     expect(body.error.suggestions[0]).toContain('-d')

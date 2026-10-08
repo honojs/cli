@@ -55,6 +55,11 @@ const COMMAND_FIXES: Record<string, string> = {
   dev: 'No server needed. Send requests directly: hono request /path',
   serve: 'No server needed. Send requests directly: hono request /path',
   start: 'No server needed. Send requests directly: hono request /path',
+  // Removed commands that old skills and docs still mention
+  docs: 'docs was removed. Find the page in https://hono.dev/llms.txt, then fetch it with the "Accept: text/markdown" header',
+  search:
+    'search was removed. Find the page in https://hono.dev/llms.txt, then fetch it with the "Accept: text/markdown" header',
+  'agent-context': 'agent-context was removed. Read the guide for agents: hono --help',
 }
 
 export const formatArgumentsError = (message: string): string => {
