@@ -1,5 +1,6 @@
 import { Command } from 'commander'
 import { describe, it, expect } from 'vitest'
+import { benchmarkCommand } from '../commands/benchmark/index.js'
 import { requestCommand } from '../commands/request/index.js'
 import { routesCommand } from '../commands/routes/index.js'
 import { agentHelp, renderCommandHelp } from './help.js'
@@ -12,6 +13,7 @@ const createProgram = (): Command => {
   program.out = ''
   routesCommand(program)
   requestCommand(program)
+  benchmarkCommand(program)
   return program
 }
 
@@ -80,5 +82,7 @@ describe('help text', () => {
     expect(routes).not.toContain('For coding agents:')
     const request = helpOf(program, ['request', '--help'])
     expect(request).toContain('hono request /api/users/123 --trace')
+    const benchmark = helpOf(program, ['benchmark', '--help'])
+    expect(benchmark).toContain('Run one benchmark at a time')
   })
 })
