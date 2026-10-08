@@ -171,7 +171,7 @@ hono request /api --runtime workerd
 
 ```
 
-In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. Keep a wrangler config next to it.
+In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, `snapshot`, and `ssg`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. Keep a wrangler config next to it.
 
 `--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
@@ -440,6 +440,7 @@ hono ssg [file] [options]
 - `--include <path>` - generate only matching paths, `*` matches anything (can be used multiple times)
 - `--exclude <path>` - skip matching paths, `*` matches anything (can be used multiple times)
 - `--plain` - human-readable output instead of JSON
+- `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**
