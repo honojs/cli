@@ -24,6 +24,11 @@ vi.mock('../../utils/workerd.js', () => ({
   startWorkerd: vi.fn(),
 }))
 
+vi.mock('../../utils/vite.js', () => ({
+  startVite: vi.fn(),
+  VITE_NOTE: '',
+}))
+
 import { batchCommand } from './index.js'
 
 describe('batchCommand', () => {
@@ -123,6 +128,25 @@ describe('batchCommand', () => {
       '/a',
       '/b',
     ])
+    expect(output.data.summary).toEqual({ total: 2, passed: 2, failed: 0 })
+  })
+
+  it('should run every step through one Vite dev server with --runtime vite', async () => {
+    const vite = await import('../../utils/vite.js')
+    const target = {
+      request: vi.fn(async (input: Request) =>
+        Response.json({ path: new URL(input.url).pathname })
+      ),
+      dispose: vi.fn(async () => {}),
+    }
+    vi.mocked(vite.startVite).mockResolvedValue(target)
+    const fs = await import('node:fs')
+    vi.mocked(fs.readFileSync).mockReturnValue('{"path":"/a"}\n{"path":"/b"}')
+    await program.parseAsync(['node', 'test', 'batch', 'steps.jsonl', '--runtime', 'vite'])
+    expect(vite.startVite).toHaveBeenCalledTimes(1)
+    expect(target.request).toHaveBeenCalledTimes(2)
+    expect(target.dispose).toHaveBeenCalledTimes(1)
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
     expect(output.data.summary).toEqual({ total: 2, passed: 2, failed: 0 })
   })
 

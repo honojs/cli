@@ -8,6 +8,7 @@ import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator, readStdin } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
+import { startVite, VITE_NOTE } from '../../utils/vite.js'
 import { startWorkerd } from '../../utils/workerd.js'
 import type { BatchResult } from './batch.js'
 import { parseBatch, runBatch } from './batch.js'
@@ -33,6 +34,7 @@ EOF`,
     'hono snapshot prints the current behavior of an app in this format — capture before a refactor, rerun after.',
     'In a project with a wrangler config, c.env carries the real local bindings (KV, D1, R2, vars) automatically — no server, no --runtime needed. Skip it with --no-bindings.',
     '--runtime workerd runs the whole app inside workerd instead: one workerd starts, every step runs in it. The entry is main in the wrangler config, so pass no file argument.',
+    VITE_NOTE,
   ],
 }
 
@@ -60,7 +62,7 @@ export function batchCommand(program: Command) {
       [] as string[]
     )
     .option('--compact', 'Print only the failed steps and the summary', false)
-    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd)', 'node')
+    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd | vite)', 'node')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',
@@ -98,8 +100,8 @@ export function batchCommand(program: Command) {
           }
         }
 
-        if (runtime === 'workerd') {
-          const target = await startWorkerd()
+        if (runtime !== 'node') {
+          const target = runtime === 'vite' ? await startVite() : await startWorkerd()
           try {
             print(await runBatch(target, steps, parseHeaders(options.header)))
           } finally {

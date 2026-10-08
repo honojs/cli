@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import type { AppEntry } from '../../utils/build.js'
 import { CliError } from '../../utils/output.js'
 
-export const RUNTIMES = ['node', 'bun', 'deno', 'workerd'] as const
+export const RUNTIMES = ['node', 'bun', 'deno', 'workerd', 'vite'] as const
 export type Runtime = (typeof RUNTIMES)[number]
 
 export interface RunnerRequest {

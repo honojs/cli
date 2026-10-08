@@ -1,5 +1,4 @@
 import type { Command } from 'commander'
-import type { Hono } from 'hono'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import type { PlatformProxy } from '../../utils/bindings.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
@@ -8,6 +7,9 @@ import { renderCommandHelp } from '../../utils/help.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { VITE_FILE_ERROR } from '../../utils/runtime-option.js'
+import type { RequestTarget } from '../../utils/target.js'
+import { startVite, VITE_NOTE } from '../../utils/vite.js'
 import { runOnWorkerd } from '../../utils/workerd.js'
 import { resolvePositionals } from './positionals.js'
 import type { Runtime } from './runtime.js'
@@ -24,6 +26,7 @@ const help: CommandHelp = {
     'hono request /api/users/123 --trace',
     'hono request / --runtime bun',
     'hono request /api --runtime workerd',
+    'hono request /api/hello --runtime vite',
     `echo 'app.get("/hello", (c) => c.json({ ok: true }))' | hono request /hello -`,
   ],
   notes: [
@@ -33,6 +36,7 @@ const help: CommandHelp = {
     'In a project with a wrangler config, c.env carries the real local bindings (KV, D1, R2, vars) automatically, while the app runs on Node.js. Skip it with --no-bindings.',
     '--runtime runs the app on bun, deno, or workerd instead of Node.js. bun and deno must be installed. workerd runs the whole app inside workerd with the wrangler config — heavier than the automatic bindings, but the full runtime.',
     '--trace adds matchedRoutes to the output: which middleware and handler matched, and which one responded. Use it to debug an unexpected response. A 404 result includes a suggestion to run it.',
+    VITE_NOTE,
     'A JSON response body is embedded as an object. A binary body becomes null with "binary": true — save it with -o.',
     'For several requests, or a flow that keeps state, use hono batch. To capture the current behavior of the app, use hono snapshot.',
     '--compact prints one-line JSON without the headers — cheaper to read when you only need the status and body.',
@@ -80,7 +84,7 @@ export function requestCommand(program: Command) {
     .option('--trace', 'include matched routes in the output', false)
     .option(
       '--runtime <runtime>',
-      'runtime to execute the app (node | bun | deno | workerd)',
+      'runtime to execute the app (node | bun | deno | workerd | vite)',
       'node'
     )
     .option('--compact', 'One-line JSON without the headers', false)
@@ -109,7 +113,7 @@ export function requestCommand(program: Command) {
           const external = options.external || []
           if (!RUNTIMES.includes(options.runtime as Runtime)) {
             throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
-              suggestions: ['Use one of: node, bun, deno, workerd'],
+              suggestions: ['Use one of: node, bun, deno, workerd, vite'],
             })
           }
           const runtime = options.runtime as Runtime
@@ -172,6 +176,22 @@ export function requestCommand(program: Command) {
               ...(options.data === undefined ? {} : { body: options.data }),
             })
             await printResponse(result, path, options, doSaveFile, { runtime })
+            return
+          }
+
+          if (runtime === 'vite') {
+            if (file !== undefined) {
+              throw new CliError('INVALID_OPTION', VITE_FILE_ERROR, {
+                suggestions: ['Drop the file argument'],
+              })
+            }
+            const target = await startVite()
+            try {
+              const result = await executeRequest(target, path, options)
+              await printResponse(result, path, options, doSaveFile, { runtime })
+            } finally {
+              await target.dispose().catch(() => {})
+            }
             return
           }
 
@@ -308,7 +328,7 @@ const handleSaveOutput = async (
 }
 
 export async function executeRequest(
-  app: Hono,
+  app: RequestTarget,
   requestPath: string,
   options: RequestOptions,
   env?: Record<string, unknown>

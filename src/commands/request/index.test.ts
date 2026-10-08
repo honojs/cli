@@ -32,6 +32,11 @@ vi.mock('../../utils/workerd.js', () => ({
   runOnWorkerd: vi.fn(),
 }))
 
+vi.mock('../../utils/vite.js', () => ({
+  startVite: vi.fn(),
+  VITE_NOTE: '',
+}))
+
 import { requestCommand } from './index.js'
 
 vi.mock('../../utils/file.js', () => ({
@@ -1186,6 +1191,57 @@ describe('requestCommand', () => {
           runtime: 'workerd',
         },
       })
+    })
+
+    it('should send the request through the Vite dev server with --runtime vite', async () => {
+      const vite = await import('../../utils/vite.js')
+      const target = {
+        request: vi.fn(async (input: Request) =>
+          Response.json({ method: input.method, body: await input.text() })
+        ),
+        dispose: vi.fn(async () => {}),
+      }
+      vi.mocked(vite.startVite).mockResolvedValue(target)
+
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/api',
+        '-X',
+        'POST',
+        '-d',
+        'hi',
+        '--runtime',
+        'vite',
+        '--compact',
+      ])
+
+      expect(target.dispose).toHaveBeenCalledTimes(1)
+      const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+      expect(parsed).toEqual({
+        ok: true,
+        data: { status: 200, body: { method: 'POST', body: 'hi' }, runtime: 'vite' },
+      })
+    })
+
+    it('should reject a file argument and --trace with vite', async () => {
+      await program.parseAsync([
+        'node',
+        'test',
+        'request',
+        '/',
+        'src/index.ts',
+        '--runtime',
+        'vite',
+      ])
+      await program.parseAsync(['node', 'test', 'request', '/', '--runtime', 'vite', '--trace'])
+
+      for (const call of consoleLogSpy.mock.calls) {
+        expect(JSON.parse(call[0]).error.code).toBe('INVALID_OPTION')
+      }
+      expect(consoleLogSpy).toHaveBeenCalledTimes(2)
+      process.exitCode = undefined
     })
 
     it('should reject a file argument with workerd', async () => {

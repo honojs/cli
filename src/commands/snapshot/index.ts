@@ -3,7 +3,7 @@ import { maybeLoadBindings } from '../../utils/bindings.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
-import { handleErrors } from '../../utils/output.js'
+import { CliError, handleErrors } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
 import { readWorkerdMain, startWorkerd } from '../../utils/workerd.js'
 import { snapshotLines } from './snapshot.js'
@@ -51,7 +51,13 @@ export function snapshotCommand(program: Command) {
     .action(
       handleErrors(async (file: string | undefined, options: SnapshotOptions) => {
         const external = options.external || []
-        if (resolveRuntime(options.runtime, file, options.bindings) === 'workerd') {
+        const runtime = resolveRuntime(options.runtime, file, options.bindings)
+        if (runtime === 'vite') {
+          throw new CliError('INVALID_OPTION', 'snapshot cannot read the routes of a Vite app', {
+            suggestions: ['Write the batch lines yourself and run hono batch - --runtime vite'],
+          })
+        }
+        if (runtime === 'workerd') {
           // The routes come from the entry in-process; the requests go to workerd.
           const main = await readWorkerdMain()
           const target = await startWorkerd()

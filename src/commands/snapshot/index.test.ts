@@ -66,6 +66,14 @@ describe('snapshotCommand', () => {
     expect(lines[0]).toEqual({ path: '/data', expect: { status: 200, body: { from: 'workerd' } } })
   })
 
+  it('should reject --runtime vite', async () => {
+    await program.parseAsync(['node', 'test', 'snapshot', '--runtime', 'vite'])
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.ok).toBe(false)
+    expect(output.error.code).toBe('INVALID_OPTION')
+    expect(output.error.suggestions[0]).toContain('--runtime vite')
+  })
+
   it('should reject a file argument with --runtime workerd', async () => {
     await program.parseAsync(['node', 'test', 'snapshot', 'src/app.ts', '--runtime', 'workerd'])
     const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
