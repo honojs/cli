@@ -1,0 +1,47 @@
+README.md
+  s_dc6239c7c86ef7::t_7729135df24bec 125,172-174,181-182,242,255
+package.json
+  s_dc6239c7c86ef7::t_f1f65d8b51ed6b 54
+pnpm-lock.yaml
+  s_dc6239c7c86ef7::t_a135c9a52b7c74 57-59,1794
+src/commands/batch/index.test.ts
+  s_dc6239c7c86ef7::t_e8fe725b492a19 27-31,134-152
+src/commands/request/index.test.ts
+  s_dc6239c7c86ef7::t_c0e71369a32d28 35-39,1196-1246
+src/commands/request/index.ts
+  s_dc6239c7c86ef7::t_7ad09167f462b5 10-12,29,39,87,116,182-197,331
+src/commands/request/runtime.ts
+  s_dc6239c7c86ef7::t_b59941a62a8e59 7
+src/commands/snapshot/index.test.ts
+  s_dc6239c7c86ef7::t_f80b18e1d835b2 69-76
+src/commands/snapshot/index.ts
+  s_dc6239c7c86ef7::t_c390a9dce4342f 6,54-60
+src/utils/fixtures/vite/vite.config.mjs
+  s_dc6239c7c86ef7::t_128033072cf4e0 1-26
+src/utils/vite.test.ts
+  s_dc6239c7c86ef7::t_f74fd9b9c079d7 1-36
+src/utils/vite.ts
+  s_dc6239c7c86ef7::t_d3246b88321438 1-115
+src/commands/batch/index.ts
+  s_dc6239c7c86ef7::t_d53c15098e526e 11,37,65,103-104
+src/utils/runtime-option.test.ts
+  s_dc6239c7c86ef7::t_a6d1fccbfa43da 5,8-17
+src/utils/runtime-option.ts
+  s_dc6239c7c86ef7::t_6efb83ea040a7f 3,7-10,17,20,30-35,45-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0f4dac13f244ab13d8f32d02ba2adf26f4517e01",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
