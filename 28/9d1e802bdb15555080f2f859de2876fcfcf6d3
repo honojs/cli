@@ -1,0 +1,29 @@
+README.md
+  s_dc6239c7c86ef7::t_9d6f7508f89265 177
+src/utils/bindings.test.ts
+  s_dc6239c7c86ef7::t_8481b173e981c3 30-40
+src/utils/bindings.ts
+  s_dc6239c7c86ef7::t_2a8099c2a0fcd8 5,30-31,33-35
+src/utils/vite.ts
+  s_dc6239c7c86ef7::t_cc398578423d23 1,46-50
+src/utils/workerd.test.ts
+  s_dc6239c7c86ef7::t_f377543c86b953 48-61
+src/utils/workerd.ts
+  s_dc6239c7c86ef7::t_32e5c5f08aadbd 7,69-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "289d1e802bdb15555080f2f859de2876fcfcf6d3",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
