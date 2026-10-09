@@ -2,6 +2,7 @@ import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CliError } from './output.js'
+import { hasViteConfig } from './vite.js'
 import { CLOUDFLARE_CONFIG, findWranglerConfig, hasCloudflareConfig } from './workerd.js'
 
 export interface PlatformProxy {
@@ -26,8 +27,12 @@ export const maybeLoadBindings = async (): Promise<PlatformProxy | undefined> =>
   const config = findWranglerConfig()
   if (!config) {
     if (hasCloudflareConfig()) {
+      // With a Vite config, the Cloudflare Vite plugin reads it: point there
+      // instead of asking for the same bindings in a second config.
       console.error(
-        `${CLOUDFLARE_CONFIG} found but it is not supported yet — c.env stays empty. Add a wrangler config, or pass --no-bindings.`
+        hasViteConfig()
+          ? `${CLOUDFLARE_CONFIG} found but it is not supported yet — c.env stays empty. Use --runtime vite to get the bindings, or pass --no-bindings.`
+          : `${CLOUDFLARE_CONFIG} found but it is not supported yet — c.env stays empty. Add a wrangler config, or pass --no-bindings.`
       )
     }
     return undefined

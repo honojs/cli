@@ -4,6 +4,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CliError } from './output.js'
 import type { RequestTarget } from './target.js'
+import { hasViteConfig } from './vite.js'
 
 export interface WorkerdRequest {
   path: string
@@ -65,7 +66,9 @@ const requireWranglerConfig = (): string => {
       'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
       `${CLOUDFLARE_CONFIG} is not supported yet`,
       {
-        suggestions: ['Add wrangler.jsonc with a main entry'],
+        suggestions: hasViteConfig()
+          ? ['Use --runtime vite instead. The Cloudflare Vite plugin reads cloudflare.config.ts']
+          : ['Add wrangler.jsonc with a main entry'],
         docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
       }
     )

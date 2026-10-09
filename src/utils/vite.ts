@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
@@ -41,6 +42,11 @@ export interface ViteTarget extends RequestTarget {
 
 export const VITE_NOTE =
   '--runtime vite (experimental) sends the requests through the Vite dev server of the project — for an app that a Vite plugin builds, with no file that exports it. The app comes from the Vite config, so pass no file argument.'
+
+const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((ext) => `vite.config.${ext}`)
+
+export const hasViteConfig = (): boolean =>
+  VITE_CONFIGS.some((file) => existsSync(join(process.cwd(), file)))
 
 /**
  * vite is not a dependency of Hono CLI. It resolves from the user's

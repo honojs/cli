@@ -45,7 +45,20 @@ describe('runOnWorkerd', () => {
     const existsSync = await getMockExistsSync()
     existsSync.mockImplementation((path) => String(path).endsWith('cloudflare.config.ts'))
     const promise = runOnWorkerd({ path: '/', method: 'GET', headers: {} })
-    await expect(promise).rejects.toMatchObject({ code: 'CLOUDFLARE_CONFIG_NOT_SUPPORTED' })
+    await expect(promise).rejects.toMatchObject({
+      code: 'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
+      suggestions: ['Add wrangler.jsonc with a main entry'],
+    })
+  })
+
+  it('should point at --runtime vite with cloudflare.config.ts and a Vite config', async () => {
+    const existsSync = await getMockExistsSync()
+    existsSync.mockImplementation((path) => /(cloudflare|vite)\.config\.ts$/.test(String(path)))
+    const promise = runOnWorkerd({ path: '/', method: 'GET', headers: {} })
+    await expect(promise).rejects.toMatchObject({
+      code: 'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
+      suggestions: [expect.stringContaining('--runtime vite')],
+    })
   })
 
   it('should fail with WRANGLER_NOT_FOUND when wrangler is not installed', async () => {
