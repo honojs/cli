@@ -22,7 +22,7 @@ const help: CommandHelp = {
     'Unlike routes, this command sends real requests to the app — middleware runs.',
     'In a project with a wrangler config, c.env carries the real local bindings automatically. Skip it with --no-bindings.',
     '--runtime workerd sends the requests to the app running inside workerd. The routes are read from main in the wrangler config, so pass no file argument.',
-    '--runtime vite reads the routes from src/index.ts and sends the requests through the Vite dev server. In a project with cloudflare.config.ts and a Vite config (as cf init makes), it is the default, and c.env has the bindings.',
+    '--runtime vite reads the routes from src/index.ts and sends the requests through the Vite dev server. In a project with cloudflare.config.ts and a Vite config, it is the default, and c.env has the bindings.',
   ],
 }
 
