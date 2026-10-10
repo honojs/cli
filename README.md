@@ -21,11 +21,16 @@ Or globally:
 npm install -g @hono/cli
 ```
 
+To start a Hono app in the current directory, run `hono init` next. See [`init`](#init).
+
 ## Usage
 
 ```bash
 # Show help
 hono --help
+
+# Add a Hono app to the current directory
+hono init
 
 # Show routes of your Hono app
 hono routes
@@ -47,6 +52,10 @@ hono ssg
 ```
 
 ## Commands
+
+Start:
+
+- `init` - Add a Hono app to the current directory
 
 Inspect and test:
 
@@ -398,6 +407,44 @@ A page that does not answer 200 is not written. It is listed in `skipped` with i
     "output": "static",
     "files": ["static/index.html"],
     "skipped": [{ "path": "/counter", "status": 500 }]
+  }
+}
+```
+
+### `init`
+
+Add a Hono app from a [create-hono](https://github.com/honojs/create-hono) template to the current directory. Use it in a directory you already have, for example right after `npm install -D @hono/cli`.
+
+```bash
+hono init [options]
+```
+
+**Options:**
+
+- `-t, --template <template>` - template to use: `aws-lambda`, `bun`, `cloudflare-workers`, `deno`, `fastly`, `lambda-edge`, `netlify`, `nextjs`, `nodejs`, `vercel`, or `x-basic`
+
+```bash
+npm install -D @hono/cli
+npx hono init --template cloudflare-workers
+npm install
+npx hono request /
+```
+
+Without `--template`, the template comes from the files in the directory: `wrangler.jsonc` or `cloudflare.config.ts` → `cloudflare-workers`, `deno.json` → `deno`, `bun.lock` → `bun`, `netlify.toml` → `netlify`, `fastly.toml` → `fastly`, `vercel.json` → `vercel`. With no hint, it fails with `TEMPLATE_REQUIRED` and lists the templates.
+
+A file that already exists is never overwritten; it is listed in `skipped`. `package.json` is merged: the template adds the scripts, dependencies, and fields it lacks, and the existing values win, except `type`, which the template's code needs. The Cloudflare configs count as one file: with a wrangler config in place, the template does not add `cloudflare.config.ts`, and the other way around. It does not install the dependencies.
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "template": "cloudflare-workers",
+    "detectedFrom": "wrangler.jsonc",
+    "written": ["package.json", "vite.config.ts"],
+    "skipped": ["cloudflare.config.ts", "src/index.ts"],
+    "suggestions": ["Install the dependencies: npm install", "Then check the app: hono request /"]
   }
 }
 ```
