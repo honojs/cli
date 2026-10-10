@@ -2,7 +2,7 @@ import type { Command } from 'commander'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import type { PlatformProxy } from '../../utils/bindings.js'
 import { getFilenameFromPath, saveFile } from '../../utils/file.js'
-import { parseHeaders } from '../../utils/headers.js'
+import { csrfHint, parseHeaders, withBodyType } from '../../utils/headers.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
@@ -68,7 +68,10 @@ export function requestCommand(program: Command) {
     .argument('[path]', 'Request path, like the URL in curl')
     .argument('[file]', 'Path to the Hono app file')
     .option('-X, --method <method>', 'HTTP method', 'GET')
-    .option('-d, --data <data>', 'Request body data (@file reads a file, @- reads stdin)')
+    .option(
+      '-d, --data <data>',
+      'Request body (@file reads a file, @- reads stdin). Sent as JSON when it is a JSON object or array, as a form otherwise, unless -H sets Content-Type'
+    )
     .option('-w, --watch', 'Watch for changes and resend request', false)
     .option(
       '-H, --header <header>',
@@ -176,7 +179,7 @@ export function requestCommand(program: Command) {
             const result = await runOnWorkerd({
               path,
               method: options.method || 'GET',
-              headers: parseHeaders(options.header),
+              headers: withBodyType(parseHeaders(options.header), options.data),
               ...(options.data === undefined ? {} : { body: options.data }),
             })
             await printResponse(result, path, options, doSaveFile, { runtime })
@@ -203,7 +206,7 @@ export function requestCommand(program: Command) {
             const runnerResponse = await runInRuntime(runtime, await resolveEntry(file), external, {
               path,
               method: options.method || 'GET',
-              headers: parseHeaders(options.header),
+              headers: withBodyType(parseHeaders(options.header), options.data),
               ...(options.data === undefined ? {} : { body: options.data }),
             })
             const bytes = Buffer.from(runnerResponse.bodyBase64, 'base64')
@@ -264,6 +267,15 @@ const printResponse = async (
   // Agents rarely discover --trace on their own. A 404 is the moment
   // it helps, so point at it right there.
   const suggestTrace = result.status === 404 && !options.trace && options.runtime === 'node'
+  const csrf = csrfHint(
+    result.status,
+    options.method || 'GET',
+    withBodyType(parseHeaders(options.header), options.data)
+  )
+  const suggestions = [
+    ...(suggestTrace ? [`See which routes matched: hono request ${path} --trace`] : []),
+    ...(csrf ? [csrf] : []),
+  ]
 
   printResult(
     {
@@ -272,9 +284,7 @@ const printResponse = async (
       body: isBinaryData ? null : parseBody(result.body, contentType),
       ...(isBinaryData ? { binary: true } : {}),
       ...(savedTo ? { savedTo } : {}),
-      ...(suggestTrace
-        ? { suggestions: [`See which routes matched: hono request ${path} --trace`] }
-        : {}),
+      ...(suggestions.length > 0 ? { suggestions } : {}),
       ...extra,
     },
     options.compact
@@ -348,10 +358,7 @@ export async function executeRequest(
     requestInit.body = options.data
   }
 
-  // Add headers if provided
-  if (options.header && options.header.length > 0) {
-    requestInit.headers = parseHeaders(options.header)
-  }
+  requestInit.headers = withBodyType(parseHeaders(options.header), options.data)
 
   // Execute request
   const request = new Request(url.href, requestInit)

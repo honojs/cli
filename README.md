@@ -122,7 +122,7 @@ hono request <path> [file] [options]
 **Options:**
 
 - `-X, --method <method>` - HTTP method (default: GET)
-- `-d, --data <data>` - Request body data (`@file` reads a file, `@-` reads stdin)
+- `-d, --data <data>` - Request body data (`@file` reads a file, `@-` reads stdin). Without a `Content-Type` header, a JSON object or array goes as `application/json` and anything else as a form, like curl's `-d`
 - `-H, --header <header>` - Custom headers (can be used multiple times)
 - `-w, --watch` - Watch for changes and resend request
 - `-o, --output <file>` - Write response body to file instead of stdout
@@ -231,7 +231,7 @@ The result is JSON with the shared envelope. A JSON response body is embedded as
 }
 ```
 
-A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl. A 404 result includes a suggestion to run `--trace`.
+A binary response body becomes `"body": null` with `"binary": true` — save it with `-o`. Use `--plain` to print the raw body like curl. A 404 result includes a suggestion to run `--trace`. A 403 to a form POST points at the `sec-fetch-site: same-origin` header that Hono's `csrf()` expects from a browser.
 
 ### `batch`
 
@@ -265,7 +265,7 @@ EOF
 
 With `--runtime workerd`, one workerd starts and every step runs in it, so a flow over the real bindings (put to KV, then get; D1; an AI binding) runs in one call. The entry is `main` in the wrangler config, so pass no file argument. With `--runtime vite`, one Vite dev server starts and every step goes through it.
 
-One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
+One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). A string `body` without a `content-type` header goes as a form, or as JSON when it is a JSON object or array. `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
 
 ### `snapshot`
 

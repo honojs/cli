@@ -1,3 +1,4 @@
+import { csrfHint, withBodyType } from '../../utils/headers.js'
 import { CliError } from '../../utils/output.js'
 import type { RequestTarget } from '../../utils/target.js'
 
@@ -232,6 +233,7 @@ export const runBatch = async (
       const body = interpolate(step.body, vars)
       if (typeof body === 'string') {
         init.body = body
+        init.headers = withBodyType(headers, body)
       } else {
         init.body = JSON.stringify(body)
         if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
@@ -281,6 +283,10 @@ export const runBatch = async (
       result.diff = diff
       if (response.status === 404) {
         result.suggestions = [`See which routes matched: hono request ${path} --trace`]
+      }
+      const csrf = csrfHint(response.status, step.method, init.headers as Record<string, string>)
+      if (csrf) {
+        result.suggestions = [csrf]
       }
     }
 
