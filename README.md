@@ -63,6 +63,7 @@ Inspect and test:
 - `request <path> [file]` - Send request to Hono app using `app.request()`
 - `batch <source> [file]` - Run multiple requests from JSONL using `app.request()`
 - `snapshot [file]` - Print the current behavior as batch JSONL lines
+- `diff` - Show how your uncommitted changes change what the app answers
 - `benchmark [file]` - Measure the performance of your Hono app
 
 Build:
@@ -287,6 +288,26 @@ Paramless GET routes are executed and their actual response becomes the `expect`
 Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
 
 With `--runtime workerd`, the requests go to the app running inside workerd. The routes are read from `main` in the wrangler config in-process, so pass no file argument. With `--runtime vite`, the routes are read from `src/index.ts` and the requests go through the Vite dev server.
+
+### `diff`
+
+Show what your uncommitted changes do to the app: it runs the app at the last commit and as it is now, and compares the answers. Nothing to capture first.
+
+```bash
+hono diff [--base <ref>]
+```
+
+```json
+{
+  "base": "HEAD",
+  "changed": [{ "route": "GET /admin", "status": "200 -> 303", "body": ["..."] }],
+  "added": ["GET /login", "POST /login"],
+  "removed": [],
+  "compared": 6
+}
+```
+
+Each side runs `hono snapshot` in a temporary git worktree with fresh local data, so data you wrote while testing does not count. `node_modules` is shared and `.dev.vars` is copied. Paramless GET routes and the 404 probe are compared; param and non-GET routes only show up in `added` and `removed` — check them with `hono batch`. Empty `changed` after a refactor means the GET routes answer as before.
 
 ### `benchmark`
 
