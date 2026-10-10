@@ -1,0 +1,21 @@
+src/commands/snapshot/snapshot-fallback.test.ts
+  s_dc6239c7c86ef7::t_7bd22e35124286 1-24
+src/commands/snapshot/snapshot.ts
+  s_dc6239c7c86ef7::t_2dc6072c0777b4 21-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c256a3805b0bbb3c96718085ff93047f1acc4ef9",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
