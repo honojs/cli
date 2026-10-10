@@ -1,0 +1,19 @@
+docs/agent-dx-log.md
+  s_dc6239c7c86ef7::t_13eff9f16206d6 71-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8e3a50bd1283a9d6e8f8d880dbe20f69b4d66a36",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
