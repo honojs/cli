@@ -1,0 +1,31 @@
+README.md
+  s_dc6239c7c86ef7::t_c56c84698cdea8 125,192,234,268
+src/commands/batch/batch.test.ts
+  s_dc6239c7c86ef7::t_8f15d82cfc01b6 2,131-187
+src/commands/batch/batch.ts
+  s_dc6239c7c86ef7::t_9db59c46361979 1,269,321-324
+src/commands/batch/index.ts
+  s_dc6239c7c86ef7::t_cf4a2b801ce8da 32
+src/commands/request/index.ts
+  s_dc6239c7c86ef7::t_965f8492e39e0f 5,71-74,182,205,266-274,283,357
+src/utils/headers.test.ts
+  s_dc6239c7c86ef7::t_be8c5d089e2eac 1-32
+src/utils/headers.ts
+  s_dc6239c7c86ef7::t_5641c4866a76f0 12-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8bd409c09fccf97e7e80abfbf5295b8b8b4e44af",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
