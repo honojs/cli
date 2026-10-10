@@ -1,0 +1,43 @@
+README.md
+  s_dc6239c7c86ef7::t_50ecb8c0591b60 66,292-311
+src/cli.ts
+  s_dc6239c7c86ef7::t_31b95ca678d105 7,40
+src/commands/diff/compare.test.ts
+  s_dc6239c7c86ef7::t_f54211153b6daf 1-51
+src/commands/diff/compare.ts
+  s_6b7c15330b08f0::t_e018266f9a1cde 1-92
+src/commands/diff/index.ts
+  s_dc6239c7c86ef7::t_896b36f3ddf36f 1-94
+src/commands/diff/worktree.test.ts
+  s_dc6239c7c86ef7::t_0bb1c3cb94694b 1-63
+src/commands/diff/worktree.ts
+  s_dc6239c7c86ef7::t_dc1d49ffc06fd2 1-92
+src/utils/help.test.ts
+  s_dc6239c7c86ef7::t_79d5aba69654b2 72
+src/utils/help.ts
+  s_dc6239c7c86ef7::t_3bb99cd157a67f 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3859186c81f247b26535836598f63a15adb163c2",
+  "prompts": {},
+  "sessions": {
+    "s_6b7c15330b08f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5825367a-ae3b-4404-8134-40107eb66076",
+        "model": "unknown"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    },
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
