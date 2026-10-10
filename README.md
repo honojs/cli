@@ -432,7 +432,7 @@ npm install
 npx hono request /
 ```
 
-Without `--template`, the template comes from the files in the directory: `wrangler.jsonc` or `cloudflare.config.ts` → `cloudflare-workers`, `deno.json` → `deno`, `bun.lock` → `bun`, `netlify.toml` → `netlify`, `fastly.toml` → `fastly`, `vercel.json` → `vercel`. With no hint, it fails with `TEMPLATE_REQUIRED` and lists the templates.
+Without `--template`, the template comes from the files in the directory: `wrangler.jsonc` or `cloudflare.config.ts` → `cloudflare-workers`, `deno.json` → `deno`, `bun.lock` → `bun`, `netlify.toml` → `netlify`, `fastly.toml` → `fastly`, `vercel.json` → `vercel`. With no hint, a terminal shows the templates to pick from, like create-hono. Without a terminal (a coding agent), it fails with `TEMPLATE_REQUIRED` and lists them.
 
 A file that already exists is never overwritten; it is listed in `skipped`. `package.json` is merged: the template adds the scripts, dependencies, and fields it lacks, and the existing values win, except `type`, which the template's code needs. The Cloudflare configs count as one file: with a wrangler config in place, the template does not add `cloudflare.config.ts`, and the other way around. It does not install the dependencies.
 
