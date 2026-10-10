@@ -142,6 +142,29 @@ describe('ssgCommand', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith('static/index.html')
   })
 
+  it('should list the pages that did not answer 200 as skipped', async () => {
+    setupBasicMocks()
+    const failing = new Hono()
+    failing.get('/counter', (c) => c.text('error', 500))
+    mockBuildAndImportApp.mockReturnValue(createBuildIterator(failing))
+    mockToSSG.mockImplementation(async (passed, _fs, options) => {
+      const res = await passed.request('/counter')
+      const hook = options?.afterResponseHook
+      if (typeof hook === 'function') {
+        await hook(res)
+      }
+      return { success: true, files: [] }
+    })
+
+    await program.parseAsync(['node', 'test', 'ssg', 'test-app.js'])
+
+    expect(JSON.parse(consoleLogSpy.mock.calls[0][0]).data).toEqual({
+      output: 'static',
+      files: [],
+      skipped: [{ path: '/counter', status: 500 }],
+    })
+  })
+
   it('should give c.env the local bindings and dispose them', async () => {
     setupBasicMocks()
     const dispose = vi.fn(async () => {})

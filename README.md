@@ -380,6 +380,19 @@ hono ssg --exclude '/api/*'
 }
 ```
 
+A page that does not answer 200 is not written. It is listed in `skipped` with its status, so a failing page does not go unnoticed:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "output": "static",
+    "files": ["static/index.html"],
+    "skipped": [{ "path": "/counter", "status": 500 }]
+  }
+}
+```
+
 ## Tips
 
 ### Using Hono CLI with AI Code Agents
