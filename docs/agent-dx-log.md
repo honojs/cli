@@ -3,7 +3,7 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
-## 2026-10-11: Without the CLI, agents run the dev server well — and `pkill` it (no change)
+## 2026-10-11: Without the CLI, agents check their work just as well (#159)
 
 **Experiment**: the same counter task as #153 ("アクセスカウンターを
 つくって"), `claude -p`, Opus, 5 runs each, Cloudflare auth replaced
@@ -47,9 +47,44 @@ with an invalid token. Three projects:
 - 5 runs each, a direction only. The runs differ in more than the CLI
   (template, Hono version, AGENTS.md).
 
-**Change**: none. The case for the CLI is "no side effects, the same
-result every time", not speed: it touches no port or process of the
-user.
+**Second task**: "TODOアプリをつくって。追加、編集、削除ができるように"
+(make a TODO app with add, edit, delete), same three projects, 5 runs
+each. After each run a separate agent (Sonnet, with Hono CLI, no edits)
+checked 5 items with real requests: list, create, edit, delete, and
+that the data stays.
+
+| | CLI | No CLI | 0.19 |
+| --- | --- | --- | --- |
+| Grader items passed | 25/25 | 25/25 | 25/25 |
+| Avg turns | 10.2 | 8.8 | 8.4 |
+| Avg cost | $0.27 | $0.25 | $0.28 |
+| Median time | 61s | 45s | 173s |
+| Started a dev server | 0/5 | 5/5 | 5/5 |
+| Broad kill (`pkill -f "cf dev"`) | 0/5 | 1/5 | 0/5 |
+
+- Every run built a working app. The CLI was slower and took more
+  turns than the no-CLI runs.
+- The side effects mostly went away: no-CLI runs picked a port
+  (`--port 5199`) and killed only that server.
+- Why the CLI took more turns:
+  - A flow needs the new TODO's id. With curl, one shell script does
+    `ID=$(curl ...)`. A batch step cannot use a value from an earlier
+    step, so agents ran one batch to get the id and another to edit
+    and delete.
+  - Each `hono request` or `hono batch` starts the Vite dev server
+    again; a running server answers curl at once.
+  - One run passed `src/index.tsx` as the file. The app ran on Node.js
+    with an empty `c.env` and returned 500; it took three turns to
+    find `--runtime vite` and drop the file.
+  - Agents read the `--help` of a subcommand first: one or two turns.
+- 0.19: 3/5 runs stalled for 120s on `wrangler types`, so its time is
+  mostly that.
+
+**Change**: #159 runs the default entry through Vite in a cf project, so
+the file argument no longer empties `c.env`. The rest is open: today the
+CLI does not beat a dev server and curl on speed for a new app. Its own
+ground is what curl cannot do (snapshot, trace, bindings with no
+server).
 
 ## 2026-10-10: Agents chain `hono request` for a flow — point at batch in `--help` (#153)
 
