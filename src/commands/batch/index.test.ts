@@ -22,10 +22,13 @@ vi.mock('../../utils/bindings.js', () => ({
 
 vi.mock('../../utils/workerd.js', () => ({
   startWorkerd: vi.fn(),
+  findWranglerConfig: vi.fn(),
+  hasCloudflareConfig: vi.fn(() => false),
 }))
 
 vi.mock('../../utils/vite.js', () => ({
   startVite: vi.fn(),
+  hasViteConfig: vi.fn(() => false),
   VITE_NOTE: '',
 }))
 

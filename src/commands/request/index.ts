@@ -7,7 +7,7 @@ import { renderCommandHelp } from '../../utils/help.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
-import { VITE_FILE_ERROR } from '../../utils/runtime-option.js'
+import { defaultRuntime, VITE_FILE_ERROR } from '../../utils/runtime-option.js'
 import type { RequestTarget } from '../../utils/target.js'
 import { startVite, VITE_NOTE } from '../../utils/vite.js'
 import { runOnWorkerd } from '../../utils/workerd.js'
@@ -50,7 +50,7 @@ interface RequestOptions {
   watch: boolean
   plain: boolean
   trace: boolean
-  runtime: string
+  runtime?: string
   output?: string
   remoteName: boolean
   include: boolean
@@ -84,8 +84,7 @@ export function requestCommand(program: Command) {
     .option('--trace', 'include matched routes in the output', false)
     .option(
       '--runtime <runtime>',
-      'runtime to execute the app (node | bun | deno | workerd | vite)',
-      'node'
+      'runtime to execute the app (node | bun | deno | workerd | vite)'
     )
     .option('--compact', 'One-line JSON without the headers', false)
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
@@ -111,12 +110,17 @@ export function requestCommand(program: Command) {
           const doSaveFile = options.output || options.remoteName
           const watch = options.watch
           const external = options.external || []
-          if (!RUNTIMES.includes(options.runtime as Runtime)) {
+          if (options.runtime !== undefined && !RUNTIMES.includes(options.runtime as Runtime)) {
             throw new CliError('INVALID_OPTION', `Unknown runtime: ${options.runtime}`, {
               suggestions: ['Use one of: node, bun, deno, workerd, vite'],
             })
           }
-          const runtime = options.runtime as Runtime
+          // --watch and --trace need the app on Node.js
+          const runtime = (options.runtime ??
+            (options.watch || options.trace
+              ? 'node'
+              : defaultRuntime(file, options.bindings))) as Runtime
+          options.runtime = runtime
           if (runtime !== 'node' && (options.watch || options.trace)) {
             throw new CliError(
               'INVALID_OPTION',

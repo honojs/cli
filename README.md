@@ -122,7 +122,7 @@ hono request <path> [file] [options]
 - `-O, --remote-name` - Write response body to file named as remote file
 - `--plain` - human-readable output instead of JSON
 - `--trace` - include matched routes in the output
-- `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, `workerd`, or `vite` (experimental)
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `bun`, `deno`, `workerd`, or `vite` (the default in a `cf` project)
 - `-i, --include` - Include status and headers in the output (with `--plain`)
 - `-I, --head` - Show only status and headers in the output (with `--plain`)
 - `--compact` - One-line JSON without the headers
@@ -169,16 +169,18 @@ hono request / --runtime deno
 # Run the app on workerd with your wrangler config: bindings (c.env) are the local ones
 hono request /api --runtime workerd
 
-# Send the request through the Vite dev server of the project (experimental)
+# Send the request through the Vite dev server of the project
 hono request /api/hello --runtime vite
 
 ```
 
-In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. With a Vite config (as `cf init` creates), use `--runtime vite`: the Cloudflare Vite plugin reads `cloudflare.config.ts`, so the bindings work. Without one, keep a wrangler config next to it.
+In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. With a Vite config (as `cf init` creates), the commands use `--runtime vite` by default: the Cloudflare Vite plugin reads `cloudflare.config.ts`, so the bindings work. Without one, keep a wrangler config next to it.
 
 `--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
-`--runtime vite` (experimental) sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs. `batch` takes it too. `--trace`, `--watch`, and `snapshot` do not work with it: they need the Hono app itself. vite must be installed in the project.
+`--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs. `batch` and `snapshot` take it too. vite must be installed in the project.
+
+In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config, as `cf init` creates — `--runtime vite` is the default, so `c.env` has the bindings with no flag. A file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
@@ -239,7 +241,7 @@ hono batch <source> [file]
 
 - `-H, --header <header>` - Shared headers for every step
 - `--compact` - Print only the failed steps and the summary, as one-line JSON
-- `--runtime <runtime>` - runtime to execute the app: `node` (default), `workerd`, or `vite` (experimental)
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `workerd`, or `vite` (the default in a `cf` project)
 - `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
@@ -267,7 +269,7 @@ hono snapshot [file]
 **Options:**
 
 - `--status-only` - Capture only the status codes, not the bodies
-- `--runtime <runtime>` - runtime to execute the app: `node` (default) or `workerd`
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `workerd`, or `vite` (the default in a `cf` project)
 - `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
@@ -275,7 +277,7 @@ Paramless GET routes are executed and their actual response becomes the `expect`
 
 Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
 
-With `--runtime workerd`, the requests go to the app running inside workerd. The routes are read from `main` in the wrangler config in-process, so pass no file argument.
+With `--runtime workerd`, the requests go to the app running inside workerd. The routes are read from `main` in the wrangler config in-process, so pass no file argument. With `--runtime vite`, the routes are read from `src/index.ts` and the requests go through the Vite dev server.
 
 ### `benchmark`
 

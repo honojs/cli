@@ -43,7 +43,7 @@ interface BatchOptions {
   external?: string[]
   compact: boolean
   bindings: boolean
-  runtime: string
+  runtime?: string
 }
 
 export function batchCommand(program: Command) {
@@ -62,7 +62,7 @@ export function batchCommand(program: Command) {
       [] as string[]
     )
     .option('--compact', 'Print only the failed steps and the summary', false)
-    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd | vite)', 'node')
+    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd | vite)')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',

@@ -30,10 +30,13 @@ vi.mock('./runtime.js', async (importOriginal) => {
 
 vi.mock('../../utils/workerd.js', () => ({
   runOnWorkerd: vi.fn(),
+  findWranglerConfig: vi.fn(),
+  hasCloudflareConfig: vi.fn(() => false),
 }))
 
 vi.mock('../../utils/vite.js', () => ({
   startVite: vi.fn(),
+  hasViteConfig: vi.fn(() => false),
   VITE_NOTE: '',
 }))
 
@@ -1223,6 +1226,36 @@ describe('requestCommand', () => {
         ok: true,
         data: { status: 200, body: { method: 'POST', body: 'hi' }, runtime: 'vite' },
       })
+    })
+
+    it('should use vite without --runtime in a cf project, but node with --trace', async () => {
+      const workerd = await import('../../utils/workerd.js')
+      const vite = await import('../../utils/vite.js')
+      vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(true)
+      vi.mocked(vite.hasViteConfig).mockReturnValue(true)
+      const target = {
+        request: vi.fn(async () => new Response('from vite')),
+        dispose: vi.fn(async () => {}),
+      }
+      vi.mocked(vite.startVite).mockResolvedValue(target)
+
+      await program.parseAsync(['node', 'test', 'request', '/', '--compact'])
+      expect(JSON.parse(consoleLogSpy.mock.calls[0][0])).toEqual({
+        ok: true,
+        data: { status: 200, body: 'from vite', runtime: 'vite' },
+      })
+
+      const app = new Hono()
+      app.get('/', (c) => c.text('from node'))
+      mockModules.existsSync.mockReturnValue(true)
+      mockModules.realpathSync.mockReturnValue('src/index.ts')
+      mockModules.resolve.mockImplementation((cwd: string, path: string) => `${cwd}/${path}`)
+      mockBuildAndImportApp.mockReturnValue(createBuildIterator(app))
+      await program.parseAsync(['node', 'test', 'request', '/', '--trace'])
+      expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).data.body).toBe('from node')
+      expect(vite.startVite).toHaveBeenCalledTimes(1)
+      vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(false)
+      vi.mocked(vite.hasViteConfig).mockReturnValue(false)
     })
 
     it('should reject a file argument and --trace with vite', async () => {
