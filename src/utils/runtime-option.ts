@@ -5,7 +5,7 @@ import { findWranglerConfig, hasCloudflareConfig } from './workerd.js'
 export type BatchRuntime = 'node' | 'workerd' | 'vite'
 
 /**
- * A project made by `cf init`: cloudflare.config.ts and a Vite config,
+ * A cf project: cloudflare.config.ts and a Vite config,
  * no wrangler config. The bindings work only through Vite there.
  */
 export const isCfViteProject = (): boolean =>
