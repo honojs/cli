@@ -1,4 +1,5 @@
 import { downloadTemplate } from '@bluwy/giget-core'
+import select from '@inquirer/select'
 import type { Command } from 'commander'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -18,11 +19,25 @@ const help: CommandHelp = {
   examples: ['hono init', 'hono init --template nodejs'],
   notes: [
     'Adds a Hono app from a create-hono template to the current directory.',
-    'Without --template, the template comes from the files in the directory: wrangler.jsonc or cloudflare.config.ts → cloudflare-workers, deno.json → deno, bun.lock → bun, and so on.',
-    'A file that already exists is never overwritten; it is listed in "skipped". package.json is merged, and its existing values win.',
+    'Without --template, the template comes from the files in the directory: wrangler.jsonc or cloudflare.config.ts → cloudflare-workers, deno.json → deno, bun.lock → bun, and so on. With no hint, a terminal shows a list to pick from; without a terminal it fails with the list.',
+    'A file that already exists is never overwritten; it is listed in "skipped". package.json is merged, and its existing values win, except type.',
     'With a wrangler config in place, the template does not add cloudflare.config.ts, and the other way around.',
     'It does not install the dependencies. Run your package manager next.',
   ],
+}
+
+/**
+ * Ask a human in a terminal. An agent runs the CLI without one and
+ * cannot answer a prompt, so it gets the TEMPLATE_REQUIRED error.
+ */
+const askTemplate = async (): Promise<string | undefined> => {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    return undefined
+  }
+  return select({
+    message: 'Which template do you want to use?',
+    choices: TEMPLATES.map((value) => ({ value })),
+  })
 }
 
 interface InitOptions {
@@ -39,7 +54,7 @@ export function initCommand(program: Command) {
       handleErrors(async (options: InitOptions) => {
         const dir = process.cwd()
         const detected = options.template ? undefined : detectTemplate(dir)
-        const template = options.template ?? detected?.template
+        const template = options.template ?? detected?.template ?? (await askTemplate())
         if (!template) {
           throw new CliError('TEMPLATE_REQUIRED', 'Cannot tell which template to use', {
             suggestions: [
