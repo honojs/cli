@@ -19,6 +19,13 @@ vi.mock('../../utils/bindings.js', () => ({
 vi.mock('../../utils/workerd.js', () => ({
   startWorkerd: vi.fn(),
   readWorkerdMain: vi.fn(),
+  findWranglerConfig: vi.fn(),
+  hasCloudflareConfig: vi.fn(() => false),
+}))
+
+vi.mock('../../utils/vite.js', () => ({
+  startVite: vi.fn(),
+  hasViteConfig: vi.fn(() => false),
 }))
 
 import { snapshotCommand } from './index.js'
@@ -64,6 +71,37 @@ describe('snapshotCommand', () => {
     expect(target.dispose).toHaveBeenCalledTimes(1)
     const lines = (consoleLogSpy.mock.calls[0][0] as string).split('\n').map((l) => JSON.parse(l))
     expect(lines[0]).toEqual({ path: '/data', expect: { status: 200, body: { from: 'workerd' } } })
+  })
+
+  it('should read the routes from the entry and send the requests to Vite', async () => {
+    const vite = await import('../../utils/vite.js')
+    const target = {
+      request: vi.fn(async () => Response.json({ from: 'vite' })),
+      dispose: vi.fn(async () => {}),
+    }
+    vi.mocked(vite.startVite).mockResolvedValue(target)
+
+    await program.parseAsync(['node', 'test', 'snapshot', '--runtime', 'vite'])
+
+    expect(target.dispose).toHaveBeenCalledTimes(1)
+    const lines = (consoleLogSpy.mock.calls[0][0] as string).split('\n').map((l) => JSON.parse(l))
+    expect(lines[0]).toEqual({ path: '/data', expect: { status: 200, body: { from: 'vite' } } })
+  })
+
+  it('should use vite without --runtime in a cf project', async () => {
+    const workerd = await import('../../utils/workerd.js')
+    const vite = await import('../../utils/vite.js')
+    vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(true)
+    vi.mocked(vite.hasViteConfig).mockReturnValue(true)
+    const target = {
+      request: vi.fn(async () => Response.json({ from: 'vite' })),
+      dispose: vi.fn(async () => {}),
+    }
+    vi.mocked(vite.startVite).mockResolvedValue(target)
+
+    await program.parseAsync(['node', 'test', 'snapshot'])
+
+    expect(vite.startVite).toHaveBeenCalledTimes(1)
   })
 
   it('should reject a file argument with --runtime workerd', async () => {

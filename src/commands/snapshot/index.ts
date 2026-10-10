@@ -5,6 +5,7 @@ import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
 import { handleErrors } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
+import { startVite } from '../../utils/vite.js'
 import { readWorkerdMain, startWorkerd } from '../../utils/workerd.js'
 import { snapshotLines } from './snapshot.js'
 
@@ -21,6 +22,7 @@ const help: CommandHelp = {
     'Unlike routes, this command sends real requests to the app — middleware runs.',
     'In a project with a wrangler config, c.env carries the real local bindings automatically. Skip it with --no-bindings.',
     '--runtime workerd sends the requests to the app running inside workerd. The routes are read from main in the wrangler config, so pass no file argument.',
+    '--runtime vite reads the routes from src/index.ts and sends the requests through the Vite dev server. In a project with cloudflare.config.ts and a Vite config (as cf init makes), it is the default, and c.env has the bindings.',
   ],
 }
 
@@ -28,7 +30,7 @@ interface SnapshotOptions {
   external?: string[]
   statusOnly: boolean
   bindings: boolean
-  runtime: string
+  runtime?: string
 }
 
 export function snapshotCommand(program: Command) {
@@ -38,7 +40,7 @@ export function snapshotCommand(program: Command) {
     .description('Print the current behavior as batch JSONL lines')
     .argument('[file]', 'Path to the Hono app file')
     .option('--status-only', 'Capture only the status codes, not the bodies', false)
-    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd)', 'node')
+    .option('--runtime <runtime>', 'runtime to execute the app (node | workerd | vite)')
     .option('--no-bindings', 'Skip loading the local Cloudflare bindings')
     .option(
       '-e, --external <package>',
@@ -51,7 +53,22 @@ export function snapshotCommand(program: Command) {
     .action(
       handleErrors(async (file: string | undefined, options: SnapshotOptions) => {
         const external = options.external || []
-        if (resolveRuntime(options.runtime, file, options.bindings) === 'workerd') {
+        const runtime = resolveRuntime(options.runtime, file, options.bindings)
+        if (runtime === 'vite') {
+          // The routes come from the default entry in-process; the requests go to Vite.
+          const target = await startVite()
+          try {
+            for await (const app of getBuildIterator(undefined, false, external)) {
+              console.log(
+                (await snapshotLines(app, options.statusOnly, undefined, target)).join('\n')
+              )
+            }
+          } finally {
+            await target.dispose().catch(() => {})
+          }
+          return
+        }
+        if (runtime === 'workerd') {
           // The routes come from the entry in-process; the requests go to workerd.
           const main = await readWorkerdMain()
           const target = await startWorkerd()
