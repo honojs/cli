@@ -31,6 +31,16 @@ describe('defaultRuntime', () => {
     expect(defaultRuntime(undefined, false)).toBe('node')
   })
 
+  it('is vite with the default entry as the file in a cf project', () => {
+    projectWith('cloudflare.config.ts', 'vite.config.ts', 'src/index.tsx')
+    expect(defaultRuntime('src/index.tsx', true)).toBe('vite')
+    expect(defaultRuntime('./src/index.tsx', true)).toBe('vite')
+    expect(resolveRuntime(undefined, 'src/index.tsx')).toBe('vite')
+    expect(defaultRuntime('src/index.tsx', false)).toBe('node')
+    projectWith('vite.config.ts', 'src/index.ts')
+    expect(defaultRuntime('src/index.ts', true)).toBe('node')
+  })
+
   it('is vite in a Vite project with no entry file', () => {
     projectWith('vite.config.ts')
     expect(defaultRuntime(undefined, true)).toBe('vite')
@@ -57,6 +67,7 @@ describe('resolveRuntime', () => {
     expect(() => resolveRuntime('vite', 'src/app.ts')).toThrowError(
       /vite runs the app from your Vite config/
     )
+    expect(resolveRuntime('vite', 'src/index.ts')).toBe('vite')
     expect(() => resolveRuntime('vite', undefined, false)).toThrowError(
       /--no-bindings applies to --runtime node only/
     )

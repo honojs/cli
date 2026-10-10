@@ -59,7 +59,7 @@ export function snapshotCommand(program: Command) {
           // The routes come from the default entry in-process; the requests go to Vite.
           const target = await startVite()
           try {
-            for await (const app of getBuildIterator(undefined, false, external, [
+            for await (const app of getBuildIterator(file, false, external, [
               stubCloudflareModules,
             ])) {
               console.log(
