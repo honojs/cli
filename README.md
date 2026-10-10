@@ -265,7 +265,7 @@ EOF
 
 With `--runtime workerd`, one workerd starts and every step runs in it, so a flow over the real bindings (put to KV, then get; D1; an AI binding) runs in one call. The entry is `main` in the wrangler config, so pass no file argument. With `--runtime vite`, one Vite dev server starts and every step goes through it.
 
-One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
+One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). Cookies carry over like in a browser, so a login step signs in the steps after it; a `cookie` header in a step wins. `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
 
 ### `snapshot`
 

@@ -92,6 +92,41 @@ describe('getByPath', () => {
 })
 
 describe('runBatch', () => {
+  it('keeps cookies from step to step, like a browser', async () => {
+    const app = new Hono()
+    app.post('/login', (c) => {
+      c.header('set-cookie', 'session=abc; Path=/; HttpOnly')
+      c.header('set-cookie', 'theme=dark', { append: true })
+      return c.redirect('/', 303)
+    })
+    app.get('/me', (c) => c.json({ cookie: c.req.header('cookie') ?? null }))
+    app.post('/logout', (c) => {
+      c.header('set-cookie', 'session=; Max-Age=0')
+      return c.body(null, 204)
+    })
+    const result = await runBatch(
+      app,
+      parseBatch(
+        [
+          '{"path":"/me"}',
+          '{"method":"POST","path":"/login"}',
+          '{"path":"/me"}',
+          '{"path":"/me","headers":{"cookie":"session=mine"}}',
+          '{"method":"POST","path":"/logout"}',
+          '{"path":"/me"}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps.map((s) => s.body)).toEqual([
+      { cookie: null },
+      '',
+      { cookie: 'session=abc; theme=dark' },
+      { cookie: 'session=mine' },
+      '',
+      { cookie: 'theme=dark' },
+    ])
+  })
+
   const crudApp = () => {
     const app = new Hono()
     const users = new Map<number, { id: number; name: string }>()
