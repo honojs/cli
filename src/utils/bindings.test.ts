@@ -34,7 +34,9 @@ describe('maybeLoadBindings', () => {
     process.chdir(dir)
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(await maybeLoadBindings()).toBeUndefined()
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Use --runtime vite'))
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('get the bindings with --runtime vite')
+    )
     errorSpy.mockRestore()
   })
 

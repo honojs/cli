@@ -31,7 +31,7 @@ export const maybeLoadBindings = async (): Promise<PlatformProxy | undefined> =>
       // instead of asking for the same bindings in a second config.
       console.error(
         hasViteConfig()
-          ? `${CLOUDFLARE_CONFIG} found but it is not supported yet — c.env stays empty. Use --runtime vite to get the bindings, or pass --no-bindings.`
+          ? `${CLOUDFLARE_CONFIG} found but it is not supported on Node.js yet — c.env stays empty. request, batch, and snapshot get the bindings with --runtime vite. Or pass --no-bindings.`
           : `${CLOUDFLARE_CONFIG} found but it is not supported yet — c.env stays empty. Add a wrangler config, or pass --no-bindings.`
       )
     }
