@@ -1,0 +1,25 @@
+src/utils/load-app.test.ts
+  s_dc6239c7c86ef7::t_c91be136eab238 1-40
+src/utils/load-app.ts
+  s_dc6239c7c86ef7::t_b90578b99baeeb 8,72,74-79
+src/utils/workerd.test.ts
+  s_dc6239c7c86ef7::t_65ac3d967afba6 62
+src/utils/workerd.ts
+  s_dc6239c7c86ef7::t_a1c3f099ac782f 68-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "42287781bd6153ffd679ff6386248cfdb01ffa16",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
