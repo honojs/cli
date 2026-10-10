@@ -68,9 +68,10 @@ that the data stays.
   (`--port 5199`) and killed only that server.
 - Why the CLI took more turns:
   - A flow needs the new TODO's id. With curl, one shell script does
-    `ID=$(curl ...)`. A batch step cannot use a value from an earlier
-    step, so agents ran one batch to get the id and another to edit
-    and delete.
+    `ID=$(curl ...)`. Batch has `save`, but it reads only a JSON body.
+    Every app here was HTML forms with 303 redirects, so the id was in
+    the HTML or the `Location` header. Agents ran one batch to get the
+    id and another to edit and delete.
   - Each `hono request` or `hono batch` starts the Vite dev server
     again; a running server answers curl at once.
   - One run passed `src/index.tsx` as the file. The app ran on Node.js
