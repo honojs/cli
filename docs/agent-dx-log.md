@@ -3,6 +3,36 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-10: Agents chain `hono request` for a flow — point at batch in `--help` (#153)
+
+**Experiment**: create-hono `cloudflare-workers` template (cf CLI, Vite)
+from create-hono@next, no skill; task: "アクセスカウンターをつくって"
+(make an access counter). `claude -p`, Opus, 5 runs each, a fresh
+project per run, Cloudflare auth replaced with an invalid token. Only
+the CLI differed: `1.0.0-rc.3` vs rc.3 plus this change. Not run in
+the agent-dx harness.
+
+**Findings**:
+
+- Every run passed and none started a dev server, wrote a wrangler
+  config, or tried to create Cloudflare resources.
+- rc.3: 2/5 checked the counter with `hono batch`; 3/5 used only
+  separate `hono request` calls (`/`, `/`, `/api/count`). With this
+  change: 5/5 used `hono batch`; 1/5 also re-ran `hono request` with
+  `grep` afterwards. Cost and time were the same (avg $0.11, 26s vs
+  23s). 5 runs each, so this is a direction, not a significant result.
+- Why it matters in this template: in a Vite project each `hono
+  request` starts the dev server again. Four requests took 3.3s; one
+  batch of four took 0.7s.
+- Found by a manual test with another model first: the agent chained
+  `hono request` calls with `;` and `grep` to check a POST, POST, GET
+  flow. The top-level `--help` only said "start with routes, then
+  request"; the batch note lived in `request --help`.
+
+**Change**: the top-level `--help` now says to send several requests or
+a flow in one `hono batch -` call, with the reason (one start; a Vite
+project restarts the dev server per request).
+
 ## 2026-09-20: The skill's workerd line hides #132 (no change yet)
 
 **Experiment**: D1 bindings A/B for #132. create-hono Workers

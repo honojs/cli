@@ -69,6 +69,7 @@ describe('help text', () => {
     expect(top).toContain('"ok": true')
     expect(top).toContain('hono <command> --help')
     expect(top).toContain('hono snapshot --status-only')
+    expect(top).toContain('in one `hono batch -` call')
     expect(top).toContain('hono batch - --compact')
     expect(top).not.toContain('Examples:')
   })
