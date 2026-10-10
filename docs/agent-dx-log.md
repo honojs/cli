@@ -3,6 +3,54 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-11: Without the CLI, agents run the dev server well — and `pkill` it (no change)
+
+**Experiment**: the same counter task as #153 ("アクセスカウンターを
+つくって"), `claude -p`, Opus, 5 runs each, Cloudflare auth replaced
+with an invalid token. Three projects:
+
+- **CLI**: create-hono@next `cloudflare-workers` (cf CLI, Vite) with
+  `@hono/cli` 1.0.0-rc.4.
+- **No CLI**: the same project without `@hono/cli`; AGENTS.md says
+  `npm run dev` starts `cf dev` instead of "use the CLI".
+- **0.19**: create-hono@0.19.5 `cloudflare-workers` as users get it
+  today: wrangler, Hono v4, no AGENTS.md.
+
+**Findings**:
+
+| | CLI | No CLI | 0.19 |
+| --- | --- | --- | --- |
+| Saw the counter go up | 5/5 | 5/5 | 5/5 |
+| Avg turns | 5.2 | 6.0 | 7.2 |
+| Avg Bash calls | 4.2 | 5.0 | 5.6 |
+| Avg cost | $0.15 | $0.15 | $0.21 |
+| Avg / median time | 26s / 24s | 29s / 27s | 92s / 46s |
+| Started a dev server | 0/5 | 5/5 | 5/5 |
+| `sleep` or polling for the port | 0/5 | 5/5 | 5/5 |
+| `pkill -f vite` | 0/5 | 5/5 | 0/5 |
+
+- Without the CLI, agents start the dev server in the background, wait
+  for the port, `curl`, and stop it. Every run checked its work, and no
+  process was left. The CLI saves little time or cost here.
+- The difference is side effects. Every no-CLI run cleaned up with
+  `pkill -f vite`, which kills every Vite process on the machine. It
+  killed two dev servers of the user that had nothing to do with the
+  test. One run hit a dependency reload, probed ports 5173 and 8787,
+  and ran 8 `kill` or `lsof` commands (45s). Port 5173 was taken, so
+  `cf dev` moved to 5174.
+- 0.19 runs picked `--port 8799` and `pkill -f "wrangler dev --port
+  8799"`, which is safer. Two runs stalled for 120s on a command
+  (`wrangler types`, and an `ls` alias in this machine's shell), so the
+  time is partly this environment. Without AGENTS.md, all five used a
+  Durable Object instead of KV, and three wrote the bindings type by
+  hand first.
+- 5 runs each, a direction only. The runs differ in more than the CLI
+  (template, Hono version, AGENTS.md).
+
+**Change**: none. The case for the CLI is "no side effects, the same
+result every time", not speed: it touches no port or process of the
+user.
+
 ## 2026-10-10: Agents chain `hono request` for a flow — point at batch in `--help` (#153)
 
 **Experiment**: create-hono `cloudflare-workers` template (cf CLI, Vite)
