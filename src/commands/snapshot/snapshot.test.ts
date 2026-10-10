@@ -21,10 +21,37 @@ describe('snapshotLines', () => {
     expect(lines).toContainEqual({ path: '/health', expect: { status: 200, body: 'ok' } })
   })
 
-  it('prints param and non-GET routes without an expect', async () => {
+  it('prints non-GET routes without an expect', async () => {
     const lines = (await snapshotLines(app())).map((l) => JSON.parse(l))
-    expect(lines).toContainEqual({ path: '/users/:id' })
     expect(lines).toContainEqual({ method: 'POST', path: '/users' })
+  })
+
+  it('fills a param from a JSON field with the same name', async () => {
+    const lines = (await snapshotLines(app())).map((l) => JSON.parse(l))
+    expect(lines).toContainEqual({ path: '/users/1', expect: { status: 200, body: { id: '1' } } })
+  })
+
+  it('follows links to param routes, page by page', async () => {
+    const a = new Hono()
+    a.get('/', (c) => c.html('<a href="/tags">Tags</a> <a href="/about">About</a>'))
+    a.get('/tags', (c) => c.html('<a href="/tags/news">#news</a>'))
+    a.get('/tags/:tag', (c) => c.html(`<a href="/posts/hello?ref=${c.req.param('tag')}">Hello</a>`))
+    a.get('/posts/:slug', (c) => c.text(`post ${c.req.param('slug')}`))
+    a.get('/api/posts/:slug', (c) => c.json({ slug: c.req.param('slug') }))
+    a.get('/page/:n{[0-9]+}', (c) => c.text('page'))
+    a.get('/:page', (c) => c.text(`page ${c.req.param('page')}`))
+    const lines = (await snapshotLines(a)).map((l) => JSON.parse(l))
+    expect(lines).toContainEqual({ path: '/tags/news', expect: expect.anything() })
+    expect(lines).toContainEqual({
+      path: '/posts/hello',
+      expect: { status: 200, body: 'post hello' },
+    })
+    // The value from the link fills the same param name elsewhere
+    expect(lines).toContainEqual({ path: '/api/posts/hello', expect: expect.anything() })
+    // A path that a paramless route already answered is not used again
+    expect(lines).toContainEqual({ path: '/about', expect: { status: 200, body: 'page about' } })
+    // No value matches [0-9]+, so the route stays for the caller to fill in
+    expect(lines).toContainEqual({ path: '/page/:n{[0-9]+}' })
   })
 
   it('records the current not-found behavior as a probe line', async () => {
