@@ -44,5 +44,15 @@ const LOCKFILES: [file: string, packageManager: string][] = [
   ['bun.lockb', 'bun'],
 ]
 
-export const detectPackageManager = (dir: string): string =>
-  LOCKFILES.find(([file]) => existsSync(join(dir, file)))?.[1] ?? 'npm'
+const PACKAGE_MANAGERS = ['npm', 'pnpm', 'yarn', 'bun']
+
+/**
+ * The lockfile first. Without one, the package manager that started
+ * the CLI (`npx`, `pnpm dlx`, ...) names itself in
+ * npm_config_user_agent, e.g. "pnpm/10.0.0 node/v22.0.0".
+ */
+export const detectPackageManager = (dir: string, userAgent: string | undefined) => {
+  const fromLockfile = LOCKFILES.find(([file]) => existsSync(join(dir, file)))?.[1]
+  const fromAgent = userAgent?.split('/')[0]
+  return fromLockfile ?? (fromAgent && PACKAGE_MANAGERS.includes(fromAgent) ? fromAgent : 'npm')
+}

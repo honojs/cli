@@ -30,7 +30,14 @@ describe('detectTemplate', () => {
 
 describe('detectPackageManager', () => {
   it('should read the lockfile', () => {
-    expect(detectPackageManager(dirWith('pnpm-lock.yaml'))).toBe('pnpm')
-    expect(detectPackageManager(dirWith('package-lock.json'))).toBe('npm')
+    expect(detectPackageManager(dirWith('pnpm-lock.yaml'), undefined)).toBe('pnpm')
+    expect(detectPackageManager(dirWith('package-lock.json'), undefined)).toBe('npm')
+  })
+
+  it('should fall back to the package manager that started the CLI', () => {
+    expect(detectPackageManager(dirWith(), 'pnpm/10.0.0 node/v22.0.0')).toBe('pnpm')
+    expect(detectPackageManager(dirWith('yarn.lock'), 'pnpm/10.0.0')).toBe('yarn')
+    expect(detectPackageManager(dirWith(), 'unknown/1.0.0')).toBe('npm')
+    expect(detectPackageManager(dirWith(), undefined)).toBe('npm')
   })
 })
