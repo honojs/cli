@@ -56,10 +56,20 @@ export const agentHelp = `For coding agents:
   requests or a flow (POST, then GET), send them in one \`hono batch -\` call,
   not many \`hono request\` calls: it is one start, and in a Vite project each
   request starts the dev server again.
-  Before changing existing routes, capture them with
-  \`hono snapshot --status-only\`. After the change, pipe those lines, plus
-  lines for new routes, into \`hono batch - --compact\` until "failed" is 0.
-  \`hono <command> --help\` has examples and notes.
+  After you change existing code, run \`hono diff\`: it lists the routes that
+  answer differently from the last commit, with nothing to capture first.
+
+  These cover most work; no need to read \`hono <command> --help\` first:
+    hono request /todos -X POST -d 'title=milk'   # -H 'name: value' adds a header
+    hono batch - <<'EOF'
+    {"method":"POST","path":"/login","body":"password=pw","expect":{"status":303}}
+    {"method":"POST","path":"/api/todos","body":{"title":"a"},"save":{"id":".id"}}
+    {"method":"DELETE","path":"/api/todos/{{id}}","expect":{"status":204}}
+    EOF
+    hono diff                                      # what changed vs the last commit
+  A string body goes as a form, an object as JSON. Cookies carry to later
+  steps. A step without "expect" fails on 4xx/5xx. "save" reads a JSON field.
+  \`hono <command> --help\` has the rest.
   For Hono itself, fetch https://hono.dev/llms.txt to find the page, then fetch
   it with the \`Accept: text/markdown\` header.
 `

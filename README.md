@@ -463,6 +463,8 @@ Without the skill, add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 Working on this Hono app? Run `hono --help` first and follow it.
 ```
 
+`hono --help` starts with a short guide for agents: which command to use when, and a cheat sheet of `request`, `batch`, and `diff` lines that covers most work without reading each command's help.
+
 ## Authors
 
 - Yusuke Wada https://github.com/yusukebe
