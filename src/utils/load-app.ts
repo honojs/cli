@@ -8,6 +8,9 @@ import { CliError } from './output.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
+export const hasDefaultEntry = (): boolean =>
+  DEFAULT_ENTRY_CANDIDATES.some((candidate) => existsSync(resolve(process.cwd(), candidate)))
+
 /**
  * Resolve the entry file and return an iterator of the built app.
  */

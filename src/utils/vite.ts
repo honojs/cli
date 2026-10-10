@@ -41,7 +41,7 @@ export interface ViteTarget extends RequestTarget {
 }
 
 export const VITE_NOTE =
-  '--runtime vite sends the requests through the Vite dev server of the project — for an app that a Vite plugin builds. The app comes from the Vite config, so pass no file argument. In a project with cloudflare.config.ts and a Vite config, it is the default, and c.env has the bindings.'
+  '--runtime vite sends the requests through the Vite dev server of the project — for an app that a Vite plugin builds. The app comes from the Vite config, so pass no file argument. It is the default in a project with cloudflare.config.ts and a Vite config, where c.env gets the bindings, and in a Vite project with no src/index.ts.'
 
 const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((ext) => `vite.config.${ext}`)
 
