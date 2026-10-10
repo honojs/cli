@@ -3,6 +3,39 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-11: A bigger app does not change the result for Opus
+
+**Experiment**: the refactor task on a bigger app: one 445-line
+`src/index.tsx` with 45 routes (pages, admin with a cookie login, a JSON
+API with a token, webhooks). It has three order traps: `/health` comes
+before `secureHeaders()`, `/admin/login` comes before the auth
+middleware, and a catch-all `/:page` comes last. No comment points at
+them. A script compares 94 requests (status, headers, body, set-cookie)
+with the original. Opus, 5 runs each, no CLI vs the build with all of
+this night's changes.
+
+**Findings**:
+
+| Opus | No CLI | CLI |
+| --- | --- | --- |
+| Requests changed | 0 in all 5 | 0 in all 5 |
+| Turns / cost / median time | 12.4 / $0.54 / 105s | 10.2 / $0.55 / 110s |
+| Stopped every dev server (`pkill -f vite`) | 1 of 5 | 0 of 5 |
+
+- Opus found all three traps by reading the code, with or without the
+  CLI, and kept the order.
+- Without the CLI, every run wrote its own before/after script with
+  `cf dev` and curl (up to 94 requests). One run caught its own `sed`
+  mistake with it. With the CLI, every run used `hono diff`.
+- `hono diff` compared only 19 of the 45 routes: it ran paramless GET
+  routes only.
+
+**Change**: `snapshot` (and so `diff`) now also runs a param GET route
+when the app showed a path for it, in a link or a JSON field with the
+param's name. On this app, 30 routes instead of 19. Also #164:
+`snapshot` printed Hono v5's `notFound` and `onError` handlers as
+`@NOT_FOUND` / `@ERROR` lines, and `hono batch` failed on them.
+
 ## 2026-10-11: Where the CLI loses, and where it wins (#160, #161, #162, #163)
 
 **Experiment**: the cf template (Vite) again, `claude -p`, 5 runs each,
