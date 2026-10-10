@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
+import { initCommand } from './commands/init/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
 import { snapshotCommand } from './commands/snapshot/index.js'
@@ -37,6 +38,7 @@ batchCommand(program)
 snapshotCommand(program)
 benchmarkCommand(program)
 ssgCommand(program)
+initCommand(program)
 
 try {
   await program.parseAsync()
