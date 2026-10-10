@@ -59,6 +59,8 @@ const COMMAND_FIXES: Record<string, string> = {
   docs: 'docs was removed. Find the page in https://hono.dev/llms.txt, then fetch it with the "Accept: text/markdown" header',
   search:
     'search was removed. Find the page in https://hono.dev/llms.txt, then fetch it with the "Accept: text/markdown" header',
+  optimize:
+    'optimize was removed. Build and minify with your bundler (wrangler, Vite). To pick a smaller preset, see https://hono.dev/docs/api/presets',
 }
 
 export const formatArgumentsError = (message: string): string => {

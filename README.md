@@ -42,9 +42,6 @@ hono snapshot
 # Measure the performance of your Hono app
 hono benchmark
 
-# Build an optimized Hono app
-hono optimize
-
 # Generate static files from your Hono app
 hono ssg
 ```
@@ -61,7 +58,6 @@ Inspect and test:
 
 Build:
 
-- `optimize [entry]` - Build an optimized Hono app
 - `ssg [file]` - Generate static files from your Hono app
 
 ---
@@ -174,7 +170,7 @@ hono request /api/hello --runtime vite
 
 ```
 
-In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, and `snapshot`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. With a Vite config (as `cf init` creates), the commands use `--runtime vite` by default: the Cloudflare Vite plugin reads `cloudflare.config.ts`, so the bindings work. Without one, keep a wrangler config next to it.
+In a project with a wrangler config, `c.env` carries the real local bindings (KV, D1, R2, vars) automatically — wrangler's `getPlatformProxy` simulates the binding backends while the app runs on Node.js. This works in `request`, `batch`, `snapshot`, and `ssg`; skip it with `--no-bindings`. It does not apply to `--runtime bun`/`deno` (the proxy cannot cross the process boundary) — `--runtime workerd` has the real bindings natively. So `--no-bindings` goes with `--runtime node` only; with another runtime it is an error. It needs [wrangler](https://developers.cloudflare.com/workers/wrangler/) installed in the project (wrangler is not a dependency of Hono CLI — without it, `c.env` stays empty and a note goes to stderr). `cloudflare.config.ts` (the config of the `cf` CLI) is not supported yet: with only that file, `c.env` stays empty with a note on stderr, and `--runtime workerd` fails with `CLOUDFLARE_CONFIG_NOT_SUPPORTED`. With a Vite config (as `cf init` creates), the commands use `--runtime vite` by default: the Cloudflare Vite plugin reads `cloudflare.config.ts`, so the bindings work. Without one, keep a wrangler config next to it.
 
 `--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
@@ -348,87 +344,6 @@ hono benchmark --hono ../hono
 
 `--hono` runs the same app with another Hono: an npm version, or a path to a local package. Use it to compare Hono versions without setting up a benchmark environment. Latency is in milliseconds.
 
-### `optimize`
-
-Build your Hono app into a single optimized bundle. For a plain bundle, use your normal build tool — this command exists for the Hono-specific optimizations:
-
-```bash
-hono optimize [entry] [options]
-```
-
-It applies the following optimizations to reduce bundle size:
-
-- **Router optimization**: Replaces the router with a prebuilt router for your routes
-- **Request body API removal**: Removes request body APIs (`c.req.json()`, `c.req.formData()`, etc.) when every route method is strictly GET, HEAD, or OPTIONS. A route or middleware registered with `all()` or `use()` keeps the APIs, because it may read the request body
-- **Context response API removal**: Removes unused response utility APIs (`c.body()`, `c.json()`, `c.text()`, `c.html()`, `c.redirect()`) from Context object
-- **Hono API removal**: Removes unused Hono methods (`route`, `mount`, `fire`) that are only used during application initialization
-
-**Arguments:**
-
-- `entry` - Entry file for your Hono app (TypeScript/JSX supported, optional)
-
-**Options:**
-
-- `-o, --outfile <outfile>` - Output file
-- `-m, --minify` - minify output file
-- `-t, --target [target]` - environment target
-- `--request-body-api-removal <mode>` - Request body API removal mode: `auto` (default), `force`, or `disable`
-- `--no-context-response-api-removal` - Disable response utility API removal from Context object
-- `--no-hono-api-removal` - Disable Hono API removal optimization
-- `--plain` - human-readable output instead of JSON
-
-**Examples:**
-
-```bash
-# Build an optimized bundle to dist/index.js
-hono optimize
-
-# Specify entry file and output file
-hono optimize -o dist/app.js src/app.ts
-
-# With minification
-hono optimize -m
-
-# Control request body API removal
-hono optimize --request-body-api-removal force
-```
-
-**Output:**
-
-The result is JSON. All Hono CLI commands use the same envelope: `ok` and `data` on success, `ok: false` and `error` on failure with exit code 1. The error has a machine-readable `code`, a `message`, `suggestions` to try in order, and sometimes a `docs` link.
-
-```json
-{
-  "ok": true,
-  "data": {
-    "router": "PreparedRegExpRouter",
-    "removed": {
-      "requestBodyApis": true,
-      "contextResponseApis": ["body", "json", "html", "redirect"],
-      "honoApis": ["route", "mount", "fire"]
-    },
-    "output": "dist/index.js",
-    "size": 34124
-  }
-}
-```
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "ENTRY_NOT_FOUND",
-    "message": "Entry file missing.ts does not exist",
-    "suggestions": [
-      "Pass the entry file: hono optimize src/app.ts",
-      "Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx"
-    ]
-  }
-}
-```
-
-Use `--plain` for a human-readable format.
-
 ### `ssg`
 
 Generate static files from your Hono app with the [SSG Helper](https://hono.dev/docs/helpers/ssg).
@@ -447,6 +362,7 @@ hono ssg [file] [options]
 - `--include <path>` - generate only matching paths, `*` matches anything (can be used multiple times)
 - `--exclude <path>` - skip matching paths, `*` matches anything (can be used multiple times)
 - `--plain` - human-readable output instead of JSON
+- `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Examples:**

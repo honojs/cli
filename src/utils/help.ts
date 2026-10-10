@@ -52,7 +52,10 @@ export const agentHelp = `For coding agents:
   { "ok": false, "error": { "code", "message", "suggestions", "docs" } } on
   failure. Try the suggestions in order. Logs go to stderr.
   Start with \`hono routes\`, then \`hono request <path>\`. After you change the
-  app, run them again. \`hono <command> --help\` has examples and notes.
+  app, run them again. Before changing existing routes, capture them with
+  \`hono snapshot --status-only\`. After the change, pipe those lines, plus
+  lines for new routes, into \`hono batch - --compact\` until "failed" is 0.
+  \`hono <command> --help\` has examples and notes.
   For Hono itself, fetch https://hono.dev/llms.txt to find the page, then fetch
   it with the \`Accept: text/markdown\` header.
 `

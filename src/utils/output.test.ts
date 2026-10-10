@@ -67,6 +67,8 @@ describe('formatArgumentsError flag fixes', () => {
     expect(docs.error.suggestions[0]).toContain('https://hono.dev/llms.txt')
     const search = JSON.parse(formatArgumentsError("error: unknown command 'search'"))
     expect(search.error.suggestions[0]).toContain('https://hono.dev/llms.txt')
+    const optimize = JSON.parse(formatArgumentsError("error: unknown command 'optimize'"))
+    expect(optimize.error.suggestions[0]).toContain('optimize was removed')
   })
 
   it('should map an invented flag to the real one', () => {
