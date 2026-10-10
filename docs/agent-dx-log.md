@@ -3,6 +3,80 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-11: Where the CLI loses, and where it wins (#160, #161, #162, #163)
+
+**Experiment**: the cf template (Vite) again, `claude -p`, 5 runs each,
+Cloudflare auth replaced with an invalid token. Three more tasks, each
+graded by a script or a separate agent, never by the agent's own report:
+
+- **Login**: a blog app (pages, a JSON API with CORS and ETag, an admin
+  form) and "記事の投稿・編集・削除は、ログインした人だけができるように
+  して". A script checks 12 public answers and the CORS headers did not
+  change and that 5 writes fail without login; an agent checks login works.
+- **Refactor**: the same blog and "src/index.tsx が長くなってきたので、
+  ファイルを分けて整理して". A script compares 28 requests (status,
+  content-type, ETag, CORS, body) with the original.
+- **Parallel**: 3 agents at once on one machine (TODO, counter, memo
+  apps), 3 rounds.
+
+Conditions: no CLI (`cf dev` + curl), rc.4, and rc.4 plus this night's
+changes (#159 to #162 and a cheat sheet in the top-level `--help`).
+
+**Findings**:
+
+| Opus: turns / cost / median time | No CLI | rc.4 | With changes |
+| --- | --- | --- | --- |
+| TODO | 8.8 / $0.25 / 45s | 10.2 / $0.27 / 61s | 9.4 / $0.26 / 53s |
+| Login | 18.0 / $0.61 / 105s | 24.6 / $0.73 / 147s | 18.0 / $0.58 / 109s |
+| Refactor | 5.2 / $0.26 / 52s | 9.2 / $0.36 / 71s | 6.0 / $0.28 / 55s |
+
+- Every run of every condition passed its grader: no regression, no
+  unprotected write, no behavior change after the refactor. Opus does not
+  break these apps with or without the CLI. Sonnet on the TODO task: 25/25
+  both ways (CLI 6.4 turns, $0.11; no CLI 5.4 turns, $0.08).
+- Whether the agent checks at all: on the refactor, Sonnet without the CLI
+  sent no request in 5/5 runs. It ran the typecheck and wrote "`cf dev` で
+  起動しての動作確認はしていません" — the check went back to the human.
+  Sonnet with the CLI (rc.4) sent requests in 5/5, at the same cost
+  ($0.11). Starting a dev server is too heavy to bother with for a
+  refactor; one CLI line is not. Opus checked in every run either way.
+- rc.4 cost more turns than curl. The changes bring it level:
+  - Agents typed `content-type: application/x-www-form-urlencoded` in 18
+    of 20 runs; a form body without it went as `text/plain`, and on a
+    form app `-d 'title=milk'` returned 303 and added nothing (#161).
+  - Batch did not carry cookies, so a login flow took a manual
+    `hono request`, a `grep` for the cookie, and `-H cookie:` (#160).
+  - The capture-first flow (`snapshot`, change, batch) is three steps;
+    `hono diff` is one, at the end (#162). With it, 5/5 refactor runs
+    used `diff` and the turns went 9.2 to 6.0.
+  - The top-level `--help` says "`hono <command> --help` has examples",
+    and agents read 1.2 to 2.6 subcommand helps per run. A cheat sheet
+    there cut it to 0.4 to 1.0.
+- Without the CLI, Opus builds its own check: 2 of 5 refactor runs built
+  the app, wrote a script that calls it with a mock KV, and compared 22
+  requests before (`git stash`) and after. That is `hono diff`, written
+  by hand each time.
+- The difference is side effects. In the cf / Vite template, runs
+  without the CLI cleaned up with a kill that stops every dev server on
+  the machine (`pkill -f vite`, `pkill -f "cf dev"`): counter 5/5, TODO
+  1/5, Sonnet TODO 5/5, login 7/10, parallel 6/9, refactor 0/10 (no dev
+  server) — 24 of 44 runs, 24 of the 34 that started a dev server. Runs
+  with the CLI: 0 of 84. In the parallel task, two of the three agents
+  used the same port in every round (5173, 5173, 8799). The create-hono
+  0.19 template (wrangler) picked `--port 8799` and killed only that:
+  0/10.
+- Half of the login turns, in every condition, went to reading
+  `node_modules/cf` types for `bindings.secret()` and `.dev.vars`, and
+  Hono's JWT and cookie types. One AGENTS.md line about secrets cut both:
+  no CLI 18.0 to 13.2 turns ($0.61 to $0.42), CLI 18.0 to 12.8 ($0.58 to
+  $0.42). It belongs in the starter template, not the CLI.
+- 5 runs each, a direction only.
+
+**Change**: #160 (cookies in batch), #161 (string body content-type, csrf()
+hint), #162 (`hono diff`), #163 (cheat sheet in `--help`). The case for
+the CLI: at the same cost as a dev server and curl, a smaller model still
+checks its work, and nothing else on the machine is touched.
+
 ## 2026-10-11: Without the CLI, agents check their work just as well (#159)
 
 **Experiment**: the same counter task as #153 ("アクセスカウンターを
