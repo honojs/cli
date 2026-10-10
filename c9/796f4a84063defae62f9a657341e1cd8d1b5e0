@@ -1,0 +1,33 @@
+README.md
+  s_dc6239c7c86ef7::t_712f162f5d52a2 192
+src/commands/request/index.test.ts
+  s_dc6239c7c86ef7::t_2dbd56cd050593 1262
+src/commands/request/index.ts
+  s_dc6239c7c86ef7::t_0ced3f42d6e036 10,187
+src/commands/snapshot/index.ts
+  s_dc6239c7c86ef7::t_51fcead1add26d 62
+src/utils/load-app.ts
+  s_dc6239c7c86ef7::t_7b604f45d7bb87 15-18
+src/utils/runtime-option.test.ts
+  s_dc6239c7c86ef7::t_61bdb95b34b233 34-43,70
+src/utils/runtime-option.ts
+  s_dc6239c7c86ef7::t_2b8cbd3121caa4 1,18-21,24,27-29,33-44,72-73
+src/utils/vite.ts
+  s_dc6239c7c86ef7::t_c596762c2c2807 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c9796f4a84063defae62f9a657341e1cd8d1b5e0",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
