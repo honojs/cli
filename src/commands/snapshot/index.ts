@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
 import { maybeLoadBindings } from '../../utils/bindings.js'
+import { stubCloudflareModules } from '../../utils/cloudflare-stub.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
@@ -58,7 +59,9 @@ export function snapshotCommand(program: Command) {
           // The routes come from the default entry in-process; the requests go to Vite.
           const target = await startVite()
           try {
-            for await (const app of getBuildIterator(undefined, false, external)) {
+            for await (const app of getBuildIterator(undefined, false, external, [
+              stubCloudflareModules,
+            ])) {
               console.log(
                 (await snapshotLines(app, options.statusOnly, undefined, target)).join('\n')
               )
@@ -73,7 +76,9 @@ export function snapshotCommand(program: Command) {
           const main = await readWorkerdMain()
           const target = await startWorkerd()
           try {
-            for await (const app of getBuildIterator(main, false, external)) {
+            for await (const app of getBuildIterator(main, false, external, [
+              stubCloudflareModules,
+            ])) {
               console.log(
                 (await snapshotLines(app, options.statusOnly, undefined, target)).join('\n')
               )

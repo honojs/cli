@@ -95,6 +95,8 @@ hono routes [file] [options]
 }
 ```
 
+An app that imports `cloudflare:*` modules (e.g. a Durable Object class from `cloudflare:workers`) works too. Node.js cannot load them, so they are replaced with an empty stub while the routes are read. `snapshot` with `--runtime workerd` or `vite` reads the routes the same way.
+
 ### `request`
 
 Send HTTP requests to your Hono application using the built-in `app.request()` method. This is particularly useful for testing and development.

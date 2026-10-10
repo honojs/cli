@@ -1,5 +1,6 @@
 import type { Command } from 'commander'
 import { getRouterName, inspectRoutes } from 'hono/dev'
+import { stubCloudflareModules } from '../../utils/cloudflare-stub.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { getBuildIterator } from '../../utils/load-app.js'
@@ -39,7 +40,10 @@ export function routesCommand(program: Command) {
     )
     .action(
       handleErrors(async (file: string | undefined, options: RoutesOptions) => {
-        const buildIterator = getBuildIterator(file, false, options.external || [])
+        // Reading routes runs no handler, so cloudflare:* can be a stub
+        const buildIterator = getBuildIterator(file, false, options.external || [], [
+          stubCloudflareModules,
+        ])
         const app = (await buildIterator.next()).value
 
         if (!app || !Array.isArray(app.routes)) {

@@ -64,6 +64,15 @@ describe('routesCommand', () => {
     vi.restoreAllMocks()
   })
 
+  it('should stub cloudflare:* modules when reading the routes', async () => {
+    setupBasicMocks(new Hono())
+
+    await program.parseAsync(['node', 'test', 'routes', 'test-app.js'])
+
+    const { stubCloudflareModules } = await import('../../utils/cloudflare-stub.js')
+    expect(mockBuildAndImportApp.mock.calls[0][1]?.plugins).toContain(stubCloudflareModules)
+  })
+
   it('should list routes as the JSON envelope', async () => {
     const app = new Hono()
     app.get('/', (c) => c.text('Hello'))
