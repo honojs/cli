@@ -65,12 +65,16 @@ const requireWranglerConfig = (): string => {
     throw new CliError(
       'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
       `${CLOUDFLARE_CONFIG} is not supported yet`,
-      {
-        suggestions: hasViteConfig()
-          ? ['Use --runtime vite instead. The Cloudflare Vite plugin reads cloudflare.config.ts']
-          : ['Add wrangler.jsonc with a main entry'],
-        docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
-      }
+      hasViteConfig()
+        ? {
+            suggestions: [
+              'Use --runtime vite instead. The Cloudflare Vite plugin reads cloudflare.config.ts',
+            ],
+          }
+        : {
+            suggestions: ['Add wrangler.jsonc with a main entry'],
+            docs: 'https://developers.cloudflare.com/workers/wrangler/configuration/',
+          }
     )
   }
   throw new CliError('WRANGLER_CONFIG_NOT_FOUND', 'No wrangler config found', {

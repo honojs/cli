@@ -59,6 +59,7 @@ describe('runOnWorkerd', () => {
       code: 'CLOUDFLARE_CONFIG_NOT_SUPPORTED',
       suggestions: [expect.stringContaining('--runtime vite')],
     })
+    await expect(promise).rejects.not.toHaveProperty('docs', expect.stringContaining('wrangler'))
   })
 
   it('should fail with WRANGLER_NOT_FOUND when wrangler is not installed', async () => {

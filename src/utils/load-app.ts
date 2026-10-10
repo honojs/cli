@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import type { AppEntry } from './build.js'
 import { buildAndImportApp } from './build.js'
 import { CliError } from './output.js'
+import { hasViteConfig } from './vite.js'
 
 const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js', 'src/index.jsx']
 
@@ -68,8 +69,14 @@ export async function resolveEntry(appPath: string | undefined): Promise<AppEntr
   if (!existsSync(resolvedAppPath)) {
     throw new CliError('ENTRY_NOT_FOUND', `Entry file ${entry} does not exist`, {
       suggestions: [
-        'Pass the app file: hono routes src/app.ts',
+        'Pass the app file as the argument, e.g. src/app.ts',
         'Default candidates are src/index.ts, src/index.tsx, src/index.js, and src/index.jsx',
+        // A Vite plugin may build the app, with no file that exports it
+        ...(!appPath && hasViteConfig()
+          ? [
+              'In a Vite project, hono request and hono batch go through the Vite dev server with no file. snapshot, --trace, and --watch need the app file',
+            ]
+          : []),
       ],
     })
   }
