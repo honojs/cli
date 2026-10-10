@@ -1,3 +1,4 @@
+import type { Plugin } from 'esbuild'
 import type { Hono } from 'hono'
 import { existsSync, realpathSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -13,7 +14,8 @@ const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js
 export async function* getBuildIterator(
   appPath: string | undefined,
   watch: boolean,
-  external: string[] = []
+  external: string[] = [],
+  plugins: Plugin[] = []
 ): AsyncGenerator<Hono> {
   if (appPath === '-') {
     if (watch) {
@@ -23,12 +25,14 @@ export async function* getBuildIterator(
     }
     yield* buildAndImportApp(await resolveEntry(appPath), {
       external: ['@hono/node-server', ...external],
+      ...(plugins.length ? { plugins } : {}),
     })
     return
   }
 
   yield* buildAndImportApp(await resolveEntry(appPath), {
     external: ['@hono/node-server', ...external],
+    ...(plugins.length ? { plugins } : {}),
     watch,
     sourcemap: true,
   })
