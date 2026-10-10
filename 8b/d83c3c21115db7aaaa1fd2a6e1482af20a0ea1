@@ -1,0 +1,31 @@
+README.md
+  s_dc6239c7c86ef7::t_4ec5628c355e06 98-99
+src/commands/routes/index.test.ts
+  s_dc6239c7c86ef7::t_4eaa8b47fc643a 67-75
+src/commands/routes/index.ts
+  s_dc6239c7c86ef7::t_3459e216f0e6de 3,43-46
+src/commands/snapshot/index.ts
+  s_dc6239c7c86ef7::t_1b93d2c0fe71d1 3,62-64,79-81
+src/utils/cloudflare-stub.test.ts
+  s_dc6239c7c86ef7::t_8b586c58d83912 1-29
+src/utils/cloudflare-stub.ts
+  s_dc6239c7c86ef7::t_9f4f06ddfee306 1-31
+src/utils/load-app.ts
+  s_dc6239c7c86ef7::t_b03e323fa41153 1,17-18,28,35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8bd83c3c21115db7aaaa1fd2a6e1482af20a0ea1",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
