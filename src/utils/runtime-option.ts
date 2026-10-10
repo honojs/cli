@@ -1,3 +1,4 @@
+import { hasDefaultEntry } from './load-app.js'
 import { CliError } from './output.js'
 import { hasViteConfig } from './vite.js'
 import { findWranglerConfig, hasCloudflareConfig } from './workerd.js'
@@ -13,11 +14,16 @@ export const isCfViteProject = (): boolean =>
 
 /**
  * The runtime without `--runtime`: vite in a cf project, so c.env has
- * the bindings, and node otherwise. A file argument or `--no-bindings`
- * asks for the app on Node.js.
+ * the bindings, and in a Vite project with no entry file, where a Vite
+ * plugin builds the app. node otherwise. A file argument or
+ * `--no-bindings` asks for the app on Node.js.
  */
-export const defaultRuntime = (file: string | undefined, bindings: boolean): 'node' | 'vite' =>
-  file === undefined && bindings && isCfViteProject() ? 'vite' : 'node'
+export const defaultRuntime = (file: string | undefined, bindings: boolean): 'node' | 'vite' => {
+  if (file !== undefined || !bindings) {
+    return 'node'
+  }
+  return isCfViteProject() || (hasViteConfig() && !hasDefaultEntry()) ? 'vite' : 'node'
+}
 
 /**
  * `--runtime` for the commands that run many requests: `node`,

@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect } from 'vitest'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { defaultRuntime, resolveRuntime } from './runtime-option'
@@ -7,6 +7,7 @@ import { defaultRuntime, resolveRuntime } from './runtime-option'
 const projectWith = (...files: string[]) => {
   const dir = mkdtempSync(join(tmpdir(), 'hono-cli-runtime-'))
   for (const file of files) {
+    mkdirSync(join(dir, file, '..'), { recursive: true })
     writeFileSync(join(dir, file), '')
   }
   process.chdir(dir)
@@ -30,10 +31,17 @@ describe('defaultRuntime', () => {
     expect(defaultRuntime(undefined, false)).toBe('node')
   })
 
+  it('is vite in a Vite project with no entry file', () => {
+    projectWith('vite.config.ts')
+    expect(defaultRuntime(undefined, true)).toBe('vite')
+    projectWith('vite.config.ts', 'src/index.ts')
+    expect(defaultRuntime(undefined, true)).toBe('node')
+  })
+
   it('is node without a Vite config or with a wrangler config', () => {
     projectWith('cloudflare.config.ts')
     expect(defaultRuntime(undefined, true)).toBe('node')
-    projectWith('cloudflare.config.ts', 'vite.config.ts', 'wrangler.jsonc')
+    projectWith('cloudflare.config.ts', 'vite.config.ts', 'wrangler.jsonc', 'src/index.ts')
     expect(defaultRuntime(undefined, true)).toBe('node')
   })
 })

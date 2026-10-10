@@ -178,6 +178,8 @@ In a project with a wrangler config, `c.env` carries the real local bindings (KV
 
 `--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs. `batch` and `snapshot` take it too. vite must be installed in the project.
 
+In a Vite project with no `src/index.ts` (or `.tsx`, `.js`, `.jsx`) — the app comes from a Vite plugin — `--runtime vite` is the default for `request` and `batch`, so they work with no flag.
+
 In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. A file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
