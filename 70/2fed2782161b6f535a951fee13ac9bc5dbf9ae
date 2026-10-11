@@ -1,0 +1,25 @@
+src/commands/diff/compare.test.ts
+  s_dc6239c7c86ef7::t_48c41c227f40c7 2,52-68
+src/commands/diff/compare.ts
+  s_dc6239c7c86ef7::t_82ad1b7a2132b7 93-101
+src/commands/diff/index.ts
+  s_dc6239c7c86ef7::t_dcfa2787642bad 6,73-82
+src/commands/diff/worktree.ts
+  s_dc6239c7c86ef7::t_fd99e39e313f36 2,38-39,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "702fed2782161b6f535a951fee13ac9bc5dbf9ae",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
