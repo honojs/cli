@@ -3,6 +3,28 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-10: `hono routes` after writing the routes is a ritual — scope it to unknown apps
+
+**Experiment**: same setup as the batch entry below (create-hono
+`cloudflare-workers` template, "アクセスカウンターをつくって", `claude -p`,
+Opus, 5 runs each, fresh project per run). Only the CLI differed:
+`1.0.0-rc.4` vs rc.4 with the new top-level help wording.
+
+**Findings**:
+
+- On rc.4, 4/5 runs ran `hono routes` right after writing the routes,
+  then checked them with `hono batch`. Across all runs of the earlier
+  test it was 10/12. It never caught anything: the batch passed every
+  time. The top-level help said "Start with `hono routes`, then `hono
+  request`", and agents ran it as a fixed step.
+- With the new wording: 0/5 ran `hono routes`. Batch use (5/5) and
+  passing checks (`"failed": 0`, 5/5) did not change. Turns 5.0 → 4.4;
+  cost and time the same.
+
+**Change**: the top-level `--help` now says to start with `hono routes`
+to learn an app you did not write, and to check a change with `hono
+request` (or `hono batch` for several requests).
+
 ## 2026-10-10: Agents chain `hono request` for a flow — point at batch in `--help` (#153)
 
 **Experiment**: create-hono `cloudflare-workers` template (cf CLI, Vite)

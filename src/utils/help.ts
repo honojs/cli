@@ -51,10 +51,11 @@ export const agentHelp = `For coding agents:
   Every command prints JSON to stdout: { "ok": true, "data": ... } on success,
   { "ok": false, "error": { "code", "message", "suggestions", "docs" } } on
   failure. Try the suggestions in order. Logs go to stderr.
-  Start with \`hono routes\`, then \`hono request <path>\`. After you change the
-  app, run them again. For several requests or a flow (POST, then GET), send
-  them in one \`hono batch -\` call, not many \`hono request\` calls: it is one
-  start, and in a Vite project each request starts the dev server again.
+  To learn an app you did not write, start with \`hono routes\`. To check a
+  change, use \`hono request <path>\`: it shows what the app does. For several
+  requests or a flow (POST, then GET), send them in one \`hono batch -\` call,
+  not many \`hono request\` calls: it is one start, and in a Vite project each
+  request starts the dev server again.
   Before changing existing routes, capture them with
   \`hono snapshot --status-only\`. After the change, pipe those lines, plus
   lines for new routes, into \`hono batch - --compact\` until "failed" is 0.
