@@ -90,3 +90,12 @@ export const compareSnapshots = (base: SnapshotLine[], current: SnapshotLine[]):
   }
   return result
 }
+
+/**
+ * Each side runs in its own temporary worktree, so a path in a body (like
+ * a stack trace on an error page) differs even when nothing changed.
+ * Replace the worktree root with one placeholder. Pass the longer path
+ * first: /private/var/... contains /var/...
+ */
+export const hideWorktree = (output: string, roots: string[]): string =>
+  roots.reduce((out, root) => out.replaceAll(root, '<worktree>'), output)

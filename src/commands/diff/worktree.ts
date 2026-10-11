@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { CliError } from '../../utils/output.js'
@@ -35,6 +35,8 @@ export const commitWorkingTree = (cwd: string): string => {
 export interface Worktree {
   /** The project directory inside the worktree */
   dir: string
+  /** The worktree root as written and as resolved (on macOS /var is /private/var) */
+  roots: string[]
   remove: () => void
 }
 
@@ -58,6 +60,7 @@ export const addWorktree = (cwd: string, commit: string): Worktree => {
   }
   return {
     dir,
+    roots: [realpathSync(root), root],
     remove: () => {
       try {
         git(cwd, ['worktree', 'remove', '--force', root])

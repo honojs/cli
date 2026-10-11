@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
-import { compareSnapshots, parseLines } from './compare.js'
+import { compareSnapshots, hideWorktree, parseLines } from './compare.js'
 import { addWorktree, commitWorkingTree, resolveBase } from './worktree.js'
 
 const help: CommandHelp = {
@@ -70,13 +70,16 @@ export function diffCommand(program: Command) {
           const outputs: string[] = []
           for (const [i, tree] of trees.entries()) {
             outputs.push(
-              await snapshot(tree.dir).catch((error: Error) => {
-                throw new CliError(
-                  'SNAPSHOT_FAILED',
-                  `Could not run the app ${i === 0 ? `at ${options.base}` : 'as it is now'}: ${error.message}`,
-                  { suggestions: ['Run hono snapshot to see the error'] }
-                )
-              })
+              hideWorktree(
+                await snapshot(tree.dir).catch((error: Error) => {
+                  throw new CliError(
+                    'SNAPSHOT_FAILED',
+                    `Could not run the app ${i === 0 ? `at ${options.base}` : 'as it is now'}: ${error.message}`,
+                    { suggestions: ['Run hono snapshot to see the error'] }
+                  )
+                }),
+                tree.roots
+              )
             )
           }
           const [before, after] = outputs
