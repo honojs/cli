@@ -185,7 +185,7 @@ In a project with a wrangler config, `c.env` carries the real local bindings (KV
 
 `--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
-`--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs. `batch` and `snapshot` take it too. vite must be installed in the project.
+`--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs, but the app sees `http://localhost`, the same URL as with `app.request()`, so `c.req.url` and an `Origin: http://localhost` check work the same in every run. `batch` and `snapshot` take it too. vite must be installed in the project.
 
 In a Vite project with no `src/index.ts` (or `.tsx`, `.js`, `.jsx`) — the app comes from a Vite plugin — `--runtime vite` is the default for `request` and `batch`, so they work with no flag.
 

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
 import type { AddressInfo } from 'node:net'
@@ -94,23 +94,61 @@ export const startVite = async (): Promise<ViteTarget> => {
 
   return {
     async request(input: Request) {
-      const { pathname, search } = new URL(input.url)
+      const url = new URL(input.url)
       const hasBody = input.method !== 'GET' && input.method !== 'HEAD'
-      const body = hasBody ? await input.arrayBuffer() : undefined
-      const res = await logsToStderr(() =>
-        fetch(`http://127.0.0.1:${port}${pathname}${search}`, {
-          method: input.method,
-          headers: input.headers,
-          // Like app.request(): return a redirect as-is
-          redirect: 'manual',
-          body,
-        })
+      const body = hasBody ? Buffer.from(await input.arrayBuffer()) : undefined
+      const headers: Record<string, string> = {}
+      input.headers.forEach((value, key) => (headers[key] = value))
+      // Keep the Host of the request (http://localhost, like app.request()),
+      // not the random port, so the app sees the same URL in every run.
+      // fetch() cannot set Host, so this uses node:http.
+      headers.host = url.host
+      if (body) {
+        headers['content-length'] = String(body.length)
+      }
+      const res = await logsToStderr(
+        () =>
+          new Promise<IncomingMessage>((resolve, reject) => {
+            const req = httpRequest(
+              {
+                host: '127.0.0.1',
+                port,
+                path: url.pathname + url.search,
+                method: input.method,
+                headers,
+              },
+              resolve
+            )
+            req.on('error', reject)
+            req.end(body)
+          })
       )
-      // These come from the local HTTP hop, not from the app
-      const headers = new Headers(res.headers)
-      headers.delete('connection')
-      headers.delete('keep-alive')
-      return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
+      const chunks: Buffer[] = []
+      for await (const chunk of res) {
+        chunks.push(chunk as Buffer)
+      }
+      // Connection headers come from the local HTTP hop, not from the app
+      const responseHeaders = new Headers()
+      for (const [key, value] of Object.entries(res.headers)) {
+        if (
+          value === undefined ||
+          key === 'connection' ||
+          key === 'keep-alive' ||
+          key === 'transfer-encoding'
+        ) {
+          continue
+        }
+        for (const v of Array.isArray(value) ? value : [value]) {
+          responseHeaders.append(key, v)
+        }
+      }
+      const status = res.statusCode ?? 500
+      const noBody = status === 204 || status === 304 || input.method === 'HEAD'
+      return new Response(noBody ? null : Buffer.concat(chunks), {
+        status,
+        statusText: res.statusMessage,
+        headers: responseHeaders,
+      })
     },
     async dispose() {
       server.closeAllConnections()

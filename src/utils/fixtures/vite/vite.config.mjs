@@ -5,6 +5,11 @@ export default {
       name: 'app',
       configureServer(server) {
         server.middlewares.use(async (req, res) => {
+          if (req.url === '/cookies') {
+            res.setHeader('set-cookie', ['a=1', 'b=2'])
+            res.end()
+            return
+          }
           if (req.url === '/redirect') {
             res.writeHead(302, { location: '/' })
             res.end()
@@ -18,7 +23,9 @@ export default {
           server.config.logger.info('from app')
           console.log('from app console')
           res.setHeader('content-type', 'application/json')
-          res.end(JSON.stringify({ method: req.method, url: req.url, body }))
+          res.end(
+            JSON.stringify({ method: req.method, url: req.url, host: req.headers.host, body })
+          )
         })
       },
     },
