@@ -1202,6 +1202,7 @@ describe('requestCommand', () => {
         request: vi.fn(async (input: Request) =>
           Response.json({ method: input.method, body: await input.text() })
         ),
+        loadModule: vi.fn(),
         dispose: vi.fn(async () => {}),
       }
       vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -1235,6 +1236,7 @@ describe('requestCommand', () => {
       vi.mocked(vite.hasViteConfig).mockReturnValue(true)
       const target = {
         request: vi.fn(async () => new Response('from vite')),
+        loadModule: vi.fn(),
         dispose: vi.fn(async () => {}),
       }
       vi.mocked(vite.startVite).mockResolvedValue(target)

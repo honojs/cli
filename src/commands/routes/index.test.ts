@@ -16,6 +16,12 @@ vi.mock('../../utils/build.js', () => ({
   buildAndImportApp: vi.fn(),
 }))
 
+vi.mock('../../utils/vite.js', () => ({
+  isVoidProject: vi.fn(() => false),
+  loadVoidApp: vi.fn(),
+  startVite: vi.fn(),
+}))
+
 import { routesCommand } from './index.js'
 
 describe('routesCommand', () => {
@@ -71,6 +77,29 @@ describe('routesCommand', () => {
 
     const { stubCloudflareModules } = await import('../../utils/cloudflare-stub.js')
     expect(mockBuildAndImportApp.mock.calls[0][1]?.plugins).toContain(stubCloudflareModules)
+  })
+
+  it('should read the routes of a Void app, which has no entry file, through Vite', async () => {
+    const vite = await import('../../utils/vite.js')
+    mockModules.existsSync.mockReturnValue(false)
+    mockModules.resolve.mockImplementation((cwd: string, path: string) => `${cwd}/${path}`)
+    vi.mocked(vite.isVoidProject).mockReturnValue(true)
+    const voidApp = new Hono()
+    voidApp.get('/api/hello', (c) => c.json({}))
+    vi.mocked(vite.loadVoidApp).mockResolvedValue(voidApp)
+    const target = { request: vi.fn(), loadModule: vi.fn(), dispose: vi.fn(async () => {}) }
+    vi.mocked(vite.startVite).mockResolvedValue(target)
+
+    try {
+      await program.parseAsync(['node', 'test', 'routes'])
+    } finally {
+      vi.mocked(vite.isVoidProject).mockReturnValue(false)
+    }
+
+    const output = JSON.parse(consoleLogSpy.mock.calls[0][0] as string)
+    expect(output.data.routes.map((r: { path: string }) => r.path)).toEqual(['/api/hello'])
+    expect(target.dispose).toHaveBeenCalledTimes(1)
+    expect(mockBuildAndImportApp).not.toHaveBeenCalled()
   })
 
   it('should list routes as the JSON envelope', async () => {

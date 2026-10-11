@@ -3,10 +3,10 @@ import { maybeLoadBindings } from '../../utils/bindings.js'
 import { stubCloudflareModules } from '../../utils/cloudflare-stub.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
-import { getBuildIterator } from '../../utils/load-app.js'
+import { getBuildIterator, hasDefaultEntry } from '../../utils/load-app.js'
 import { handleErrors } from '../../utils/output.js'
 import { resolveRuntime } from '../../utils/runtime-option.js'
-import { startVite } from '../../utils/vite.js'
+import { isVoidProject, loadVoidApp, startVite } from '../../utils/vite.js'
 import { readWorkerdMain, startWorkerd } from '../../utils/workerd.js'
 import { snapshotLines } from './snapshot.js'
 
@@ -60,6 +60,14 @@ export function snapshotCommand(program: Command) {
           // The routes come from the default entry in-process; the requests go to Vite.
           const target = await startVite()
           try {
+            if (file === undefined && !hasDefaultEntry() && isVoidProject()) {
+              // Void builds the app from file-based routes; there is no entry file
+              const app = await loadVoidApp(target)
+              console.log(
+                (await snapshotLines(app, options.statusOnly, undefined, target)).join('\n')
+              )
+              return
+            }
             for await (const app of getBuildIterator(file, false, external, [
               stubCloudflareModules,
             ])) {
