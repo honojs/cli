@@ -26,6 +26,8 @@ vi.mock('../../utils/workerd.js', () => ({
 vi.mock('../../utils/vite.js', () => ({
   startVite: vi.fn(),
   hasViteConfig: vi.fn(() => false),
+  isVoidProject: vi.fn(() => false),
+  loadVoidApp: vi.fn(),
 }))
 
 import { snapshotCommand } from './index.js'
@@ -59,6 +61,7 @@ describe('snapshotCommand', () => {
     const target = {
       request: vi.fn(async () => Response.json({ from: 'workerd' })),
       fetch: vi.fn(),
+      loadModule: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(workerd.readWorkerdMain).mockResolvedValue('/proj/src/index.ts')
@@ -77,6 +80,7 @@ describe('snapshotCommand', () => {
     const vite = await import('../../utils/vite.js')
     const target = {
       request: vi.fn(async () => Response.json({ from: 'vite' })),
+      loadModule: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -88,6 +92,37 @@ describe('snapshotCommand', () => {
     expect(lines[0]).toEqual({ path: '/data', expect: { status: 200, body: { from: 'vite' } } })
   })
 
+  it('should read the routes of a Void app, which has no entry file, through Vite', async () => {
+    const fs = await import('node:fs')
+    const vite = await import('../../utils/vite.js')
+    vi.mocked(fs.existsSync).mockImplementation(() => false)
+    vi.mocked(vite.isVoidProject).mockReturnValue(true)
+    const voidApp = new Hono()
+    voidApp.get('/api/hello', (c) => c.json({}))
+    vi.mocked(vite.loadVoidApp).mockResolvedValue(voidApp)
+    const target = {
+      request: vi.fn(async () => Response.json({ from: 'vite' })),
+      loadModule: vi.fn(),
+      dispose: vi.fn(async () => {}),
+    }
+    vi.mocked(vite.startVite).mockResolvedValue(target)
+
+    try {
+      await program.parseAsync(['node', 'test', 'snapshot', '--runtime', 'vite'])
+    } finally {
+      vi.mocked(fs.existsSync).mockImplementation(() => true)
+      vi.mocked(vite.isVoidProject).mockReturnValue(false)
+    }
+
+    expect(vite.loadVoidApp).toHaveBeenCalledWith(target)
+    const lines = (consoleLogSpy.mock.calls[0][0] as string).split('\n').map((l) => JSON.parse(l))
+    expect(lines[0]).toEqual({
+      path: '/api/hello',
+      expect: { status: 200, body: { from: 'vite' } },
+    })
+    expect(target.dispose).toHaveBeenCalledTimes(1)
+  })
+
   it('should use vite without --runtime in a cf project', async () => {
     const workerd = await import('../../utils/workerd.js')
     const vite = await import('../../utils/vite.js')
@@ -95,6 +130,7 @@ describe('snapshotCommand', () => {
     vi.mocked(vite.hasViteConfig).mockReturnValue(true)
     const target = {
       request: vi.fn(async () => Response.json({ from: 'vite' })),
+      loadModule: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)

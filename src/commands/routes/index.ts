@@ -3,8 +3,9 @@ import { getRouterName, inspectRoutes } from 'hono/dev'
 import { stubCloudflareModules } from '../../utils/cloudflare-stub.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
-import { getBuildIterator } from '../../utils/load-app.js'
+import { getBuildIterator, hasDefaultEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
+import { isVoidProject, loadVoidApp, startVite } from '../../utils/vite.js'
 
 const help: CommandHelp = {
   output:
@@ -13,6 +14,7 @@ const help: CommandHelp = {
   notes: [
     'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',
     'Run it first to get the full picture of an app without reading the source.',
+    'In a Void project (no entry file), the routes come from the app that Void builds through Vite.',
   ],
 }
 
@@ -40,11 +42,15 @@ export function routesCommand(program: Command) {
     )
     .action(
       handleErrors(async (file: string | undefined, options: RoutesOptions) => {
-        // Reading routes runs no handler, so cloudflare:* can be a stub
-        const buildIterator = getBuildIterator(file, false, options.external || [], [
-          stubCloudflareModules,
-        ])
-        const app = (await buildIterator.next()).value
+        const app =
+          file === undefined && !hasDefaultEntry() && isVoidProject()
+            ? await readVoidApp()
+            : // Reading routes runs no handler, so cloudflare:* can be a stub
+              (
+                await getBuildIterator(file, false, options.external || [], [
+                  stubCloudflareModules,
+                ]).next()
+              ).value
 
         if (!app || !Array.isArray(app.routes)) {
           throw new CliError('INVALID_APP', 'The app does not expose routes', {
@@ -69,4 +75,14 @@ export function routesCommand(program: Command) {
         printResult({ router, routes })
       })
     )
+}
+
+/** A Void app has no entry file: Vite builds it from the file-based routes */
+const readVoidApp = async () => {
+  const target = await startVite()
+  try {
+    return await loadVoidApp(target)
+  } finally {
+    await target.dispose().catch(() => {})
+  }
 }

@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs'
+import type { Hono } from 'hono'
+import { existsSync, readFileSync } from 'node:fs'
 import { createServer, request as httpRequest } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
@@ -18,6 +19,7 @@ interface ViteLogger {
 
 interface ViteDevServer {
   middlewares: (req: IncomingMessage, res: ServerResponse) => void
+  ssrLoadModule(id: string): Promise<Record<string, unknown>>
   close(): Promise<void>
 }
 
@@ -37,6 +39,8 @@ interface ViteModule {
  */
 export interface ViteTarget extends RequestTarget {
   request(input: Request): Promise<Response>
+  /** Load a module, virtual ones too, through the project's Vite plugins */
+  loadModule(id: string): Promise<Record<string, unknown>>
   dispose(): Promise<void>
 }
 
@@ -47,6 +51,26 @@ const VITE_CONFIGS = ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((ext) => `vite
 
 export const hasViteConfig = (): boolean =>
   VITE_CONFIGS.some((file) => existsSync(join(process.cwd(), file)))
+
+/**
+ * Void (https://void.cloud) builds the Hono app from file-based routes in
+ * its Vite plugin, so there is no entry file. The app is the default
+ * export of this virtual module.
+ */
+export const VOID_APP_MODULE = 'virtual:void-routes'
+
+/** The project depends on `void` */
+export const isVoidProject = (): boolean => {
+  try {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+    }
+    return Boolean(pkg.dependencies?.void ?? pkg.devDependencies?.void)
+  } catch {
+    return false
+  }
+}
 
 /**
  * vite is not a dependency of Hono CLI. It resolves from the user's
@@ -77,17 +101,20 @@ export const startVite = async (): Promise<ViteTarget> => {
   // in workerd logs through this logger; an app in this process (e.g.
   // @hono/vite-dev-server) calls console.log, so `request` wraps it.
   const toStderr = (msg: string) => console.error(msg)
-  const vite = await createViteServer({
-    server: { middlewareMode: true, hmr: false, ws: false },
-    appType: 'custom',
-    customLogger: {
-      ...createLogger('info'),
-      info: toStderr,
-      warn: toStderr,
-      warnOnce: toStderr,
-      error: toStderr,
-    },
-  })
+  // Plugins may log with console.log while the server starts (Void does)
+  const vite = await logsToStderr(() =>
+    createViteServer({
+      server: { middlewareMode: true, hmr: false, ws: false },
+      appType: 'custom',
+      customLogger: {
+        ...createLogger('info'),
+        info: toStderr,
+        warn: toStderr,
+        warnOnce: toStderr,
+        error: toStderr,
+      },
+    })
+  )
   const server = createServer(vite.middlewares)
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const { port } = server.address() as AddressInfo
@@ -150,10 +177,24 @@ export const startVite = async (): Promise<ViteTarget> => {
         headers: responseHeaders,
       })
     },
+    loadModule(id: string) {
+      return logsToStderr(() => vite.ssrLoadModule(id))
+    },
     async dispose() {
       server.closeAllConnections()
       await new Promise((resolve) => server.close(resolve))
       await vite.close()
     },
   }
+}
+
+/** The Hono app of a Void project, loaded through Vite */
+export const loadVoidApp = async (target: ViteTarget): Promise<Hono> => {
+  const app = (await target.loadModule(VOID_APP_MODULE)).default
+  if (!(app && Array.isArray((app as Hono).routes))) {
+    throw new CliError('INVALID_APP', `${VOID_APP_MODULE} does not export a Hono app`, {
+      suggestions: ['Check that voidPlugin() is in the Vite config'],
+    })
+  }
+  return app as Hono
 }

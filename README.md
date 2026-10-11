@@ -107,6 +107,8 @@ hono routes [file] [options]
 
 An app that imports `cloudflare:*` modules (e.g. a Durable Object class from `cloudflare:workers`) works too. Node.js cannot load them, so they are replaced with an empty stub while the routes are read. `snapshot` with `--runtime workerd` or `vite` reads the routes the same way.
 
+A [Void](https://void.cloud) project has no entry file: Void's Vite plugin builds the Hono app from file-based routes. When `package.json` depends on `void` and there is no `src/index.ts`, `routes` and `snapshot` (and so `diff`) start Vite and read the app from `virtual:void-routes`. No option is needed.
+
 ### `request`
 
 Send HTTP requests to your Hono application using the built-in `app.request()` method. This is particularly useful for testing and development.
