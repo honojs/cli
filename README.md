@@ -186,11 +186,11 @@ In a project with a wrangler config, `c.env` carries the real local bindings (KV
 
 `--runtime workerd` runs the whole app inside workerd instead — heavier, but the full runtime. It starts the app with the wrangler config, so pass no file argument. `batch` and `snapshot` take it too; `request` alone also runs on `bun` and `deno`.
 
-`--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs. `batch` and `snapshot` take it too. vite must be installed in the project.
+`--runtime vite` sends the request through the Vite dev server of the project. Use it for an app that a Vite plugin builds, with no file that exports the Hono app. The dev server starts from the Vite config, so pass no file argument. It listens on a random port on `127.0.0.1` while the command runs, but the app sees `http://localhost`, the same URL as with `app.request()`, so `c.req.url` and an `Origin: http://localhost` check work the same in every run. `batch` and `snapshot` take it too. vite must be installed in the project.
 
 In a Vite project with no `src/index.ts` (or `.tsx`, `.js`, `.jsx`) — the app comes from a Vite plugin — `--runtime vite` is the default for `request` and `batch`, so they work with no flag.
 
-In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. A file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
+In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. The default entry as the file argument (`src/index.ts`, `src/index.tsx`, ...) still goes through Vite. Another file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
@@ -266,7 +266,7 @@ EOF
 
 With `--runtime workerd`, one workerd starts and every step runs in it, so a flow over the real bindings (put to KV, then get; D1; an AI binding) runs in one call. The entry is `main` in the wrangler config, so pass no file argument. With `--runtime vite`, one Vite dev server starts and every step goes through it.
 
-One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
+One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). Cookies carry over like in a browser, so a login step signs in the steps after it; a `cookie` header in a step wins. `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
 
 ### `snapshot`
 

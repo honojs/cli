@@ -71,6 +71,7 @@ describe('help text', () => {
     expect(top).toContain('hono snapshot --status-only')
     expect(top).toContain('`hono diff` compares the app with the last commit')
     expect(top).toContain('in one `hono batch -` call')
+    expect(top).toContain('To learn an app you did not write, start with `hono routes`')
     expect(top).toContain('hono batch - --compact')
     expect(top).not.toContain('Examples:')
   })
