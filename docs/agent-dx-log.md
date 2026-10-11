@@ -3,6 +3,238 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-11: Code mode (`hono exec`) loses to batch; the CLI wins on side effects (#166, #167)
+
+**Experiment 1: code mode.** Opus without the CLI already does a kind of
+code mode: one shell line starts `cf dev`, runs a check script, and stops
+the server. So we built `hono exec`: a script that calls `app.request()`
+with the real bindings, like a Hono test. `hono diff` took a script too.
+The top-level help pointed at `exec`, and `batch` and `snapshot` were
+hidden. Opus, 5 runs each:
+
+| Opus: turns / cost / median time | batch | exec |
+| --- | --- | --- |
+| Refactor of the 45-route app | 10.2 / $0.55 / 110s | 9.4 / $0.46 / 95s |
+| Login (AGENTS.md has the secret line) | 12.8 / $0.42 / 77s | 14.6 / $0.50 / 101s |
+
+All runs were correct. Why exec lost on login:
+
+- A failed script says only "403 == 303". batch says which step failed and
+  how to fix a `csrf()` 403. Agents wrote extra scripts to find the step.
+- Each check is longer as code, and a fixed script is rewritten in full:
+  output tokens were 1.5 times those of batch.
+
+Checking responses is routine work, so the fixed format wins. `exec` is
+not added. The runs found two real bugs: `-H 'Origin: http://localhost'`
+reached the app as `Origin: http` (#166), and through Vite the app saw
+`http://127.0.0.1:<random port>`, so `Origin: http://localhost` failed
+`csrf()` and absolute URLs changed on every run (#167).
+
+**Experiment 2: another dev server on the machine.** A Vite dev server
+of another project runs on port 5173, as another agent or a human would
+leave it. Then the TODO task, Opus, 5 runs each:
+
+| | No CLI | CLI |
+| --- | --- | --- |
+| Started its own dev server | 5 of 5 | 0 of 5 |
+| Stopped the other server (`pkill -f vite`) | 1 of 5 | 0 of 5 |
+| Ran `pkill -f "cf dev"` (stops any `cf dev` on the machine) | 2 of 5 | 0 of 5 |
+| Sent requests to the other server by mistake | 0 | 0 |
+
+**Experiment 3: Haiku on the 45-route refactor**, 5 runs each: 0 broken
+runs with and without the CLI. Without the CLI, no run ran the app; with
+it, 2 of 5 ran `hono diff`.
+
+## 2026-10-11: A bigger app does not change the result for Opus
+
+**Experiment**: the refactor task on a bigger app: one 445-line
+`src/index.tsx` with 45 routes (pages, admin with a cookie login, a JSON
+API with a token, webhooks). It has three order traps: `/health` comes
+before `secureHeaders()`, `/admin/login` comes before the auth
+middleware, and a catch-all `/:page` comes last. No comment points at
+them. A script compares 94 requests (status, headers, body, set-cookie)
+with the original. Opus, 5 runs each, no CLI vs the build with all of
+this night's changes.
+
+**Findings**:
+
+| Opus | No CLI | CLI |
+| --- | --- | --- |
+| Requests changed | 0 in all 5 | 0 in all 5 |
+| Turns / cost / median time | 12.4 / $0.54 / 105s | 10.2 / $0.55 / 110s |
+| Stopped every dev server (`pkill -f vite`) | 1 of 5 | 0 of 5 |
+
+- Opus found all three traps by reading the code, with or without the
+  CLI, and kept the order.
+- Without the CLI, every run wrote its own before/after script with
+  `cf dev` and curl (up to 94 requests). One run caught its own `sed`
+  mistake with it. With the CLI, every run used `hono diff`.
+- `hono diff` compared only 19 of the 45 routes: it ran paramless GET
+  routes only.
+
+**Change**: `snapshot` (and so `diff`) now also runs a param GET route
+when the app showed a path for it, in a link or a JSON field with the
+param's name. On this app, 30 routes instead of 19. Also #164:
+`snapshot` printed Hono v5's `notFound` and `onError` handlers as
+`@NOT_FOUND` / `@ERROR` lines, and `hono batch` failed on them.
+
+## 2026-10-11: Where the CLI loses, and where it wins (#160, #161, #162, #163)
+
+**Experiment**: the cf template (Vite) again, `claude -p`, 5 runs each,
+Cloudflare auth replaced with an invalid token. Three more tasks, each
+graded by a script or a separate agent, never by the agent's own report:
+
+- **Login**: a blog app (pages, a JSON API with CORS and ETag, an admin
+  form) and "記事の投稿・編集・削除は、ログインした人だけができるように
+  して". A script checks 12 public answers and the CORS headers did not
+  change and that 5 writes fail without login; an agent checks login works.
+- **Refactor**: the same blog and "src/index.tsx が長くなってきたので、
+  ファイルを分けて整理して". A script compares 28 requests (status,
+  content-type, ETag, CORS, body) with the original.
+- **Parallel**: 3 agents at once on one machine (TODO, counter, memo
+  apps), 3 rounds.
+
+Conditions: no CLI (`cf dev` + curl), rc.4, and rc.4 plus this night's
+changes (#159 to #162 and a cheat sheet in the top-level `--help`).
+
+**Findings**:
+
+| Opus: turns / cost / median time | No CLI | rc.4 | With changes |
+| --- | --- | --- | --- |
+| TODO | 8.8 / $0.25 / 45s | 10.2 / $0.27 / 61s | 9.4 / $0.26 / 53s |
+| Login | 18.0 / $0.61 / 105s | 24.6 / $0.73 / 147s | 18.0 / $0.58 / 109s |
+| Refactor | 5.2 / $0.26 / 52s | 9.2 / $0.36 / 71s | 6.0 / $0.28 / 55s |
+
+- Every run of every condition passed its grader: no regression, no
+  unprotected write, no behavior change after the refactor. Opus does not
+  break these apps with or without the CLI. Sonnet on the TODO task: 25/25
+  both ways (CLI 6.4 turns, $0.11; no CLI 5.4 turns, $0.08).
+- Whether the agent checks at all: on the refactor, Sonnet without the CLI
+  sent no request in 5/5 runs. It ran the typecheck and wrote "`cf dev` で
+  起動しての動作確認はしていません" — the check went back to the human.
+  Sonnet with the CLI (rc.4) sent requests in 5/5, at the same cost
+  ($0.11). Starting a dev server is too heavy to bother with for a
+  refactor; one CLI line is not. Opus checked in every run either way.
+- rc.4 cost more turns than curl. The changes bring it level:
+  - Agents typed `content-type: application/x-www-form-urlencoded` in 18
+    of 20 runs; a form body without it went as `text/plain`, and on a
+    form app `-d 'title=milk'` returned 303 and added nothing (#161).
+  - Batch did not carry cookies, so a login flow took a manual
+    `hono request`, a `grep` for the cookie, and `-H cookie:` (#160).
+  - The capture-first flow (`snapshot`, change, batch) is three steps;
+    `hono diff` is one, at the end (#162). With it, 5/5 refactor runs
+    used `diff` and the turns went 9.2 to 6.0.
+  - The top-level `--help` says "`hono <command> --help` has examples",
+    and agents read 1.2 to 2.6 subcommand helps per run. A cheat sheet
+    there cut it to 0.4 to 1.0.
+- Without the CLI, Opus builds its own check: 2 of 5 refactor runs built
+  the app, wrote a script that calls it with a mock KV, and compared 22
+  requests before (`git stash`) and after. That is `hono diff`, written
+  by hand each time.
+- The difference is side effects. In the cf / Vite template, runs
+  without the CLI cleaned up with a kill that stops every dev server on
+  the machine (`pkill -f vite`, `pkill -f "cf dev"`): counter 5/5, TODO
+  1/5, Sonnet TODO 5/5, login 7/10, parallel 6/9, refactor 0/10 (no dev
+  server) — 24 of 44 runs, 24 of the 34 that started a dev server. Runs
+  with the CLI: 0 of 84. In the parallel task, two of the three agents
+  used the same port in every round (5173, 5173, 8799). The create-hono
+  0.19 template (wrangler) picked `--port 8799` and killed only that:
+  0/10.
+- Half of the login turns, in every condition, went to reading
+  `node_modules/cf` types for `bindings.secret()` and `.dev.vars`, and
+  Hono's JWT and cookie types. One AGENTS.md line about secrets cut both:
+  no CLI 18.0 to 13.2 turns ($0.61 to $0.42), CLI 18.0 to 12.8 ($0.58 to
+  $0.42). It belongs in the starter template, not the CLI.
+- 5 runs each, a direction only.
+
+**Change**: #160 (cookies in batch), #161 (string body content-type, csrf()
+hint), #162 (`hono diff`), #163 (cheat sheet in `--help`). The case for
+the CLI: at the same cost as a dev server and curl, a smaller model still
+checks its work, and nothing else on the machine is touched.
+
+## 2026-10-11: Without the CLI, agents check their work just as well (#159)
+
+**Experiment**: the same counter task as #153 ("アクセスカウンターを
+つくって"), `claude -p`, Opus, 5 runs each, Cloudflare auth replaced
+with an invalid token. Three projects:
+
+- **CLI**: create-hono@next `cloudflare-workers` (cf CLI, Vite) with
+  `@hono/cli` 1.0.0-rc.4.
+- **No CLI**: the same project without `@hono/cli`; AGENTS.md says
+  `npm run dev` starts `cf dev` instead of "use the CLI".
+- **0.19**: create-hono@0.19.5 `cloudflare-workers` as users get it
+  today: wrangler, Hono v4, no AGENTS.md.
+
+**Findings**:
+
+| | CLI | No CLI | 0.19 |
+| --- | --- | --- | --- |
+| Saw the counter go up | 5/5 | 5/5 | 5/5 |
+| Avg turns | 5.2 | 6.0 | 7.2 |
+| Avg Bash calls | 4.2 | 5.0 | 5.6 |
+| Avg cost | $0.15 | $0.15 | $0.21 |
+| Avg / median time | 26s / 24s | 29s / 27s | 92s / 46s |
+| Started a dev server | 0/5 | 5/5 | 5/5 |
+| `sleep` or polling for the port | 0/5 | 5/5 | 5/5 |
+| `pkill -f vite` | 0/5 | 5/5 | 0/5 |
+
+- Without the CLI, agents start the dev server in the background, wait
+  for the port, `curl`, and stop it. Every run checked its work, and no
+  process was left. The CLI saves little time or cost here.
+- The difference is side effects. Every no-CLI run cleaned up with
+  `pkill -f vite`, which kills every Vite process on the machine. It
+  killed two dev servers of the user that had nothing to do with the
+  test. One run hit a dependency reload, probed ports 5173 and 8787,
+  and ran 8 `kill` or `lsof` commands (45s). Port 5173 was taken, so
+  `cf dev` moved to 5174.
+- 0.19 runs picked `--port 8799` and `pkill -f "wrangler dev --port
+  8799"`, which is safer. Two runs stalled for 120s on a command
+  (`wrangler types`, and an `ls` alias in this machine's shell), so the
+  time is partly this environment. Without AGENTS.md, all five used a
+  Durable Object instead of KV, and three wrote the bindings type by
+  hand first.
+- 5 runs each, a direction only. The runs differ in more than the CLI
+  (template, Hono version, AGENTS.md).
+
+**Second task**: "TODOアプリをつくって。追加、編集、削除ができるように"
+(make a TODO app with add, edit, delete), same three projects, 5 runs
+each. After each run a separate agent (Sonnet, with Hono CLI, no edits)
+checked 5 items with real requests: list, create, edit, delete, and
+that the data stays.
+
+| | CLI | No CLI | 0.19 |
+| --- | --- | --- | --- |
+| Grader items passed | 25/25 | 25/25 | 25/25 |
+| Avg turns | 10.2 | 8.8 | 8.4 |
+| Avg cost | $0.27 | $0.25 | $0.28 |
+| Median time | 61s | 45s | 173s |
+| Started a dev server | 0/5 | 5/5 | 5/5 |
+| Broad kill (`pkill -f "cf dev"`) | 0/5 | 1/5 | 0/5 |
+
+- Every run built a working app. The CLI was slower and took more
+  turns than the no-CLI runs.
+- The side effects mostly went away: no-CLI runs picked a port
+  (`--port 5199`) and killed only that server.
+- Why the CLI took more turns:
+  - A flow needs the new TODO's id. With curl, one shell script does
+    `ID=$(curl ...)`. Batch has `save`, but it reads only a JSON body.
+    Every app here was HTML forms with 303 redirects, so the id was in
+    the HTML or the `Location` header. Agents ran one batch to get the
+    id and another to edit and delete.
+  - Each `hono request` or `hono batch` starts the Vite dev server
+    again; a running server answers curl at once.
+  - One run passed `src/index.tsx` as the file. The app ran on Node.js
+    with an empty `c.env` and returned 500; it took three turns to
+    find `--runtime vite` and drop the file.
+  - Agents read the `--help` of a subcommand first: one or two turns.
+- 0.19: 3/5 runs stalled for 120s on `wrangler types`, so its time is
+  mostly that.
+
+**Change**: #159 runs the default entry through Vite in a cf project, so
+the file argument no longer empties `c.env`. The rest is open: today the
+CLI does not beat a dev server and curl on speed for a new app. Its own
+ground is what curl cannot do (snapshot, trace, bindings with no
+server).
 ## 2026-10-10: `hono routes` after writing the routes is a ritual — scope it to unknown apps
 
 **Experiment**: same setup as the batch entry below (create-hono
