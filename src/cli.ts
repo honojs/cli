@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
+import { diffCommand } from './commands/diff/index.js'
 import { initCommand } from './commands/init/index.js'
 import { requestCommand } from './commands/request/index.js'
 import { routesCommand } from './commands/routes/index.js'
@@ -36,6 +37,7 @@ routesCommand(program)
 requestCommand(program)
 batchCommand(program)
 snapshotCommand(program)
+diffCommand(program)
 benchmarkCommand(program)
 ssgCommand(program)
 initCommand(program)

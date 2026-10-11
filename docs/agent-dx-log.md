@@ -3,6 +3,48 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-11: Code mode (`hono exec`) loses to batch; the CLI wins on side effects (#166, #167)
+
+**Experiment 1: code mode.** Opus without the CLI already does a kind of
+code mode: one shell line starts `cf dev`, runs a check script, and stops
+the server. So we built `hono exec`: a script that calls `app.request()`
+with the real bindings, like a Hono test. `hono diff` took a script too.
+The top-level help pointed at `exec`, and `batch` and `snapshot` were
+hidden. Opus, 5 runs each:
+
+| Opus: turns / cost / median time | batch | exec |
+| --- | --- | --- |
+| Refactor of the 45-route app | 10.2 / $0.55 / 110s | 9.4 / $0.46 / 95s |
+| Login (AGENTS.md has the secret line) | 12.8 / $0.42 / 77s | 14.6 / $0.50 / 101s |
+
+All runs were correct. Why exec lost on login:
+
+- A failed script says only "403 == 303". batch says which step failed and
+  how to fix a `csrf()` 403. Agents wrote extra scripts to find the step.
+- Each check is longer as code, and a fixed script is rewritten in full:
+  output tokens were 1.5 times those of batch.
+
+Checking responses is routine work, so the fixed format wins. `exec` is
+not added. The runs found two real bugs: `-H 'Origin: http://localhost'`
+reached the app as `Origin: http` (#166), and through Vite the app saw
+`http://127.0.0.1:<random port>`, so `Origin: http://localhost` failed
+`csrf()` and absolute URLs changed on every run (#167).
+
+**Experiment 2: another dev server on the machine.** A Vite dev server
+of another project runs on port 5173, as another agent or a human would
+leave it. Then the TODO task, Opus, 5 runs each:
+
+| | No CLI | CLI |
+| --- | --- | --- |
+| Started its own dev server | 5 of 5 | 0 of 5 |
+| Stopped the other server (`pkill -f vite`) | 1 of 5 | 0 of 5 |
+| Ran `pkill -f "cf dev"` (stops any `cf dev` on the machine) | 2 of 5 | 0 of 5 |
+| Sent requests to the other server by mistake | 0 | 0 |
+
+**Experiment 3: Haiku on the 45-route refactor**, 5 runs each: 0 broken
+runs with and without the CLI. Without the CLI, no run ran the app; with
+it, 2 of 5 ran `hono diff`.
+
 ## 2026-10-11: A bigger app does not change the result for Opus
 
 **Experiment**: the refactor task on a bigger app: one 445-line
@@ -193,6 +235,27 @@ the file argument no longer empties `c.env`. The rest is open: today the
 CLI does not beat a dev server and curl on speed for a new app. Its own
 ground is what curl cannot do (snapshot, trace, bindings with no
 server).
+## 2026-10-10: `hono routes` after writing the routes is a ritual — scope it to unknown apps
+
+**Experiment**: same setup as the batch entry below (create-hono
+`cloudflare-workers` template, "アクセスカウンターをつくって", `claude -p`,
+Opus, 5 runs each, fresh project per run). Only the CLI differed:
+`1.0.0-rc.4` vs rc.4 with the new top-level help wording.
+
+**Findings**:
+
+- On rc.4, 4/5 runs ran `hono routes` right after writing the routes,
+  then checked them with `hono batch`. Across all runs of the earlier
+  test it was 10/12. It never caught anything: the batch passed every
+  time. The top-level help said "Start with `hono routes`, then `hono
+  request`", and agents ran it as a fixed step.
+- With the new wording: 0/5 ran `hono routes`. Batch use (5/5) and
+  passing checks (`"failed": 0`, 5/5) did not change. Turns 5.0 → 4.4;
+  cost and time the same.
+
+**Change**: the top-level `--help` now says to start with `hono routes`
+to learn an app you did not write, and to check a change with `hono
+request` (or `hono batch` for several requests).
 
 ## 2026-10-10: Agents chain `hono request` for a flow — point at batch in `--help` (#153)
 
