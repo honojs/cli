@@ -1,0 +1,59 @@
+README.md
+  s_dc6239c7c86ef7::t_6a693aac0512d4 189,193,269
+docs/agent-dx-log.md
+  s_dc6239c7c86ef7::t_6f371ed7980950 6-27
+src/commands/batch/batch.test.ts
+  s_dc6239c7c86ef7::t_62bbefb377ede3 95-129
+src/commands/batch/batch.ts
+  s_dc6239c7c86ef7::t_8888dfde31a502 206-233,236,250,259-262,281
+src/commands/batch/index.ts
+  s_dc6239c7c86ef7::t_400fc7b847d99f 29
+src/commands/diff/index.ts
+  s_dc6239c7c86ef7::t_093c84e9844736 16
+src/commands/request/index.test.ts
+  s_dc6239c7c86ef7::t_8b91016a1f7de2 1262
+src/commands/request/index.ts
+  s_dc6239c7c86ef7::t_ff643f007ef9c5 10,187
+src/commands/snapshot/index.ts
+  s_dc6239c7c86ef7::t_3e0a4ef031f5cd 63
+src/commands/snapshot/snapshot-fallback.test.ts
+  s_dc6239c7c86ef7::t_38304e6f92f5cd 1-24
+src/commands/snapshot/snapshot.ts
+  s_dc6239c7c86ef7::t_50b730dbc63ba0 24-28
+src/utils/fixtures/vite/vite.config.mjs
+  s_dc6239c7c86ef7::t_31a02516f5122e 8-12,26-28
+src/utils/headers.test.ts
+  s_dc6239c7c86ef7::t_788b99d7fd6aca 1-15
+src/utils/headers.ts
+  s_dc6239c7c86ef7::t_7d70bafdcd0eb5 5-10
+src/utils/help.test.ts
+  s_dc6239c7c86ef7::t_ae924a01732f6d 74
+src/utils/help.ts
+  s_dc6239c7c86ef7::t_6f5b8a0afe71a3 54-58
+src/utils/load-app.ts
+  s_dc6239c7c86ef7::t_f24eb3cb9f2b89 15-18
+src/utils/runtime-option.test.ts
+  s_dc6239c7c86ef7::t_92b746da8f52ed 34-43,70
+src/utils/runtime-option.ts
+  s_dc6239c7c86ef7::t_8c9a213e89ca78 1,18-21,24,27-29,33-44,72-73
+src/utils/vite.test.ts
+  s_dc6239c7c86ef7::t_57f84887311b7c 22-28,34-36
+src/utils/vite.ts
+  s_dc6239c7c86ef7::t_9ffebb2a0a61c8 2,44,97,99-124,126-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "92321a391457a58cb7860c6e485bedb8e349c7f7",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
