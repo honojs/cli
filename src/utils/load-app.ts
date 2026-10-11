@@ -12,6 +12,10 @@ const DEFAULT_ENTRY_CANDIDATES = ['src/index.ts', 'src/index.tsx', 'src/index.js
 export const hasDefaultEntry = (): boolean =>
   DEFAULT_ENTRY_CANDIDATES.some((candidate) => existsSync(resolve(process.cwd(), candidate)))
 
+/** The file is one of the default candidates, e.g. `./src/index.tsx` */
+export const isDefaultEntry = (file: string): boolean =>
+  DEFAULT_ENTRY_CANDIDATES.includes(file.replaceAll('\\', '/').replace(/^\.\//, ''))
+
 /**
  * Resolve the entry file and return an iterator of the built app.
  */

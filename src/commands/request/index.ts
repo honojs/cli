@@ -7,7 +7,7 @@ import { renderCommandHelp } from '../../utils/help.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { getBuildIterator, resolveData, resolveEntry } from '../../utils/load-app.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'
-import { defaultRuntime, VITE_FILE_ERROR } from '../../utils/runtime-option.js'
+import { assertNoViteFile, defaultRuntime } from '../../utils/runtime-option.js'
 import type { RequestTarget } from '../../utils/target.js'
 import { startVite, VITE_NOTE } from '../../utils/vite.js'
 import { runOnWorkerd } from '../../utils/workerd.js'
@@ -187,11 +187,7 @@ export function requestCommand(program: Command) {
           }
 
           if (runtime === 'vite') {
-            if (file !== undefined) {
-              throw new CliError('INVALID_OPTION', VITE_FILE_ERROR, {
-                suggestions: ['Drop the file argument'],
-              })
-            }
+            assertNoViteFile(file)
             const target = await startVite()
             try {
               const result = await executeRequest(target, path, options)

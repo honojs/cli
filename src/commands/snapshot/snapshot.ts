@@ -18,7 +18,11 @@ export const snapshotLines = async (
   target: RequestTarget = app
 ): Promise<string[]> => {
   const lines: string[] = []
-  const routes = inspectRoutes(app).filter((route) => !route.isMiddleware)
+  // Hono v5 lists notFound and onError handlers with a method like
+  // "@NOT_FOUND". They are not routes to request.
+  const routes = inspectRoutes(app).filter(
+    (route) => !route.isMiddleware && !route.method.startsWith('@')
+  )
 
   for (const route of routes) {
     const isParamless = !route.path.includes(':') && !route.path.includes('*')

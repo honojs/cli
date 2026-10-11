@@ -26,6 +26,7 @@ EOF`,
   notes: [
     'Runs many requests in one call, in order, against one app instance — in-memory state carries between steps. One JSON object per line: {"method","path","body","headers","expect","save"}.',
     '"save" stores a value from the response body by dot path (e.g. {"id":".id"}), and later steps use it as {{id}}. A whole-variable string like "{{id}}" keeps the saved type.',
+    'Cookies carry over like in a browser: a login step that sets a cookie signs in the steps after it. A "cookie" header in a step wins.',
     'Declare the acceptance criteria in "expect": {"status":201} and/or {"body":{...}} (a deep partial match — declared fields must match, extra response fields are ignored). Turn the spec into batch lines and rerun until "failed" is 0 — comparing a spec table by eye misses lines.',
     'A step without "expect" passes on any 2xx or 3xx and fails on a 4xx or 5xx. To accept a 4xx on purpose, declare it: {"expect":{"status":404}}.',
     'A string "body" goes as a form ("title=milk"), or as JSON when it is a JSON object or array, unless "headers" sets content-type. An object "body" goes as JSON.',

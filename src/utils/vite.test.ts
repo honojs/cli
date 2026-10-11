@@ -19,12 +19,21 @@ describe('startVite', () => {
         new Request('http://localhost/api?q=1', { method: 'POST', body: 'hi' })
       )
       expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ method: 'POST', url: '/api?q=1', body: 'hi' })
+      // The app sees the host of the request, not the random port
+      expect(await res.json()).toEqual({
+        method: 'POST',
+        url: '/api?q=1',
+        host: 'localhost',
+        body: 'hi',
+      })
       expect(res.headers.get('connection')).toBeNull()
 
       const redirect = await target.request(new Request('http://localhost/redirect'))
       expect(redirect.status).toBe(302)
       expect(redirect.headers.get('location')).toBe('/')
+
+      const cookies = await target.request(new Request('http://localhost/cookies'))
+      expect(cookies.headers.getSetCookie()).toEqual(['a=1', 'b=2'])
     } finally {
       await target.dispose()
     }
