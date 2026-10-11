@@ -53,7 +53,7 @@ describe('compareSnapshots', () => {
 describe('hideWorktree', () => {
   it('makes the same error page from two worktrees compare equal', () => {
     const page = (root: string) =>
-      `{"path":"/","expect":{"status":500,"body":"at ${root}/pages/index.ts:9"}}`
+      `{"path":"/","expect":{"status":500,"body":"at ${root}/pages/index.ts:9 at /chunk.mjs%3Fv=${root.endsWith('a') ? '9ceb3db4' : '03d74f32'}:1"}}`
     const before = hideWorktree(page('/private/var/T/hono-diff-a'), [
       '/private/var/T/hono-diff-a',
       '/var/T/hono-diff-a',

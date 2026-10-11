@@ -307,7 +307,7 @@ hono diff [--base <ref>]
 }
 ```
 
-Each side runs `hono snapshot` in a temporary git worktree with fresh local data, so data you wrote while testing does not count. `node_modules` is shared and `.dev.vars` is copied. GET routes that `snapshot` runs (paramless ones, and param ones it found a path for) and the 404 probe are compared; other param routes and non-GET routes only show up in `added` and `removed` — check them with `hono batch`. Empty `changed` after a refactor means the GET routes answer as before.
+Each side runs `hono snapshot` in a temporary git worktree with fresh local data, so data you wrote while testing does not count. `node_modules` is shared and `.dev.vars` is copied. The worktree path and Vite's dependency hash (`?v=...`) in a body are replaced with placeholders, so a stack trace on an error page does not count as a change. GET routes that `snapshot` runs (paramless ones, and param ones it found a path for) and the 404 probe are compared; other param routes and non-GET routes only show up in `added` and `removed` — check them with `hono batch`. Empty `changed` after a refactor means the GET routes answer as before.
 
 ### `benchmark`
 

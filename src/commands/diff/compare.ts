@@ -92,10 +92,13 @@ export const compareSnapshots = (base: SnapshotLine[], current: SnapshotLine[]):
 }
 
 /**
- * Each side runs in its own temporary worktree, so a path in a body (like
- * a stack trace on an error page) differs even when nothing changed.
- * Replace the worktree root with one placeholder. Pass the longer path
- * first: /private/var/... contains /var/...
+ * Each side runs in its own temporary worktree and its own Vite server,
+ * so a stack trace on an error page differs even when nothing changed:
+ * the worktree path, and Vite's dependency hash (`?v=1a2b3c4d`). Replace
+ * both with placeholders. Pass the longer root first: /private/var/...
+ * contains /var/...
  */
 export const hideWorktree = (output: string, roots: string[]): string =>
-  roots.reduce((out, root) => out.replaceAll(root, '<worktree>'), output)
+  roots
+    .reduce((out, root) => out.replaceAll(root, '<worktree>'), output)
+    .replace(/([?&]|%3F|%26)v=[0-9a-f]{8}\b/g, '$1v=<hash>')
