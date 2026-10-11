@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { csrf } from 'hono/csrf'
 import { describe, it, expect } from 'vitest'
 import { CliError } from '../../utils/output.js'
 import { getByPath, interpolate, matchesSubset, parseBatch, runBatch, subsetDiff } from './batch.js'
@@ -92,6 +93,45 @@ describe('getByPath', () => {
 })
 
 describe('runBatch', () => {
+  it('sends a string body as a form, or as JSON when it is JSON', async () => {
+    const app = new Hono()
+    app.post('/echo', async (c) =>
+      c.json({ type: c.req.header('content-type'), body: await c.req.parseBody() })
+    )
+    const result = await runBatch(
+      app,
+      parseBatch(
+        [
+          '{"method":"POST","path":"/echo","body":"title=milk"}',
+          '{"method":"POST","path":"/echo","body":"{\\"a\\":1}"}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps[0].body).toEqual({
+      type: 'application/x-www-form-urlencoded',
+      body: { title: 'milk' },
+    })
+    expect((result.steps[1].body as { type: string }).type).toBe('application/json')
+  })
+
+  it('points at sec-fetch-site when csrf() rejects a form POST', async () => {
+    const app = new Hono()
+    app.use(csrf())
+    app.post('/todos', (c) => c.redirect('/', 303))
+    const result = await runBatch(
+      app,
+      parseBatch(
+        [
+          '{"method":"POST","path":"/todos","body":"title=milk"}',
+          '{"method":"POST","path":"/todos","body":"title=milk","headers":{"sec-fetch-site":"same-origin"}}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps[0].status).toBe(403)
+    expect(result.steps[0].suggestions?.[0]).toContain('sec-fetch-site: same-origin')
+    expect(result.steps[1].status).toBe(303)
+  })
+
   it('keeps cookies from step to step, like a browser', async () => {
     const app = new Hono()
     app.post('/login', (c) => {
