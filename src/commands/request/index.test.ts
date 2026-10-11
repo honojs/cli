@@ -1259,15 +1259,7 @@ describe('requestCommand', () => {
     })
 
     it('should reject a file argument and --trace with vite', async () => {
-      await program.parseAsync([
-        'node',
-        'test',
-        'request',
-        '/',
-        'src/index.ts',
-        '--runtime',
-        'vite',
-      ])
+      await program.parseAsync(['node', 'test', 'request', '/', 'src/app.ts', '--runtime', 'vite'])
       await program.parseAsync(['node', 'test', 'request', '/', '--runtime', 'vite', '--trace'])
 
       for (const call of consoleLogSpy.mock.calls) {

@@ -189,7 +189,7 @@ In a project with a wrangler config, `c.env` carries the real local bindings (KV
 
 In a Vite project with no `src/index.ts` (or `.tsx`, `.js`, `.jsx`) — the app comes from a Vite plugin — `--runtime vite` is the default for `request` and `batch`, so they work with no flag.
 
-In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. A file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
+In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. The default entry as the file argument (`src/index.ts`, `src/index.tsx`, ...) still goes through Vite. Another file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
