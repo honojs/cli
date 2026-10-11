@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compareSnapshots, parseLines } from './compare'
+import { compareSnapshots, hideWorktree, parseLines } from './compare'
 
 describe('compareSnapshots', () => {
   it('lists routes that answer differently, and routes added or removed', () => {
@@ -47,5 +47,22 @@ describe('compareSnapshots', () => {
       removed: [],
       compared: 1,
     })
+  })
+})
+
+describe('hideWorktree', () => {
+  it('makes the same error page from two worktrees compare equal', () => {
+    const page = (root: string) =>
+      `{"path":"/","expect":{"status":500,"body":"at ${root}/pages/index.ts:9 at /chunk.mjs%3Fv=${root.endsWith('a') ? '9ceb3db4' : '03d74f32'}:1"}}`
+    const before = hideWorktree(page('/private/var/T/hono-diff-a'), [
+      '/private/var/T/hono-diff-a',
+      '/var/T/hono-diff-a',
+    ])
+    const after = hideWorktree(page('/var/T/hono-diff-b'), [
+      '/private/var/T/hono-diff-b',
+      '/var/T/hono-diff-b',
+    ])
+    expect(before).toBe(after)
+    expect(compareSnapshots(parseLines(before), parseLines(after)).changed).toEqual([])
   })
 })
