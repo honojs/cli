@@ -204,8 +204,36 @@ export const getByPath = (body: unknown, path: string): unknown => {
 }
 
 /**
+ * Keep the cookies a response sets, like a browser, so a login step
+ * signs in the steps after it. A cookie with `Max-Age=0` or a past
+ * `Expires` is removed.
+ */
+export const updateCookies = (jar: Map<string, string>, setCookies: string[]) => {
+  for (const setCookie of setCookies) {
+    const [pair, ...attributes] = setCookie.split(';')
+    const eq = pair.indexOf('=')
+    if (eq < 1) {
+      continue
+    }
+    const name = pair.slice(0, eq).trim()
+    const expired = attributes.some((attribute) => {
+      const [key, value = ''] = attribute.trim().split('=')
+      return (
+        (key.toLowerCase() === 'max-age' && Number(value) <= 0) ||
+        (key.toLowerCase() === 'expires' && Date.parse(value) <= Date.now())
+      )
+    })
+    if (expired) {
+      jar.delete(name)
+    } else {
+      jar.set(name, pair.slice(eq + 1).trim())
+    }
+  }
+}
+
+/**
  * Run the steps in order against one app instance, so in-memory state
- * carries from step to step. Each result carries the facts — status
+ * and cookies carry from step to step. Each result carries the facts — status
  * and body — and, when the step declares `expect`, the deterministic
  * check against them. Agents miss lines when they compare a spec
  * table by eye, so the comparison belongs to the CLI. A step without
@@ -219,6 +247,7 @@ export const runBatch = async (
   env?: Record<string, unknown>
 ): Promise<BatchResult> => {
   const vars: Record<string, unknown> = {}
+  const cookies = new Map<string, string>()
   const results: StepResult[] = []
 
   for (const step of steps) {
@@ -226,6 +255,10 @@ export const runBatch = async (
     const headers: Record<string, string> = {
       ...sharedHeaders,
       ...interpolate(step.headers ?? {}, vars),
+    }
+    // A cookie header in the step wins over the kept cookies
+    if (cookies.size > 0 && !Object.keys(headers).some((k) => k.toLowerCase() === 'cookie')) {
+      headers.cookie = [...cookies].map(([name, value]) => `${name}=${value}`).join('; ')
     }
     const init: RequestInit = { method: step.method, headers }
     if (step.body !== undefined) {
@@ -245,6 +278,7 @@ export const runBatch = async (
       undefined,
       env
     )
+    updateCookies(cookies, response.headers.getSetCookie())
     const text = await response.text()
     const isJson = response.headers.get('content-type')?.includes('json')
     let body: unknown = text
