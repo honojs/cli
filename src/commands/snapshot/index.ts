@@ -16,7 +16,8 @@ const help: CommandHelp = {
   examples: ['hono snapshot', 'hono snapshot src/app.ts'],
   notes: [
     'Prints the current behavior of the app as batch JSONL lines, to stdout. No file is written — keep the lines in your context, or redirect if you want one.',
-    'Paramless GET routes are executed and their actual status and body become the "expect". Param and non-GET routes are printed without one, for you to fill in — the tool does not invent intent.',
+    'Paramless GET routes are executed and their actual status and body become the "expect".',
+    'A param GET route is executed too when the app already showed a path for it: a link in a page, or a JSON field with the param\'s name (/posts/:slug -> /posts/hello). Other param routes and non-GET routes are printed without an "expect", for you to fill in — the tool does not invent values.',
     'One probe line records the current response for a path that matches no route.',
     'Capture before a refactor, then rerun the lines with hono batch until "failed" is 0.',
     '--status-only captures only the status codes — much smaller on a large app. The probe line keeps its body either way: a dropped notFound handler still answers 404, only the body changes.',

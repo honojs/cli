@@ -12,8 +12,8 @@ const help: CommandHelp = {
   examples: ['hono diff', 'hono diff --base main'],
   notes: [
     'Shows what your uncommitted changes do to the app: it runs the app at the last commit and as it is now, and compares the answers. Nothing to capture first.',
-    'Paramless GET routes and a 404 probe are run on both sides; "changed" lists each one that answers differently, with the status and body differences. Routes that appear or disappear are in "added" and "removed".',
-    'Param and non-GET routes are not run — check them with hono batch.',
+    'The GET routes that hono snapshot runs (paramless ones, and param ones with a path found in a link or JSON field) and a 404 probe are run on both sides; "changed" lists each one that answers differently, with the status and body differences. Routes that appear or disappear are in "added" and "removed".',
+    'Other param routes and non-GET routes are not run — check them with hono batch.',
     'Each side runs in a temporary git worktree with fresh local data, so data you wrote while testing does not count. node_modules is shared, and .dev.vars is copied.',
     'Empty "changed" after a refactor means the GET routes answer as before.',
   ],

@@ -283,7 +283,7 @@ hono snapshot [file]
 - `--no-bindings` - Skip loading the local Cloudflare bindings
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
-Paramless GET routes are executed and their actual response becomes the `expect` (`--status-only` captures only the status codes — much smaller on a large app; the probe line keeps its body either way). Param and non-GET routes are printed without one, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
+Paramless GET routes are executed and their actual response becomes the `expect` (`--status-only` captures only the status codes — much smaller on a large app; the probe line keeps its body either way). A param GET route is executed too when the app already showed a path for it: a link in a page (`href`, `src`, `<loc>`, `<link>`), or a JSON field with the param's name. `/posts/:slug` becomes `/posts/hello` when a page links there. Other param routes and non-GET routes are printed without an `expect`, to fill in. One probe line records the current response for a path that matches no route. Capture before a refactor, then rerun the lines with `hono batch` until `failed` is 0.
 
 Unlike `routes`, this command sends real requests to the app — middleware runs. `routes` never sends a request.
 
@@ -307,7 +307,7 @@ hono diff [--base <ref>]
 }
 ```
 
-Each side runs `hono snapshot` in a temporary git worktree with fresh local data, so data you wrote while testing does not count. `node_modules` is shared and `.dev.vars` is copied. Paramless GET routes and the 404 probe are compared; param and non-GET routes only show up in `added` and `removed` — check them with `hono batch`. Empty `changed` after a refactor means the GET routes answer as before.
+Each side runs `hono snapshot` in a temporary git worktree with fresh local data, so data you wrote while testing does not count. `node_modules` is shared and `.dev.vars` is copied. GET routes that `snapshot` runs (paramless ones, and param ones it found a path for) and the 404 probe are compared; other param routes and non-GET routes only show up in `added` and `removed` — check them with `hono batch`. Empty `changed` after a refactor means the GET routes answer as before.
 
 ### `benchmark`
 
