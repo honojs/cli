@@ -68,11 +68,10 @@ describe('help text', () => {
     expect(top).toContain('For coding agents:')
     expect(top).toContain('"ok": true')
     expect(top).toContain('hono <command> --help')
-    expect(top).toContain('hono snapshot --status-only')
-    expect(top).toContain('`hono diff` compares the app with the last commit')
+    expect(top).toContain('run `hono diff`')
+    expect(top).toContain("hono request /todos -X POST -d 'title=milk'")
     expect(top).toContain('in one `hono batch -` call')
     expect(top).toContain('To learn an app you did not write, start with `hono routes`')
-    expect(top).toContain('hono batch - --compact')
     expect(top).not.toContain('Examples:')
   })
 
