@@ -58,6 +58,7 @@ export const agentHelp = `For coding agents:
   Before changing existing routes, capture them with
   \`hono snapshot --status-only\`. After the change, pipe those lines, plus
   lines for new routes, into \`hono batch - --compact\` until "failed" is 0.
+  Forgot to capture? \`hono diff\` compares the app with the last commit.
   \`hono <command> --help\` has examples and notes.
   For Hono itself, fetch https://hono.dev/llms.txt to find the page, then fetch
   it with the \`Accept: text/markdown\` header.
