@@ -41,6 +41,9 @@ hono request /
 # Run multiple requests from JSONL
 hono batch -
 
+# Load a page in happy-dom, fill and click
+hono browse / --fill Title=milk --click 'button[type=submit]'
+
 # Print the current behavior as batch JSONL lines
 hono snapshot
 
