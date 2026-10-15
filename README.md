@@ -555,7 +555,7 @@ It writes a "Hono CLI" block to `AGENTS.md`, or to `CLAUDE.md` when only that ex
 
 The block has extra lines for the framework: `void` (`package.json` depends on `void`: use the `hono-void` skill from [honojs/skills](https://github.com/honojs/skills)), `cloudflare-workers` (a wrangler config or `cloudflare.config.ts`), or `hono`.
 
-Without `@hono/cli` in `package.json`, it runs `<package manager> add -D @hono/cli`. The package manager comes from the lockfile, as in `init`.
+Without `@hono/cli` in `package.json`, it runs `<package manager> add -D @hono/cli@<this version>`. The package manager comes from the lockfile, as in `init`, and the commands in the block use it too: `pnpm exec hono` in a pnpm project, `npx hono` with npm. The exact version lets pnpm add a release candidate that is younger than its `minimumReleaseAge`.
 
 **Output:**
 
@@ -566,7 +566,7 @@ Without `@hono/cli` in `package.json`, it runs `<package manager> add -D @hono/c
     "framework": "void",
     "file": "AGENTS.md",
     "action": "appended",
-    "added": "@hono/cli@^1.0.0"
+    "added": "@hono/cli@1.0.0"
   }
 }
 ```
