@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { join } from 'node:path'
-import { isVoidProject, loadVoidApp, startVite } from './vite'
+import { isViteNoise, isVoidProject, loadVoidApp, startVite } from './vite'
 
 const FIXTURE = join(import.meta.dirname, 'fixtures/vite')
 const VOID_FIXTURE = join(import.meta.dirname, 'fixtures/void')
@@ -60,5 +60,19 @@ describe('startVite', () => {
   it('should not take a project without void for a Void project', () => {
     vi.spyOn(process, 'cwd').mockReturnValue(FIXTURE)
     expect(isVoidProject()).toBe(false)
+  })
+})
+
+describe('isViteNoise', () => {
+  it("drops Vite's own notes and keeps the app logs", () => {
+    expect(isViteNoise('Re-optimizing dependencies because vite config has changed')).toBe(true)
+    expect(isViteNoise('Default inspector port 9229 not available, using 9232 instead')).toBe(true)
+    expect(
+      isViteNoise(
+        'Sourcemap for "/a/node_modules/x/index.mjs" points to a source file outside its package: "/a/src/x.ts"'
+      )
+    ).toBe(true)
+    expect(isViteNoise('GET /users 200')).toBe(false)
+    expect(isViteNoise('Error: something broke')).toBe(false)
   })
 })

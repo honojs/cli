@@ -95,12 +95,25 @@ const loadVite = async (): Promise<ViteModule> => {
  * that a Vite plugin builds (with virtual modules) can take requests.
  * The server listens on a random port on 127.0.0.1 only.
  */
+const VITE_NOISE = [
+  /^Sourcemap for .* points to (a source file outside its package|missing source files)/,
+  /^Re-optimizing dependencies because/,
+  /^Default inspector port \d+ not available/,
+]
+
+/** Vite's own notes that say nothing about the app */
+export const isViteNoise = (msg: string): boolean => VITE_NOISE.some((noise) => noise.test(msg))
+
 export const startVite = async (): Promise<ViteTarget> => {
   const { createLogger, createServer: createViteServer } = await loadVite()
   // Keep the app logs off stdout, which is for the JSON output. An app
   // in workerd logs through this logger; an app in this process (e.g.
   // @hono/vite-dev-server) calls console.log, so `request` wraps it.
-  const toStderr = (msg: string) => console.error(msg)
+  const toStderr = (msg: string) => {
+    if (!isViteNoise(msg)) {
+      console.error(msg)
+    }
+  }
   // Plugins may log with console.log while the server starts (Void does)
   const vite = await logsToStderr(() =>
     createViteServer({
