@@ -1,0 +1,38 @@
+package.json
+  s_dc6239c7c86ef7::t_c353de5004d8ec 49
+src/cli.ts
+  s_dc6239c7c86ef7::t_1a6d19f63ba53b 41
+  s_dc6239c7c86ef7::t_1f4c487e07a38b 8
+pnpm-lock.yaml
+  s_dc6239c7c86ef7::t_600e0ae7d22649 36-38,59,62,992-997,1406-1409,1584-1587,1723-1726,2794-2797,3536-3541,3547,3564,3602,3812-3815,3968-3969,4123-4135,4605,4628,4639,4661,5117,5128-5129,5132,5172,5192,5196-5197
+README.md
+  s_dc6239c7c86ef7::t_bff6ff3db8f0a1 66,276-328
+docs/agent-dx-log.md
+  s_dc6239c7c86ef7::t_1f359fcc74755c 6-35
+src/commands/browse/browser.test.ts
+  s_dc6239c7c86ef7::t_de2cd591b362fa 1-118
+src/commands/browse/browser.ts
+  s_dc6239c7c86ef7::t_7fd00b6e93105e 1-373
+src/commands/browse/index.test.ts
+  s_dc6239c7c86ef7::t_e63e73b6541b3d 1-71
+src/commands/browse/index.ts
+  s_dc6239c7c86ef7::t_940db23de59b01 1-114
+src/utils/help.ts
+  s_dc6239c7c86ef7::t_2dcf802e48e3b3 59-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c066c4eeaa2d3a2b87ff88c220b376aa19da3127",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
