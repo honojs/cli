@@ -152,6 +152,30 @@ describe('routesCommand', () => {
     ])
   })
 
+  it('should hide routes that start with an --exclude prefix', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Hello'))
+    app.get('/__void/a', (c) => c.text('a'))
+    app.get('/__internal/b', (c) => c.text('b'))
+    setupBasicMocks(app)
+
+    await program.parseAsync([
+      'node',
+      'test',
+      'routes',
+      '--exclude',
+      '/__void',
+      '--exclude',
+      '/__internal',
+      'test-app.js',
+    ])
+
+    const parsed = JSON.parse(consoleLogSpy.mock.calls[0][0])
+    expect(parsed.data.routes).toEqual([
+      { method: 'GET', path: '/', name: '[handler]', isMiddleware: false },
+    ])
+  })
+
   it('should print routes as text with --plain', async () => {
     const app = new Hono()
     app.get('/', (c) => c.text('Hello'))
