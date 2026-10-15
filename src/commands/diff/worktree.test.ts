@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import {
   existsSync,
@@ -10,6 +9,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { describe, it, expect } from 'vitest'
 import { addWorktree, commitWorkingTree, resolveBase } from './worktree'
 
 const git = (cwd: string, ...args: string[]) =>

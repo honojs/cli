@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
 import { execFile } from 'node:child_process'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { CliError } from '../../utils/output'
 import { buildRunnerBody, parseRunnerOutput } from './runtime'
 

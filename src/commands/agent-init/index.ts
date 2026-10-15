@@ -1,6 +1,6 @@
-import type { Command } from 'commander'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import type { Command } from 'commander'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'

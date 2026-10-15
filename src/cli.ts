@@ -1,7 +1,7 @@
-import { Command, CommanderError } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { Command, CommanderError } from 'commander'
 import { agentInitCommand } from './commands/agent-init/index.js'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'

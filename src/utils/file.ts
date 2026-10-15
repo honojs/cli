@@ -1,6 +1,6 @@
-import { getExtension } from 'hono/utils/mime'
 import { existsSync, createWriteStream } from 'node:fs'
 import { dirname, basename } from 'node:path'
+import { getExtension } from 'hono/utils/mime'
 
 export const getFilenameFromPath = (path: string, contentType?: string): string => {
   // We use 'http://localhost' as a base because 'path' is often a relative path (e.g., '/users/123').

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { maybeLoadBindings } from './bindings.js'
 
 describe('maybeLoadBindings', () => {

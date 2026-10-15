@@ -1,6 +1,6 @@
-import type { Command } from 'commander'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import type { Command } from 'commander'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import { parseHeaders } from '../../utils/headers.js'
 import type { CommandHelp } from '../../utils/help.js'

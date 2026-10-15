@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import { join } from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { isViteNoise, isVoidProject, loadVoidApp, startVite } from './vite'
 
 const FIXTURE = join(import.meta.dirname, 'fixtures/vite')
