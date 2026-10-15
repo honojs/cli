@@ -1,0 +1,25 @@
+README.md
+  s_dc6239c7c86ef7::t_1642b2ee285730 492
+src/commands/agent-init/block.test.ts
+  s_dc6239c7c86ef7::t_09b99cc28f289e 49-50
+src/commands/agent-init/block.ts
+  s_dc6239c7c86ef7::t_a6db00ad9f045e 15
+src/commands/agent-init/index.test.ts
+  s_dc6239c7c86ef7::t_5b926a8bee9f94 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d8062ba7e7e0ba49c6aca6c560d38bbf85db57cd",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
