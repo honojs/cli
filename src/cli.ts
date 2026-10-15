@@ -2,6 +2,7 @@ import { Command, CommanderError } from 'commander'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { agentInitCommand } from './commands/agent-init/index.js'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
 import { diffCommand } from './commands/diff/index.js'
@@ -41,6 +42,7 @@ diffCommand(program)
 benchmarkCommand(program)
 ssgCommand(program)
 initCommand(program)
+agentInitCommand(program)
 
 try {
   await program.parseAsync()
