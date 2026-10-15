@@ -1,5 +1,6 @@
 import type { context, PluginBuild } from 'esbuild'
 import { Hono } from 'hono'
+import type { Mock } from 'vitest'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Mock dependencies
@@ -16,7 +17,7 @@ import { buildAndImportApp } from './build.js'
 describe('buildAndImportApp', () => {
   const getMockEsbuild = async () => vi.mocked((await import('esbuild')).context)
 
-  let mockEsbuildDispose: ReturnType<typeof vi.fn>
+  let mockEsbuildDispose: Mock<() => Promise<void>>
   let mockEsbuild: Awaited<ReturnType<typeof getMockEsbuild>>
 
   type OnEndCallback = Parameters<PluginBuild['onEnd']>[0]
@@ -48,7 +49,7 @@ describe('buildAndImportApp', () => {
   }
 
   beforeEach(async () => {
-    mockEsbuildDispose = vi.fn()
+    mockEsbuildDispose = vi.fn(async () => {})
     mockEsbuild = await getMockEsbuild()
 
     vi.clearAllMocks()
