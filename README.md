@@ -56,6 +56,7 @@ hono ssg
 Start:
 
 - `init` - Add a Hono app to the current directory
+- `agent-init` - Tell coding agents in this project to use Hono CLI
 
 Inspect and test:
 
@@ -474,13 +475,47 @@ A file that already exists is never overwritten; it is listed in `skipped`. `pac
 }
 ```
 
+### `agent-init`
+
+Tell coding agents in the current project to verify their changes with Hono CLI. Agents read `AGENTS.md`, so this is where the hint goes.
+
+```bash
+npx @hono/cli@next agent-init [options]
+```
+
+**Options:**
+
+- `--no-install` - do not add `@hono/cli` to `devDependencies`
+
+It writes a "Hono CLI" block to `AGENTS.md`, or to `CLAUDE.md` when only that exists, and creates `AGENTS.md` when neither exists. The block sits between `<!-- hono-cli:start -->` and `<!-- hono-cli:end -->`, so running it again replaces the block in place.
+
+The block has extra lines for the framework: `void` (`package.json` depends on `void`: page data as JSON, page actions, `--runtime vite`), `cloudflare-workers` (a wrangler config or `cloudflare.config.ts`), or `hono`.
+
+Without `@hono/cli` in `package.json`, it runs `<package manager> add -D @hono/cli`. The package manager comes from the lockfile, as in `init`.
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "framework": "void",
+    "file": "AGENTS.md",
+    "action": "appended",
+    "added": "@hono/cli@^1.0.0"
+  }
+}
+```
+
+`action` is `created`, `appended`, or `updated`.
+
 ## Tips
 
 ### Using Hono CLI with AI Code Agents
 
 Use the [Hono skill](https://github.com/honojs/skills). It teaches the agent when and how to use Hono CLI, together with Hono best practices.
 
-Without the skill, add one line to your project's `AGENTS.md` or `CLAUDE.md`:
+Without the skill, run `hono agent-init` (see [`agent-init`](#agent-init)), or add one line to your project's `AGENTS.md` or `CLAUDE.md`:
 
 ```markdown
 Working on this Hono app? Run `hono --help` first and follow it.
