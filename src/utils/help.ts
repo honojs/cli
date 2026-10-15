@@ -56,6 +56,9 @@ export const agentHelp = `For coding agents:
   requests or a flow (POST, then GET), send them in one \`hono batch -\` call,
   not many \`hono request\` calls: it is one start, and in a Vite project each
   request starts the dev server again.
+  For what the page does in a browser (client JavaScript, a form React
+  handles), run \`hono browse <path> --fill name=value --click <selector>\`.
+  It needs happy-dom in the project.
   After you change existing code, run \`hono diff\`: it lists the routes that
   answer differently from the last commit, with nothing to capture first.
 

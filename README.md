@@ -63,6 +63,7 @@ Inspect and test:
 - `routes [file]` - Show routes of your Hono app
 - `request <path> [file]` - Send request to Hono app using `app.request()`
 - `batch <source> [file]` - Run multiple requests from JSONL using `app.request()`
+- `browse <path> [file]` - Load a page in happy-dom, run its JavaScript, fill and click
 - `snapshot [file]` - Print the current behavior as batch JSONL lines
 - `diff` - Show how your uncommitted changes change what the app answers
 - `benchmark [file]` - Measure the performance of your Hono app
@@ -271,6 +272,59 @@ EOF
 With `--runtime workerd`, one workerd starts and every step runs in it, so a flow over the real bindings (put to KV, then get; D1; an AI binding) runs in one call. The entry is `main` in the wrangler config, so pass no file argument. With `--runtime vite`, one Vite dev server starts and every step goes through it.
 
 One JSON object per line: `method`, `path`, `body`, `headers`, `expect`, `save`. `save` stores a value from the response body by dot path, and later steps use it as `{{id}}` (a whole-variable string keeps the saved type). A redirect shows its `location` in the step, and `save` reads a header with `header:`: `"save":{"next":"header:location"}`, then `"path":"{{next}}"` follows the URL a create redirects to. A string `body` without a `content-type` header goes as a form, or as JSON when it is a JSON object or array. Cookies carry over like in a browser, so a login step signs in the steps after it; a `cookie` header in a step wins. `expect` declares the acceptance criteria: `status` matches exactly, `body` is a deep partial match (declared fields must match, extra response fields are ignored). The output carries the actual `status` and `body`, `pass` per step, and a `summary` — rerun until `failed` is 0. A step without `expect` passes on any 2xx or 3xx and fails on a 4xx or 5xx; to accept a 4xx on purpose, declare it with `expect.status`.
+
+### `browse`
+
+Load a page in [happy-dom](https://github.com/capricorn86/happy-dom), run its JavaScript, and fill and click like a user. Use it for what an HTTP request cannot show: React hydration, a form that JavaScript handles, client-side navigation. Every request the page makes goes to the app the same way as `request` and `batch` (`app.request()`, `--runtime vite`, or `--runtime workerd`), so no server and no Chrome are needed.
+
+```bash
+hono browse <path> [file] [options]
+```
+
+**Arguments:**
+
+- `path` - Page path (e.g. `/todos`)
+- `file` - Path to the Hono app file (optional)
+
+**Options:**
+
+- `--fill <name=value>` - type a value into a field (can be used multiple times)
+- `--click <selector>` - click the element that matches the CSS selector (can be used multiple times)
+- `-H, --header <header>` - header for every request the page makes
+- `--runtime <runtime>` - runtime to execute the app: `node` (default), `workerd`, or `vite`
+- `--no-bindings` - Skip loading the local Cloudflare bindings
+- `-e, --external <package>` - Mark package as external (can be used multiple times)
+
+```bash
+npm install -D happy-dom
+hono browse / --fill Title=milk --click 'button[type=submit]'
+```
+
+`--fill` and `--click` run in the order given, and each waits until the page is quiet. `--fill` finds the field by its `name`, label text, placeholder, `aria-label`, or `id` (the keys in `forms`), or by a CSS selector. `confirm()` is accepted. Redirects are followed like a browser, and a request to another origin gets 403: only the app runs here.
+
+happy-dom is not a dependency of Hono CLI. Install it in the project; without it, `browse` fails with `HAPPY_DOM_NOT_FOUND`. happy-dom has no layout or CSS, so check visual details in a real browser.
+
+**Output:**
+
+```json
+{
+  "ok": true,
+  "data": {
+    "url": "/?added=milk",
+    "title": "Todos",
+    "text": "Todos milk Add",
+    "forms": [{ "action": "/todos", "method": "POST", "fields": { "Title": "" } }],
+    "console": [],
+    "actions": [
+      { "action": "fill Title=milk", "ok": true },
+      { "action": "click button[type=submit]", "ok": true }
+    ],
+    "note": "happy-dom runs the page JS but has no layout or CSS. Confirm visual details in a real browser."
+  }
+}
+```
+
+`console` has the page's console messages and its uncaught errors. An action that finds nothing stops the run with `"ok": false` and an `error`.
 
 ### `snapshot`
 

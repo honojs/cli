@@ -5,6 +5,7 @@ import { Command, CommanderError } from 'commander'
 import { agentInitCommand } from './commands/agent-init/index.js'
 import { batchCommand } from './commands/batch/index.js'
 import { benchmarkCommand } from './commands/benchmark/index.js'
+import { browseCommand } from './commands/browse/index.js'
 import { diffCommand } from './commands/diff/index.js'
 import { initCommand } from './commands/init/index.js'
 import { requestCommand } from './commands/request/index.js'
@@ -37,6 +38,7 @@ program
 routesCommand(program)
 requestCommand(program)
 batchCommand(program)
+browseCommand(program)
 snapshotCommand(program)
 diffCommand(program)
 benchmarkCommand(program)
