@@ -19,7 +19,8 @@ export interface BrowseResult {
   url: string
   title: string
   text: string
-  forms: { action: string; method: string; fields: Record<string, string> }[]
+  /** No action and method when JavaScript handles the submit */
+  forms: { action?: string; method?: string; fields: Record<string, string> }[]
   console: { type: string; text: string }[]
   actions: { action: string; ok: boolean; error?: string }[]
   note: string
@@ -354,9 +355,13 @@ export const browse = async (
           fields[namesOf(el)[0] ?? el.tagName.toLowerCase()] = field.value
         }
         const action = form.getAttribute('action') ?? ''
+        // React puts this placeholder when a function handles the submit:
+        // the form never sends itself, so it has no method to report
+        if (action.startsWith('javascript:')) {
+          return { fields }
+        }
         return {
-          // React puts a placeholder here when a function handles the submit
-          action: action.startsWith('javascript:') ? '' : action,
+          action,
           method: (form.getAttribute('method') ?? 'get').toUpperCase(),
           fields,
         }

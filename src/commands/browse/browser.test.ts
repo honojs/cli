@@ -30,6 +30,13 @@ const app = () => {
     const { title } = await c.req.parseBody()
     return c.redirect(`/?added=${title}`, 303)
   })
+  app.get('/react-form', (c) =>
+    c.html(
+      page(
+        `<form action="javascript:throw new Error('React form unexpectedly submitted.')"><input aria-label="Search" /></form>`
+      )
+    )
+  )
   app.get('/module', (c) =>
     c.html(page('<p id="out">waiting</p><script type="module" src="/m.js"></script>'))
   )
@@ -78,6 +85,11 @@ describe('browse', () => {
     ])
     expect(after.url).toBe('/?added=milk')
     expect(after.text).toContain('milk')
+  })
+
+  it('reports no action and method for a form that JavaScript handles', async () => {
+    const result = await browse(happyDom, app(), '/react-form', [])
+    expect(result.forms).toEqual([{ fields: { Search: '' } }])
   })
 
   it('stops at an action that finds nothing', async () => {
