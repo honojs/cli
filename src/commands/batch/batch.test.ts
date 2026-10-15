@@ -202,6 +202,29 @@ describe('runBatch', () => {
     expect(result.steps[1].body).toEqual({ id: 1, name: 'Momo' })
   })
 
+  it('shows the Location of a redirect and saves a header with header:', async () => {
+    const app = crudApp()
+    app.post('/form', (c) => c.redirect('http://localhost/users/1', 303))
+    const result = await runBatch(
+      app,
+      parseBatch(
+        [
+          '{"method":"POST","path":"/users","body":{"name":"Momo"}}',
+          '{"method":"POST","path":"/form","save":{"next":"header:location"}}',
+          '{"path":"{{next}}","expect":{"status":200,"body":{"name":"Momo"}}}',
+          '{"path":"/users","save":{"x":"header:x-none"}}',
+        ].join('\n')
+      )
+    )
+    expect(result.steps[0].location).toBeUndefined()
+    expect(result.steps[1].location).toBe('http://localhost/users/1')
+    expect(result.steps[1].saved).toEqual({ next: 'http://localhost/users/1' })
+    expect(result.steps[2].path).toBe('/users/1')
+    expect(result.steps[2].pass).toBe(true)
+    expect(result.steps[3].pass).toBe(false)
+    expect(result.steps[3].error).toBe('save: x-none not found in the headers')
+  })
+
   it('passes a step without expect on a 2xx or 3xx', async () => {
     const app = crudApp()
     app.get('/moved', (c) => c.redirect('/users'))
