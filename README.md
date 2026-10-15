@@ -32,6 +32,9 @@ hono --help
 # Add a Hono app to the current directory
 hono init
 
+# Tell coding agents in this project to use Hono CLI
+hono agent-init
+
 # Show routes of your Hono app
 hono routes
 
@@ -46,6 +49,9 @@ hono browse / --fill Title=milk --click 'button[type=submit]'
 
 # Print the current behavior as batch JSONL lines
 hono snapshot
+
+# Show how your uncommitted changes change what the app answers
+hono diff
 
 # Measure the performance of your Hono app
 hono benchmark
