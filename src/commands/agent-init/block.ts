@@ -12,12 +12,7 @@ const COMMON = [
 
 const FRAMEWORK_LINES: Record<Framework, string[]> = {
   void: [
-    'This is a Void app. Pass `--runtime vite` and no file argument.',
-    '`pages/**` return HTML. Send the header `x-voidpages: true` to get the page data as JSON: `{ component, props, errors, head, ... }`.',
-    'Page actions are POST/PUT/PATCH/DELETE to the page URL. A named action has a `?name` suffix, e.g. `POST /ramen/1?delete`.',
-    'A validation failure in a page action returns 200, not 422, with the messages in `body.errors`. Assert on the body.',
-    "A foreign `Origin` header gets 403. Omit `Origin` or use the app's own origin.",
-    '`npx void db seed --yes` resets the local DB between runs.',
+    'This is a Void app. To check pages and page actions, read the Void section of the hono skill. If the skill is missing, install it: `npx skills add honojs/skills`.',
   ],
   'cloudflare-workers': [
     '`c.env` has the local bindings (KV, D1, R2, vars). Add `--runtime workerd` to run in the real Workers runtime.',

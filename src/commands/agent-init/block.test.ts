@@ -46,7 +46,7 @@ describe('writeBlock', () => {
 
 describe('renderBlock', () => {
   it('should add the Void lines for a Void app', () => {
-    expect(renderBlock('void')).toContain('x-voidpages: true')
-    expect(renderBlock('hono')).not.toContain('x-voidpages')
+    expect(renderBlock('void')).toContain('Void section of the hono skill')
+    expect(renderBlock('hono')).not.toContain('Void')
   })
 })

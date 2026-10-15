@@ -489,7 +489,7 @@ npx @hono/cli@next agent-init [options]
 
 It writes a "Hono CLI" block to `AGENTS.md`, or to `CLAUDE.md` when only that exists, and creates `AGENTS.md` when neither exists. The block sits between `<!-- hono-cli:start -->` and `<!-- hono-cli:end -->`, so running it again replaces the block in place.
 
-The block has extra lines for the framework: `void` (`package.json` depends on `void`: page data as JSON, page actions, `--runtime vite`), `cloudflare-workers` (a wrangler config or `cloudflare.config.ts`), or `hono`.
+The block has extra lines for the framework: `void` (`package.json` depends on `void`: read the Void section of the [Hono skill](https://github.com/honojs/skills)), `cloudflare-workers` (a wrangler config or `cloudflare.config.ts`), or `hono`.
 
 Without `@hono/cli` in `package.json`, it runs `<package manager> add -D @hono/cli`. The package manager comes from the lockfile, as in `init`.
 
