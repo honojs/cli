@@ -89,6 +89,7 @@ hono routes [file] [options]
 
 - `--verbose` - include middleware
 - `--plain` - human-readable output instead of JSON
+- `--exclude <prefix>` - hide routes whose path starts with the prefix, e.g. `--exclude /__void` for internal routes a framework adds (can be used multiple times)
 - `-e, --external <package>` - Mark package as external (can be used multiple times)
 
 **Output:**

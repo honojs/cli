@@ -10,11 +10,12 @@ import { isVoidProject, loadVoidApp, startVite } from '../../utils/vite.js'
 const help: CommandHelp = {
   output:
     '{ "router": "SmartRouter + RegExpRouter", "routes": [{ "method": "GET", "path": "/", "name": "[handler]", "isMiddleware": false }] }',
-  examples: ['hono routes', 'hono routes --verbose src/app.ts'],
+  examples: ['hono routes', 'hono routes --verbose src/app.ts', 'hono routes --exclude /__void'],
   notes: [
     'Routes are resolved from the real app instance, so mounted sub-apps and basePath are all expanded.',
     'Run it first to get the full picture of an app without reading the source.',
     'In a Void project (no entry file), the routes come from the app that Void builds through Vite.',
+    '--exclude hides the routes whose path starts with the prefix, e.g. internal routes a framework adds.',
   ],
 }
 
@@ -22,6 +23,7 @@ interface RoutesOptions {
   verbose: boolean
   plain: boolean
   external?: string[]
+  exclude: string[]
 }
 
 export function routesCommand(program: Command) {
@@ -32,6 +34,12 @@ export function routesCommand(program: Command) {
     .argument('[file]', 'Path to the Hono app file')
     .option('--verbose', 'include middleware', false)
     .option('--plain', 'human-readable output instead of JSON', false)
+    .option(
+      '--exclude <prefix>',
+      'hide routes whose path starts with the prefix (can be used multiple times)',
+      (value: string, previous: string[]) => [...previous, value],
+      [] as string[]
+    )
     .option(
       '-e, --external <package>',
       'Mark package as external (can be used multiple times)',
@@ -60,7 +68,9 @@ export function routesCommand(program: Command) {
         }
 
         const routes = inspectRoutes(app).filter(
-          ({ isMiddleware }) => options.verbose || !isMiddleware
+          ({ isMiddleware, path }) =>
+            (options.verbose || !isMiddleware) &&
+            !options.exclude.some((prefix) => path.startsWith(prefix))
         )
         const router = getRouterName(app)
 
