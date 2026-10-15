@@ -333,7 +333,7 @@ happy-dom is not a dependency of Hono CLI. Install it in the project; without it
 }
 ```
 
-`console` has the page's console messages and its uncaught errors. An action that finds nothing stops the run with `"ok": false` and an `error`.
+A form that JavaScript handles (e.g. a React form action) has only `fields`, with no `action` and `method`: it never submits itself. A field without a `name` or label is keyed by its placeholder, `aria-label`, or `id`. `console` has the page's console messages and its uncaught errors. An action that finds nothing stops the run with `"ok": false` and an `error`.
 
 ### `snapshot`
 
