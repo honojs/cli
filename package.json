@@ -46,6 +46,7 @@
     "@babel/parser": "^7.28.5",
     "@babel/types": "^7.28.5",
     "@types/node": "^24.7.0",
+    "happy-dom": "^21.0.1",
     "magic-string": "^0.30.21",
     "np": "^10.2.0",
     "pkg-pr-new": "^0.0.62",

@@ -3,6 +3,36 @@
 How measurements from [honojs/agent-dx](https://github.com/honojs/agent-dx)
 changed Hono CLI. Newest first.
 
+## 2026-10-16: HTTP checks miss client-side bugs — add `hono browse`
+
+**Experiment**: bench3 on a Void app (a ramen log with create, edit,
+delete), `claude -p`, 5 runs each: no CLI, `agent-init` with the Void
+facts inline, and the released `agent-init` + the `hono-void` skill.
+A black-box script graded each app.
+
+**Findings**:
+
+- `agent-init` cut the median cost from $2.23 / 59 turns to $1.64 / 42
+  (p≈0.02). The released version with the skill: $1.80 / 58 (p≈0.06).
+- Quality was the same in every condition (4/5 pass), and 1/5 in each
+  still shipped a delete that lands on `/?delete`.
+- Client-side behavior could not be checked over HTTP: no run could see
+  whether the form clears after a submit. Many runs tried Chrome
+  DevTools MCP (denied; 5/5 without the CLI), and one installed
+  Playwright itself.
+- A happy-dom spike loaded the Vite dev page, hydrated React, typed,
+  clicked, and found both bugs in about 5 seconds.
+
+**Changes**:
+
+- `hono browse <path> --fill name=value --click <selector>`: the page
+  runs in happy-dom, and every request it makes goes to the app like
+  `request` and `batch`. happy-dom resolves from the project, so the
+  CLI does not grow for those who do not use it.
+- happy-dom's module loader misreads a regex literal after `!`, `||`,
+  `?`, `-` or `return`. `browse` rewrites regex literals to
+  `new RegExp()` until it is fixed upstream.
+
 ## 2026-10-11: Code mode (`hono exec`) loses to batch; the CLI wins on side effects (#166, #167)
 
 **Experiment 1: code mode.** Opus without the CLI already does a kind of
