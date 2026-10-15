@@ -52,7 +52,9 @@ describe('agentInitCommand', () => {
       ['add', '-D', '@hono/cli@^1.0.0'],
       process.cwd()
     )
-    expect(readFileSync('AGENTS.md', 'utf-8')).toContain('npx skills add honojs/skills')
+    expect(readFileSync('AGENTS.md', 'utf-8')).toContain(
+      'npx skills add honojs/skills --skill hono-void -y'
+    )
   })
 
   it('should detect a Cloudflare Workers app', async () => {

@@ -12,7 +12,7 @@ const COMMON = [
 
 const FRAMEWORK_LINES: Record<Framework, string[]> = {
   void: [
-    'This is a Void app. To check pages and page actions, use the hono-void skill. If it is missing, install it: `npx skills add honojs/skills`.',
+    'This is a Void app. To check pages and page actions, use the hono-void skill. If it is missing, install it: `npx skills add honojs/skills --skill hono-void -y`.',
   ],
   'cloudflare-workers': [
     '`c.env` has the local bindings (KV, D1, R2, vars). Add `--runtime workerd` to run in the real Workers runtime.',
