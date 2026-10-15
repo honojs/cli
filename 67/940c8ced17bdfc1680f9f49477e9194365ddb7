@@ -1,0 +1,21 @@
+src/utils/vite.test.ts
+  s_dc6239c7c86ef7::t_5af255d5e42c79 3,65-78
+src/utils/vite.ts
+  s_dc6239c7c86ef7::t_0af4bb959168d6 98-106,112-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "67940c8ced17bdfc1680f9f49477e9194365ddb7",
+  "prompts": {},
+  "sessions": {
+    "s_dc6239c7c86ef7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c0631115-fbc3-47b2-8a7b-540ed7d192d0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
