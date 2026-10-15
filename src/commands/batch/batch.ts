@@ -20,6 +20,8 @@ export interface StepResult {
   method: string
   path: string
   status: number
+  /** The Location header of a redirect */
+  location?: string
   body: unknown
   pass: boolean
   expect?: StepExpect
@@ -62,8 +64,9 @@ export const parseBatch = (input: string): BatchStep[] => {
       throw invalid(`Line ${i + 1} is not a JSON object`)
     }
     const step = parsed as Record<string, unknown>
-    if (typeof step.path !== 'string' || !step.path.startsWith('/')) {
-      throw invalid(`Line ${i + 1} needs a "path" starting with /`)
+    // "{{next}}" is a saved path, e.g. from "header:location"
+    if (typeof step.path !== 'string' || !/^(\/|\{\{)/.test(step.path)) {
+      throw invalid(`Line ${i + 1} needs a "path" starting with / or a saved {{name}}`)
     }
     if (step.method !== undefined && typeof step.method !== 'string') {
       throw invalid(`Line ${i + 1}: "method" must be a string`)
@@ -252,7 +255,8 @@ export const runBatch = async (
   const results: StepResult[] = []
 
   for (const step of steps) {
-    const path = interpolate(step.path, vars)
+    // A saved absolute URL (a Location) goes to the same app
+    const path = String(interpolate(step.path, vars)).replace(/^https?:\/\/[^/]+/, '')
     const headers: Record<string, string> = {
       ...sharedHeaders,
       ...interpolate(step.headers ?? {}, vars),
@@ -292,10 +296,12 @@ export const runBatch = async (
       }
     }
 
+    const location = response.headers.get('location')
     const result: StepResult = {
       method: step.method,
       path,
       status: response.status,
+      ...(location === null ? {} : { location }),
       body,
       pass: true,
       ...(step.expect === undefined ? {} : { expect: interpolate(step.expect, vars) }),
@@ -327,10 +333,15 @@ export const runBatch = async (
     if (step.save) {
       const saved: Record<string, unknown> = {}
       for (const [name, savePath] of Object.entries(step.save)) {
-        const value = getByPath(body, savePath)
+        // "header:location" reads a header, e.g. the URL a create redirects to
+        const header = savePath.startsWith('header:') ? savePath.slice(7) : undefined
+        const value =
+          header === undefined
+            ? getByPath(body, savePath)
+            : (response.headers.get(header) ?? undefined)
         if (value === undefined) {
           result.pass = false
-          result.error = `save: ${savePath} not found in the body`
+          result.error = `save: ${header ?? savePath} not found in the ${header ? 'headers' : 'body'}`
         } else {
           vars[name] = value
           saved[name] = value
