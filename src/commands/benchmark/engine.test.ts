@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { execFile } from 'node:child_process'
+import { describe, it, expect } from 'vitest'
 import { parseRunnerOutput } from '../request/runtime'
 import { buildBenchBody } from './engine'
 import type { RouteResult } from './engine'

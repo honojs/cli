@@ -1,17 +1,17 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { downloadTemplate } from '@bluwy/giget-core'
 import select from '@inquirer/select'
 import { Command } from 'commander'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 
 vi.mock('@bluwy/giget-core', () => ({ downloadTemplate: vi.fn(async () => {}) }))
 vi.mock('@inquirer/select', () => ({ default: vi.fn(async () => 'nodejs') }))
 vi.mock('./install.js', () => ({ install: vi.fn(async () => {}) }))
 
-import { install } from './install.js'
 import { initCommand } from './index.js'
+import { install } from './install.js'
 
 describe('initCommand', () => {
   const cwd = process.cwd()

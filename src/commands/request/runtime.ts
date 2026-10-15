@@ -1,6 +1,6 @@
-import * as esbuild from 'esbuild'
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import * as esbuild from 'esbuild'
 import type { AppEntry } from '../../utils/build.js'
 import { CliError } from '../../utils/output.js'
 

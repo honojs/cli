@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { EventEmitter } from 'node:events'
+import { describe, it, expect } from 'vitest'
 import { ignoreEpipe } from './epipe'
 
 const errorWithCode = (code: string) => Object.assign(new Error(code), { code })

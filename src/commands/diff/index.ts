@@ -1,5 +1,5 @@
-import type { Command } from 'commander'
 import { spawn } from 'node:child_process'
+import type { Command } from 'commander'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'
 import { CliError, handleErrors, printResult } from '../../utils/output.js'

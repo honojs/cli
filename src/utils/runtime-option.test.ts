@@ -1,7 +1,7 @@
-import { afterEach, describe, it, expect } from 'vitest'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { afterEach, describe, it, expect } from 'vitest'
 import { defaultRuntime, resolveRuntime } from './runtime-option'
 
 const projectWith = (...files: string[]) => {

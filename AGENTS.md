@@ -11,10 +11,13 @@ made for coding agents, not humans.
 ## Commands
 
 - `pnpm install` — install dependencies
-- `pnpm run build` — build (tsdown)
+- `pnpm run build` — build (`vp pack`)
 - `pnpm run watch` — build with auto-rebuild
-- `pnpm run test` — run tests (Vitest)
-- `pnpm run format:fix && pnpm run lint:fix` — fix format and lint
+- `pnpm run test` — run tests (`vp test`)
+- `pnpm run check:fix` — fix format and lint (`vp check`)
+
+The toolchain is [Vite+](https://viteplus.dev), like honojs/hono. Its config
+(format, lint, test, pack) is in `vite.config.ts`.
 
 Runtime: Node.js 22+. Package manager: pnpm.
 
@@ -41,7 +44,7 @@ Runtime: Node.js 22+. Package manager: pnpm.
 3. Run the quality gates. All must pass:
 
    ```bash
-   pnpm run format:fix && pnpm run lint:fix
+   pnpm run check:fix
    pnpm run test
    pnpm run build
    ```

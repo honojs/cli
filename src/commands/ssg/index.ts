@@ -1,6 +1,6 @@
+import fs from 'node:fs/promises'
 import type { Command } from 'commander'
 import { toSSG } from 'hono/ssg'
-import fs from 'node:fs/promises'
 import { maybeLoadBindings } from '../../utils/bindings.js'
 import type { CommandHelp } from '../../utils/help.js'
 import { renderCommandHelp } from '../../utils/help.js'

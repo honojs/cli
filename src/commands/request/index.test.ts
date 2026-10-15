@@ -1,7 +1,7 @@
+import { Readable } from 'node:stream'
 import { Command } from 'commander'
 import { Hono } from 'hono'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { Readable } from 'node:stream'
 import type * as RuntimeModule from './runtime.js'
 
 // Mock dependencies

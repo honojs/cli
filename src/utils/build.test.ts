@@ -61,12 +61,12 @@ describe('buildAndImportApp', () => {
   it('should build and import TypeScript file', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.ts'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath)
     const result = (await buildIterator.next()).value
@@ -98,12 +98,12 @@ describe('buildAndImportApp', () => {
   it('should not dispose context when watch is true', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.ts'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath, { watch: true })
     const result = (await buildIterator.next()).value
@@ -135,16 +135,15 @@ describe('buildAndImportApp', () => {
   it('should build and import JSX file with custom options', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.jsx'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
     const options = {
       external: ['@hono/node-server'],
     }
 
     setupBundledCode(bundledCode)
-
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath, options)
     const result = (await buildIterator.next()).value
@@ -175,13 +174,12 @@ describe('buildAndImportApp', () => {
   it('should build and import TSX file', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.tsx'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath)
     const result = (await buildIterator.next()).value
@@ -199,13 +197,12 @@ describe('buildAndImportApp', () => {
   it('should build and import file with sourcemap', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.ts'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(`${bundledCode}\n//# sourceURL=file://${process.cwd()}/__hono_cli_bundle__.js`).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath, { sourcemap: true })
     const result = (await buildIterator.next()).value
@@ -313,13 +310,12 @@ describe('buildAndImportApp', () => {
   it('should use default empty options when none provided', async () => {
     const mockApp = new Hono()
     const filePath = '/path/to/app.ts'
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-
-    // Mock dynamic import
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    // The bundle is imported for real; it exports this app
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp(filePath)
     await buildIterator.next()
@@ -348,11 +344,11 @@ describe('buildAndImportApp', () => {
 
   it('should build code from stdin', async () => {
     const mockApp = new Hono()
-    const bundledCode = 'export default app;'
+    // A new comment each time, so Node does not reuse an imported module
+    const bundledCode = `export default globalThis.__honoTestApp // ${crypto.randomUUID()}`
 
     setupBundledCode(bundledCode)
-    const dataUrl = `data:text/javascript;base64,${Buffer.from(bundledCode).toString('base64')}`
-    vi.doMock(dataUrl, () => ({ default: mockApp }))
+    Object.assign(globalThis, { __honoTestApp: mockApp })
 
     const buildIterator = buildAndImportApp({ code: 'export default app' })
     const result = (await buildIterator.next()).value

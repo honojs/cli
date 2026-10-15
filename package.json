@@ -6,15 +6,17 @@
     "hono": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsdown",
-    "watch": "tsdown --watch",
-    "test": "vitest",
-    "test:run": "vitest --run",
-    "test:watch": "vitest watch",
-    "lint": "eslint --ext js,ts src",
-    "lint:fix": "eslint --ext js,ts src --fix",
-    "format": "prettier src --check",
-    "format:fix": "prettier src --write",
+    "build": "vp pack",
+    "watch": "vp pack --watch",
+    "test": "vp test",
+    "test:run": "vp test --run",
+    "test:watch": "vp test --watch",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
+    "lint": "vp lint src",
+    "lint:fix": "vp lint --fix src",
+    "format": "vp fmt --check src",
+    "format:fix": "vp fmt src",
     "postbuild": "publint",
     "prerelease": "pnpm run build",
     "release": "np --no-publish"
@@ -43,18 +45,15 @@
   "devDependencies": {
     "@babel/parser": "^7.28.5",
     "@babel/types": "^7.28.5",
-    "@hono/eslint-config": "^1.1.1",
     "@types/node": "^24.7.0",
-    "eslint": "^9.37.0",
     "magic-string": "^0.30.21",
     "np": "^10.2.0",
     "pkg-pr-new": "^0.0.62",
-    "prettier": "^3.6.2",
     "publint": "^0.3.14",
-    "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
-    "vite": "^7.3.6",
-    "vitest": "^3.2.4"
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",
+    "vite-plus": "1.0.0",
+    "vitest": "5.0.1"
   },
   "packageManager": "pnpm@11.20.0",
   "engines": {
