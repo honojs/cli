@@ -12,13 +12,14 @@ import { writeBlock } from './block.js'
 
 const help: CommandHelp = {
   output:
-    '{ "framework": "void", "file": "AGENTS.md", "action": "created", "added": "@hono/cli@^1.0.0" }',
+    '{ "framework": "void", "file": "AGENTS.md", "action": "created", "added": "@hono/cli@1.0.0" }',
   examples: ['npx @hono/cli@next agent-init', 'hono agent-init --no-install'],
   notes: [
     'Tells coding agents to verify changes with Hono CLI: writes a "Hono CLI" block to AGENTS.md (CLAUDE.md when only that exists).',
     'Running it again replaces the block in place.',
     'The block has extra lines for the framework: void (package.json depends on void), cloudflare-workers (a wrangler config or cloudflare.config.ts), or hono.',
     'Adds @hono/cli to devDependencies with the package manager of the lockfile. Skip it with --no-install.',
+    'The commands in the block use the same package manager: pnpm exec hono in a pnpm project, npx hono with npm.',
   ],
 }
 
@@ -58,11 +59,14 @@ export function agentInitCommand(program: Command) {
       handleErrors(async (options: AgentInitOptions, command: Command) => {
         const dir = process.cwd()
         const framework = detectFramework(dir)
-        const written = writeBlock(dir, framework)
 
-        const version = command.parent?.version()
-        const spec = version ? `@hono/cli@^${version}` : '@hono/cli'
         const packageManager = detectPackageManager(dir, process.env.npm_config_user_agent)
+        const written = writeBlock(dir, framework, packageManager)
+
+        // The exact version: pnpm skips a release younger than its
+        // minimumReleaseAge for a range, but adds an exclude for an exact one
+        const version = command.parent?.version()
+        const spec = version ? `@hono/cli@${version}` : '@hono/cli'
         const addCommand = [packageManager, 'add', '-D', spec]
         const needsCli = !hasCli(dir)
         if (needsCli && options.install) {

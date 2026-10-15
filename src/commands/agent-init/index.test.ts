@@ -45,16 +45,18 @@ describe('agentInitCommand', () => {
       framework: 'void',
       file: 'AGENTS.md',
       action: 'created',
-      added: '@hono/cli@^1.0.0',
+      added: '@hono/cli@1.0.0',
     })
     expect(runPackageManager).toHaveBeenCalledWith(
       'pnpm',
-      ['add', '-D', '@hono/cli@^1.0.0'],
+      ['add', '-D', '@hono/cli@1.0.0'],
       process.cwd()
     )
-    expect(readFileSync('AGENTS.md', 'utf-8')).toContain(
-      'npx skills add honojs/skills --skill hono-void -y'
-    )
+    // pnpm project: no npx, which npm refuses when devEngines names pnpm
+    const agents = readFileSync('AGENTS.md', 'utf-8')
+    expect(agents).toContain('`pnpm exec hono request <path>`')
+    expect(agents).toContain('`pnpm dlx skills add honojs/skills --skill hono-void -y`')
+    expect(agents).not.toContain('npx')
   })
 
   it('should detect a Cloudflare Workers app', async () => {
@@ -75,7 +77,7 @@ describe('agentInitCommand', () => {
     packageJson({})
     const output = await run('--no-install')
     expect(runPackageManager).not.toHaveBeenCalled()
-    expect(output.data.suggestions).toEqual(['Add Hono CLI: npm add -D @hono/cli@^1.0.0'])
+    expect(output.data.suggestions).toEqual(['Add Hono CLI: npm add -D @hono/cli@1.0.0'])
   })
 
   it('should keep the file and say how to add when adding fails', async () => {
@@ -83,7 +85,7 @@ describe('agentInitCommand', () => {
     vi.mocked(runPackageManager).mockRejectedValueOnce(new Error('exited with 1'))
     const output = await run()
     expect(output.error.code).toBe('INSTALL_FAILED')
-    expect(output.error.suggestions).toEqual(['Run it yourself: npm add -D @hono/cli@^1.0.0'])
+    expect(output.error.suggestions).toEqual(['Run it yourself: npm add -D @hono/cli@1.0.0'])
     expect(readFileSync('AGENTS.md', 'utf-8')).toContain('## Hono CLI')
   })
 })
