@@ -87,7 +87,12 @@ describe('routesCommand', () => {
     const voidApp = new Hono()
     voidApp.get('/api/hello', (c) => c.json({}))
     vi.mocked(vite.loadVoidApp).mockResolvedValue(voidApp)
-    const target = { request: vi.fn(), loadModule: vi.fn(), dispose: vi.fn(async () => {}) }
+    const target = {
+      request: vi.fn(),
+      loadModule: vi.fn(),
+      onChange: vi.fn(),
+      dispose: vi.fn(async () => {}),
+    }
     vi.mocked(vite.startVite).mockResolvedValue(target)
 
     try {

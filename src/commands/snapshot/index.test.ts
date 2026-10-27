@@ -62,6 +62,7 @@ describe('snapshotCommand', () => {
       request: vi.fn(async () => Response.json({ from: 'workerd' })),
       fetch: vi.fn(),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(workerd.readWorkerdMain).mockResolvedValue('/proj/src/index.ts')
@@ -81,6 +82,7 @@ describe('snapshotCommand', () => {
     const target = {
       request: vi.fn(async () => Response.json({ from: 'vite' })),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -103,6 +105,7 @@ describe('snapshotCommand', () => {
     const target = {
       request: vi.fn(async () => Response.json({ from: 'vite' })),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -131,6 +134,7 @@ describe('snapshotCommand', () => {
     const target = {
       request: vi.fn(async () => Response.json({ from: 'vite' })),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)

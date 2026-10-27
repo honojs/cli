@@ -20,6 +20,7 @@ interface ViteLogger {
 interface ViteDevServer {
   middlewares: (req: IncomingMessage, res: ServerResponse) => void
   ssrLoadModule(id: string): Promise<Record<string, unknown>>
+  watcher: { on(event: 'change' | 'add' | 'unlink', listener: () => void): void }
   close(): Promise<void>
 }
 
@@ -41,6 +42,8 @@ export interface ViteTarget extends RequestTarget {
   request(input: Request): Promise<Response>
   /** Load a module, virtual ones too, through the project's Vite plugins */
   loadModule(id: string): Promise<Record<string, unknown>>
+  /** Call `listener` when a file of the project changes */
+  onChange(listener: () => void): void
   dispose(): Promise<void>
 }
 
@@ -192,6 +195,11 @@ export const startVite = async (): Promise<ViteTarget> => {
     },
     loadModule(id: string) {
       return logsToStderr(() => vite.ssrLoadModule(id))
+    },
+    onChange(listener: () => void) {
+      for (const event of ['change', 'add', 'unlink'] as const) {
+        vite.watcher.on(event, listener)
+      }
     },
     async dispose() {
       server.closeAllConnections()

@@ -1203,6 +1203,7 @@ describe('requestCommand', () => {
           Response.json({ method: input.method, body: await input.text() })
         ),
         loadModule: vi.fn(),
+        onChange: vi.fn(),
         dispose: vi.fn(async () => {}),
       }
       vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -1237,6 +1238,7 @@ describe('requestCommand', () => {
       const target = {
         request: vi.fn(async () => new Response('from vite')),
         loadModule: vi.fn(),
+        onChange: vi.fn(),
         dispose: vi.fn(async () => {}),
       }
       vi.mocked(vite.startVite).mockResolvedValue(target)
@@ -1256,6 +1258,39 @@ describe('requestCommand', () => {
       await program.parseAsync(['node', 'test', 'request', '/', '--trace'])
       expect(JSON.parse(consoleLogSpy.mock.calls[1][0]).data.body).toBe('from node')
       expect(vite.startVite).toHaveBeenCalledTimes(1)
+      vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(false)
+      vi.mocked(vite.hasViteConfig).mockReturnValue(false)
+    })
+
+    it('should resend through Vite on a change with --watch in a cf project', async () => {
+      const workerd = await import('../../utils/workerd.js')
+      const vite = await import('../../utils/vite.js')
+      vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(true)
+      vi.mocked(vite.hasViteConfig).mockReturnValue(true)
+      let changed = () => {}
+      let version = 0
+      const target = {
+        request: vi.fn(async () => new Response(`v${++version}`)),
+        loadModule: vi.fn(),
+        onChange: vi.fn((listener: () => void) => {
+          changed = listener
+        }),
+        dispose: vi.fn(async () => {}),
+      }
+      vi.mocked(vite.startVite).mockResolvedValue(target)
+
+      // --watch never returns
+      void program.parseAsync(['node', 'test', 'request', '/', '--watch', '--compact'])
+      await vi.waitFor(() => expect(consoleLogSpy).toHaveBeenCalledTimes(1))
+      // Changes close together send one request
+      changed()
+      changed()
+      await vi.waitFor(() => expect(consoleLogSpy).toHaveBeenCalledTimes(2))
+      expect(target.request).toHaveBeenCalledTimes(2)
+      expect(JSON.parse(consoleLogSpy.mock.calls[1][0])).toEqual({
+        ok: true,
+        data: { status: 200, body: 'v2', runtime: 'vite' },
+      })
       vi.mocked(workerd.hasCloudflareConfig).mockReturnValue(false)
       vi.mocked(vite.hasViteConfig).mockReturnValue(false)
     })

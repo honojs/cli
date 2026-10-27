@@ -139,7 +139,7 @@ hono request <path> [file] [options]
 - `-X, --method <method>` - HTTP method (default: GET)
 - `-d, --data <data>` - Request body data (`@file` reads a file, `@-` reads stdin). Without a `Content-Type` header, a JSON object or array goes as `application/json` and anything else as a form, like curl's `-d`
 - `-H, --header <header>` - Custom headers (can be used multiple times)
-- `-w, --watch` - Watch for changes and resend request
+- `-w, --watch` - Watch for changes and resend request (with `--runtime node` or `vite`)
 - `-o, --output <file>` - Write response body to file instead of stdout
 - `-O, --remote-name` - Write response body to file named as remote file
 - `--plain` - human-readable output instead of JSON
@@ -204,7 +204,7 @@ In a project with a wrangler config, `c.env` carries the real local bindings (KV
 
 In a Vite project with no `src/index.ts` (or `.tsx`, `.js`, `.jsx`) — the app comes from a Vite plugin — `--runtime vite` is the default for `request` and `batch`, so they work with no flag.
 
-In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. The default entry as the file argument (`src/index.ts`, `src/index.tsx`, ...) still goes through Vite. Another file argument, `--no-bindings`, `--trace`, or `--watch` runs the app on Node.js instead: `--trace` and `--watch` need the Hono app itself.
+In a `cf` project — `cloudflare.config.ts` and a Vite config, no wrangler config — `--runtime vite` is the default, so `c.env` has the bindings with no flag. The default entry as the file argument (`src/index.ts`, `src/index.tsx`, ...) still goes through Vite. Another file argument, `--no-bindings`, or `--trace` runs the app on Node.js instead: `--trace` needs the Hono app itself. `--watch` stays on Vite: the request goes again when a file changes.
 
 With `--trace`, the output has `matchedRoutes`. `responded` marks the route that returned the response:
 
