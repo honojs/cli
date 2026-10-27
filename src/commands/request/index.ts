@@ -10,6 +10,7 @@ import { CliError, handleErrors, printResult } from '../../utils/output.js'
 import { assertNoViteFile, defaultRuntime } from '../../utils/runtime-option.js'
 import type { RequestTarget } from '../../utils/target.js'
 import { startVite, VITE_NOTE } from '../../utils/vite.js'
+import type { ViteTarget } from '../../utils/vite.js'
 import { runOnWorkerd } from '../../utils/workerd.js'
 import { resolvePositionals } from './positionals.js'
 import type { Runtime } from './runtime.js'
@@ -118,20 +119,19 @@ export function requestCommand(program: Command) {
               suggestions: ['Use one of: node, bun, deno, workerd, vite'],
             })
           }
-          // --watch and --trace need the app on Node.js
+          // --trace needs the app on Node.js
           const runtime = (options.runtime ??
-            (options.watch || options.trace
-              ? 'node'
-              : defaultRuntime(file, options.bindings))) as Runtime
+            (options.trace ? 'node' : defaultRuntime(file, options.bindings))) as Runtime
           options.runtime = runtime
-          if (runtime !== 'node' && (options.watch || options.trace)) {
-            throw new CliError(
-              'INVALID_OPTION',
-              `Cannot use --watch or --trace with --runtime ${runtime}`,
-              {
-                suggestions: ['Drop --watch and --trace, or use --runtime node'],
-              }
-            )
+          if (runtime !== 'node' && options.trace) {
+            throw new CliError('INVALID_OPTION', `Cannot use --trace with --runtime ${runtime}`, {
+              suggestions: ['Drop --trace, or use --runtime node'],
+            })
+          }
+          if (runtime !== 'node' && runtime !== 'vite' && options.watch) {
+            throw new CliError('INVALID_OPTION', `Cannot use --watch with --runtime ${runtime}`, {
+              suggestions: ['Drop --watch, or use --runtime node or vite'],
+            })
           }
 
           if (runtime !== 'node' && !options.bindings) {
@@ -190,8 +190,14 @@ export function requestCommand(program: Command) {
             assertNoViteFile(file)
             const target = await startVite()
             try {
-              const result = await executeRequest(target, path, options)
-              await printResponse(result, path, options, doSaveFile, { runtime })
+              const send = async () => {
+                const result = await executeRequest(target, path, options)
+                await printResponse(result, path, options, doSaveFile, { runtime })
+              }
+              await send()
+              if (watch) {
+                await watchVite(target, send)
+              }
             } finally {
               await target.dispose().catch(() => {})
             }
@@ -237,6 +243,24 @@ export function requestCommand(program: Command) {
         }
       )
     )
+}
+
+/**
+ * Resend the request on every change until the process stops. Vite
+ * reloads the changed modules, so the next request sees the new code.
+ * Changes close together send one request. A failed request logs and
+ * waits for the next change, like a failed build on Node.js.
+ */
+const watchVite = (target: ViteTarget, send: () => Promise<void>): Promise<never> => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let queue = Promise.resolve()
+  target.onChange(() => {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      queue = queue.then(send).catch((error) => console.error('Error sending request', error))
+    }, 100)
+  })
+  return new Promise(() => {})
 }
 
 const printResponse = async (

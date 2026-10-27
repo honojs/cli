@@ -118,6 +118,7 @@ describe('batchCommand', () => {
       ),
       fetch: vi.fn(),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(workerd.startWorkerd).mockResolvedValue(target)
@@ -142,6 +143,7 @@ describe('batchCommand', () => {
         Response.json({ path: new URL(input.url).pathname })
       ),
       loadModule: vi.fn(),
+      onChange: vi.fn(),
       dispose: vi.fn(async () => {}),
     }
     vi.mocked(vite.startVite).mockResolvedValue(target)
