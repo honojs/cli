@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { CliError, formatArgumentsError, formatResult, formatError, handleErrors } from './output'
+import {
+  CliError,
+  exitAfterOutput,
+  formatArgumentsError,
+  formatResult,
+  formatError,
+  handleErrors,
+} from './output'
 
 describe('formatResult', () => {
   it('should wrap data in the envelope', () => {
@@ -111,5 +118,27 @@ describe('handleErrors', () => {
     await handleErrors(async () => {})()
     expect(log).not.toHaveBeenCalled()
     expect(process.exitCode).toBeUndefined()
+  })
+})
+
+describe('exitAfterOutput', () => {
+  it('should exit only after stdout is flushed', () => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
+    let flushed: (() => void) | undefined
+    const write = vi.spyOn(process.stdout, 'write').mockImplementation(((
+      _: string,
+      callback: () => void
+    ) => {
+      flushed = callback
+      return true
+    }) as typeof process.stdout.write)
+
+    exitAfterOutput()
+    expect(exit).not.toHaveBeenCalled()
+    flushed?.()
+    expect(exit).toHaveBeenCalledOnce()
+
+    exit.mockRestore()
+    write.mockRestore()
   })
 })

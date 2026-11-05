@@ -19,7 +19,7 @@ made for coding agents, not humans.
 The toolchain is [Vite+](https://viteplus.dev), like honojs/hono. Its config
 (format, lint, test, pack) is in `vite.config.ts`.
 
-Runtime: Node.js 22+. Package manager: pnpm.
+Runtime: Node.js 22.15+. Package manager: pnpm.
 
 ## Architecture
 
