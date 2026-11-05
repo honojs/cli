@@ -91,6 +91,10 @@ describe('buildAndImportApp', () => {
           name: 'watch',
           setup: expect.any(Function),
         },
+        {
+          name: 'no-listen',
+          setup: expect.any(Function),
+        },
       ],
     })
     expect(result).toBe(mockApp)
@@ -126,6 +130,10 @@ describe('buildAndImportApp', () => {
       plugins: [
         {
           name: 'watch',
+          setup: expect.any(Function),
+        },
+        {
+          name: 'no-listen',
           setup: expect.any(Function),
         },
       ],
@@ -165,6 +173,10 @@ describe('buildAndImportApp', () => {
       plugins: [
         {
           name: 'watch',
+          setup: expect.any(Function),
+        },
+        {
+          name: 'no-listen',
           setup: expect.any(Function),
         },
       ],
@@ -337,6 +349,10 @@ describe('buildAndImportApp', () => {
       plugins: [
         {
           name: 'watch',
+          setup: expect.any(Function),
+        },
+        {
+          name: 'no-listen',
           setup: expect.any(Function),
         },
       ],

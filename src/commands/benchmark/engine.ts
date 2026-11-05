@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import * as esbuild from 'esbuild'
 import type { AppEntry } from '../../utils/build.js'
+import { noListen } from '../../utils/no-listen.js'
 import { CliError } from '../../utils/output.js'
 import { parseRunnerOutput } from '../request/runtime.js'
 import type { HonoSource } from './hono-source.js'
@@ -93,7 +94,7 @@ export const buildBenchBundle = async (
   source: HonoSource,
   body: string
 ): Promise<string> => {
-  const plugins: esbuild.Plugin[] = []
+  const plugins: esbuild.Plugin[] = [noListen]
   if (typeof entry !== 'string') {
     plugins.push({
       name: 'virtual-app',
