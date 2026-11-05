@@ -1,0 +1,21 @@
+src/utils/build-external.test.ts
+  s_c8f3a3a8b7d6c6::t_db146d663c37b6 3,36-58
+src/utils/build.ts
+  s_c8f3a3a8b7d6c6::t_578d3e9e83a46e 17-28,37-40,129-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6b822f6934cbc95c02a89f45136719e1439943f5",
+  "prompts": {},
+  "sessions": {
+    "s_c8f3a3a8b7d6c6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2cf76120-d893-44b6-800c-cbaaeba54844",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
