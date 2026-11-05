@@ -1,11 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type * as Fs from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { CliError } from './output'
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
 }))
 
-import { findWranglerConfig, runOnWorkerd, workerdTarget } from './workerd'
+import { findWranglerConfig, runOnWorkerd, startWorkerd, workerdTarget } from './workerd'
 import type { StartedWorker } from './workerd'
 
 const getMockExistsSync = async () => vi.mocked((await import('node:fs')).existsSync)
@@ -68,6 +71,40 @@ describe('runOnWorkerd', () => {
     existsSync.mockReturnValue(true)
     const promise = runOnWorkerd({ path: '/', method: 'GET', headers: {} })
     await expect(promise).rejects.toMatchObject({ code: 'WRANGLER_NOT_FOUND' })
+  })
+})
+
+describe('startWorkerd', () => {
+  const cwd = process.cwd()
+
+  afterEach(() => {
+    process.chdir(cwd)
+  })
+
+  it('should keep the cause when workerd fails to start', async () => {
+    const fs = await vi.importActual<typeof Fs>('node:fs')
+    const dir = fs.mkdtempSync(join(tmpdir(), 'hono-cli-workerd-'))
+    const wrangler = join(dir, 'node_modules', 'wrangler')
+    fs.mkdirSync(wrangler, { recursive: true })
+    fs.writeFileSync(join(dir, 'package.json'), '{"name":"probe"}')
+    fs.writeFileSync(join(wrangler, 'package.json'), '{"name":"wrangler","main":"index.js"}')
+    fs.writeFileSync(
+      join(wrangler, 'index.js'),
+      `exports.unstable_startWorker = async () => {
+        throw new Error('An error occurred when starting the server', {
+          cause: new Error('Use a local Postgres connection string'),
+        })
+      }`
+    )
+    process.chdir(dir)
+    const existsSync = await getMockExistsSync()
+    existsSync.mockReturnValue(true)
+
+    await expect(startWorkerd()).rejects.toMatchObject({
+      code: 'RUNTIME_FAILED',
+      message: 'workerd failed to start: Use a local Postgres connection string',
+      suggestions: ['Check the wrangler config'],
+    })
   })
 })
 
