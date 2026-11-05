@@ -5,6 +5,7 @@ import * as esbuild from 'esbuild'
 import type { Plugin } from 'esbuild'
 import type { Hono } from 'hono'
 import { appLogsToStderr, logsToStderr } from './app-logs.js'
+import { noListen } from './no-listen.js'
 import { CliError } from './output.js'
 
 export interface BuildOptions {
@@ -12,18 +13,6 @@ export interface BuildOptions {
   watch?: boolean
   sourcemap?: boolean
   plugins?: Plugin[]
-}
-
-/**
- * The module for `@hono/node-server`, with a `serve` that does not listen.
- * The CLI only needs the app, and the port may be in use by a dev server.
- */
-const noListenNodeServer = (url: string): string => {
-  const from = JSON.stringify(url)
-  const code = `export * from ${from}
-import { createAdaptorServer } from ${from}
-export const serve = (options) => createAdaptorServer(options)`
-  return `data:text/javascript,${encodeURIComponent(code)}`
 }
 
 // Node.js resolves only builtin modules from a data URL, so external
@@ -34,10 +23,7 @@ registerHooks({
       return next(specifier, context)
     }
     const parentURL = pathToFileURL(join(process.cwd(), 'package.json')).href
-    const resolved = next(specifier, { ...context, parentURL })
-    return specifier === '@hono/node-server'
-      ? { url: noListenNodeServer(resolved.url), shortCircuit: true }
-      : resolved
+    return next(specifier, { ...context, parentURL })
   },
 })
 
@@ -145,6 +131,7 @@ export async function* buildAndImportApp(
           })
         },
       },
+      noListen,
       ...(options.plugins || []),
     ],
   })

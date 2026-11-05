@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import * as esbuild from 'esbuild'
 import type { AppEntry } from '../../utils/build.js'
+import { noListen } from '../../utils/no-listen.js'
 import { CliError } from '../../utils/output.js'
 
 export const RUNTIMES = ['node', 'bun', 'deno', 'workerd', 'vite'] as const
@@ -107,7 +108,7 @@ export const runInRuntime = async (
       jsx: 'automatic',
       jsxImportSource: 'hono/jsx',
       external: ['@hono/node-server', ...external],
-      plugins,
+      plugins: [noListen, ...plugins],
     })
   } catch (e) {
     throw new CliError('BUILD_FAILED', e instanceof Error ? e.message : String(e), {
