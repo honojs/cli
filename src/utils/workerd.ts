@@ -194,8 +194,18 @@ export const workerdTarget = (worker: StartedWorker, timeoutMs = TIMEOUT_MS): Wo
 export const startWorkerd = async (): Promise<WorkerdTarget> => {
   const config = requireWranglerConfig()
   const { unstable_startWorker } = await loadWrangler()
-  const worker = await unstable_startWorker({ config, dev: { logLevel: 'error' } })
-  return workerdTarget(worker)
+  try {
+    const worker = await unstable_startWorker({ config, dev: { logLevel: 'error' } })
+    return workerdTarget(worker)
+  } catch (error) {
+    // The message is generic. The reason is in the cause.
+    const reason = error instanceof Error ? (error.cause ?? error) : error
+    throw new CliError(
+      'RUNTIME_FAILED',
+      `workerd failed to start: ${reason instanceof Error ? reason.message : String(reason)}`,
+      { suggestions: ['Check the wrangler config'] }
+    )
+  }
 }
 
 /**
