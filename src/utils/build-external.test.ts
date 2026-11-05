@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildAndImportApp } from './build.js'
 
@@ -31,6 +31,29 @@ describe('buildAndImportApp with external packages', () => {
     )
     const { value: app } = await buildAndImportApp(entry, { external: ['probe-pkg'] }).next()
     expect(app).toHaveProperty('value', 'from the project')
+  })
+
+  it('should not listen when the app calls serve() from @hono/node-server', async () => {
+    const entry = setupProject(`import { serve, other } from '@hono/node-server'
+const server = serve({ port: 3000 })
+export default { server, other, request: () => 'ok' }`)
+    const pkg = join(dirname(entry), 'node_modules', '@hono', 'node-server')
+    mkdirSync(pkg, { recursive: true })
+    writeFileSync(
+      join(pkg, 'package.json'),
+      '{"name":"@hono/node-server","type":"module","main":"index.js"}'
+    )
+    writeFileSync(
+      join(pkg, 'index.js'),
+      `export const serve = () => { throw new Error('listened') }
+export const createAdaptorServer = (options) => ({ options })
+export const other = 'kept'`
+    )
+    const { value: app } = await buildAndImportApp(entry, {
+      external: ['@hono/node-server'],
+    }).next()
+    expect(app).toHaveProperty('server', { options: { port: 3000 } })
+    expect(app).toHaveProperty('other', 'kept')
   })
 
   it('should not put the bundle in the error for a missing package', async () => {
