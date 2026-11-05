@@ -77,6 +77,14 @@ export const printResult = (data: unknown, compact = false): void => {
 }
 
 /**
+ * Exit after stdout is flushed. The app may keep the process alive,
+ * e.g. with `serve()` from `@hono/node-server`.
+ */
+export const exitAfterOutput = (): void => {
+  process.stdout.write('', () => process.exit())
+}
+
+/**
  * Wrap a command action. A thrown `CliError` (or any other error)
  * becomes a JSON error on stdout with exit code 1.
  */

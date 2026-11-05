@@ -14,7 +14,7 @@ import { snapshotCommand } from './commands/snapshot/index.js'
 import { ssgCommand } from './commands/ssg/index.js'
 import { ignoreEpipe } from './utils/epipe.js'
 import { agentHelp } from './utils/help.js'
-import { formatArgumentsError } from './utils/output.js'
+import { exitAfterOutput, formatArgumentsError } from './utils/output.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -62,3 +62,5 @@ try {
     process.exitCode = 1
   }
 }
+
+exitAfterOutput()

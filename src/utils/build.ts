@@ -1,3 +1,6 @@
+import { registerHooks } from 'node:module'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import * as esbuild from 'esbuild'
 import type { Plugin } from 'esbuild'
 import type { Hono } from 'hono'
@@ -10,6 +13,18 @@ export interface BuildOptions {
   sourcemap?: boolean
   plugins?: Plugin[]
 }
+
+// Node.js resolves only builtin modules from a data URL, so external
+// packages in the bundle resolve from the project instead.
+registerHooks({
+  resolve(specifier, context, next) {
+    if (!context.parentURL?.startsWith('data:')) {
+      return next(specifier, context)
+    }
+    const parentURL = pathToFileURL(join(process.cwd(), 'package.json')).href
+    return next(specifier, { ...context, parentURL })
+  },
+})
 
 /** App source: a file path, or code read from stdin */
 export type AppEntry = string | { code: string }
