@@ -1,0 +1,21 @@
+src/utils/workerd.test.ts
+  s_c8f3a3a8b7d6c6::t_0a44191a3f2b09 1-4,11,77-110
+src/utils/workerd.ts
+  s_c8f3a3a8b7d6c6::t_9bad055e29c7c9 197-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a84777407ce697aadfa124800cfdf8bcb59e9d02",
+  "prompts": {},
+  "sessions": {
+    "s_c8f3a3a8b7d6c6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2cf76120-d893-44b6-800c-cbaaeba54844",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Yusuke Wada <yusuke@kamawada.com>"
+    }
+  }
+}
