@@ -14,6 +14,18 @@ export interface BuildOptions {
   plugins?: Plugin[]
 }
 
+/**
+ * The module for `@hono/node-server`, with a `serve` that does not listen.
+ * The CLI only needs the app, and the port may be in use by a dev server.
+ */
+const noListenNodeServer = (url: string): string => {
+  const from = JSON.stringify(url)
+  const code = `export * from ${from}
+import { createAdaptorServer } from ${from}
+export const serve = (options) => createAdaptorServer(options)`
+  return `data:text/javascript,${encodeURIComponent(code)}`
+}
+
 // Node.js resolves only builtin modules from a data URL, so external
 // packages in the bundle resolve from the project instead.
 registerHooks({
@@ -22,7 +34,10 @@ registerHooks({
       return next(specifier, context)
     }
     const parentURL = pathToFileURL(join(process.cwd(), 'package.json')).href
-    return next(specifier, { ...context, parentURL })
+    const resolved = next(specifier, { ...context, parentURL })
+    return specifier === '@hono/node-server'
+      ? { url: noListenNodeServer(resolved.url), shortCircuit: true }
+      : resolved
   },
 })
 
@@ -111,7 +126,10 @@ export async function* buildAndImportApp(
 
               if (!app || typeof app.request !== 'function') {
                 throw new CliError('INVALID_APP', 'No valid Hono app exported from the file', {
-                  suggestions: ['Export the Hono instance as the default export'],
+                  suggestions: [
+                    'Export the Hono instance as the default export',
+                    'If this file only starts the server, pass the file that exports the app, e.g. src/app.ts',
+                  ],
                   docs: 'https://hono.dev/docs/api/hono',
                 })
               }
