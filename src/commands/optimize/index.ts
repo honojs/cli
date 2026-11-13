@@ -1,7 +1,6 @@
 import type { Command } from 'commander'
 import * as esbuild from 'esbuild'
 import type { Hono } from 'hono'
-import { METHOD_NAME_ALL } from 'hono/router'
 import { buildInitParams, serializeInitParams } from 'hono/router/reg-exp-router'
 import { execFile } from 'node:child_process'
 import { existsSync, realpathSync, statSync, readFileSync } from 'node:fs'
@@ -32,8 +31,9 @@ export function optimizeCommand(program: Command) {
     .option('-o, --outfile [outfile]', 'output file', 'dist/index.js')
     .option('-m, --minify', 'minify output file')
     .option(
-      '--no-request-body-api-removal',
-      'do not remove request body APIs even if they are not needed'
+      '--request-body-api-removal [mode]',
+      'request body API removal mode (auto | force | disable, default: auto)',
+      'auto'
     )
     .option('--no-hono-api-removal', 'do not remove Hono APIs even if they are not used')
     .option(
@@ -48,7 +48,7 @@ export function optimizeCommand(program: Command) {
           outfile: string
           minify?: boolean
           target: string
-          requestBodyApiRemoval: boolean
+          requestBodyApiRemoval: 'auto' | 'force' | 'disable' | boolean
           honoApiRemoval: boolean
           contextResponseApiRemoval: boolean
         }
@@ -187,10 +187,11 @@ export class Hono extends HonoBase {
 
         const removed = []
         const removeRequestBodyApi =
-          options.requestBodyApiRemoval !== false &&
-          app.routes.every(({ method }) =>
-            [METHOD_NAME_ALL, 'GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
-          )
+          options.requestBodyApiRemoval === 'force' ||
+          (options.requestBodyApiRemoval === 'auto' &&
+            app.routes.every(({ method }) =>
+              ['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
+            ))
         const unusedHonoMethods: Record<string, number> = (
           app as Hono & { unusedMethods: Record<string, number> }
         ).unusedMethods
