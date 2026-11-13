@@ -327,6 +327,113 @@ describe('optimizeCommand', () => {
       expect(content).toMatch(/parseBody/)
     })
 
+    it('should keep request body APIs when all method is used', { timeout: 0 }, async () => {
+      writePackageJSON(dir)
+      await npmInstall()
+      writeFileSync(
+        join(dir, './src/index.ts'),
+        `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.get('/', (c) => c.text('Hello'))
+          app.all('/data', async (c) => {
+            const body = await c.req.json()
+            return c.json(body)
+          })
+          export default app
+        `
+      )
+      await program.parseAsync(['node', 'hono', 'optimize'])
+
+      const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+      expect(content).toMatch(/parseBody/)
+    })
+
+    it('should keep request body APIs when middleware is used', { timeout: 0 }, async () => {
+      writePackageJSON(dir)
+      await npmInstall()
+      writeFileSync(
+        join(dir, './src/index.ts'),
+        `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.use(async (c, next) => {
+            if (c.req.method === 'POST') {
+              const body = await c.req.json()
+              c.set('body', body)
+            }
+            await next()
+          })
+          app.get('/', (c) => c.text('Hello'))
+          export default app
+        `
+      )
+      await program.parseAsync(['node', 'hono', 'optimize'])
+
+      const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+      expect(content).toMatch(/parseBody/)
+    })
+
+    it(
+      'should keep request body APIs when --request-body-api-removal disable is specified',
+      { timeout: 0 },
+      async () => {
+        writePackageJSON(dir)
+        await npmInstall()
+        writeFileSync(
+          join(dir, './src/index.ts'),
+          `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.get('/', (c) => c.text('Hello'))
+          export default app
+        `
+        )
+        await program.parseAsync([
+          'node',
+          'hono',
+          'optimize',
+          '--request-body-api-removal',
+          'disable',
+        ])
+
+        const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+        expect(content).toMatch(/parseBody/)
+      }
+    )
+
+    it(
+      'should remove request body APIs when --request-body-api-removal force is specified',
+      { timeout: 0 },
+      async () => {
+        writePackageJSON(dir)
+        await npmInstall()
+        writeFileSync(
+          join(dir, './src/index.ts'),
+          `
+          import { Hono } from 'hono'
+          const app = new Hono()
+          app.post('/data', async (c) => {
+            const body = await c.req.json()
+            return c.json(body)
+          })
+          export default app
+        `
+        )
+        await program.parseAsync([
+          'node',
+          'hono',
+          'optimize',
+          '--request-body-api-removal',
+          'force',
+        ])
+
+        const content = readFileSync(join(dir, './dist/index.js'), 'utf-8')
+        expect(content).not.toMatch(/parseBody/)
+        expect(content).not.toMatch(/#cachedBody/)
+      }
+    )
+
     it(
       'should keep request body APIs when --no-request-body-api-removal is specified',
       { timeout: 0 },
